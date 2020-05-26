@@ -11,7 +11,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * Opens the purchase order
 * Links the 'piece' created by FOLIO to the item UUID
 
-### If you want to try it (maven is needed)
+### If you want to try it 
 * It expects the properties file to be here: /yourhomefolder/order/import.properties  -- you will have to add the okapi userid/password and you may have to adjust the file upload path (where it will save the uploaded file)
 * clone the repo
 * call: mvn jetty:run
