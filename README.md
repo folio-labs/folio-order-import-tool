@@ -12,7 +12,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * Links the 'piece' created by FOLIO to the item UUID
 
 ### If you want to try it (maven is needed)
-* It expects the properties file to be here: /yourhomefolder/order/import.properties  -- you will have to add the okapi userid/password
+* It expects the properties file to be here: /yourhomefolder/order/import.properties  -- you will have to add the okapi userid/password and you may have to adjust the file upload path (where it will save the uploaded file)
 * clone the repo
 * call: mvn jetty:run
 * It should start a jetty server and you should be able to point your browser to http://localhost:8888/order and try it
