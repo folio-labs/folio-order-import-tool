@@ -5,6 +5,7 @@
 	<groupId>org.olf.folio.order</groupId>
 	<artifactId>order-import-poc</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<packaging>war</packaging>
 	<name>Order Import POC</name>
 
 
