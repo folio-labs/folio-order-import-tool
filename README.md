@@ -26,6 +26,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 ### Lots of areas for improvement including:
 * Better way to get data out of the MARC record to include on the instance. 
 * Better way to store reference values needed for lookup
+* Current version contains some hard-coded values (e.g. currency: USD)
 
 
 
