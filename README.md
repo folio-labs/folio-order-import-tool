@@ -14,7 +14,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 ### If you want to try it (maven is needed)
 * It expects the properties file to be here: /yourhomefolder/order/import.properties  -- you will have to add the okapi userid/password
 * clone the repo
-* call: mvn jetty:run
+* call: mvn jetty:run    (using this for convenience for testing - won't go live like this - re: security alert)
 * It should start a jetty server and you should be able to point your browser to http://localhost:8888/order and try it
 * I've included example MARC files with organization and fund codes that are in FOLIO snapshot
 * The first call is a bit slow because it initializes reference values/UUIDs
