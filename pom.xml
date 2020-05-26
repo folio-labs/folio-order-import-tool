@@ -12,7 +12,7 @@
 
 	<properties>
 		<!-- Adapt this to a version found on https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-maven-plugin/ -->
-		<jettyVersion>9.3.9.v20160517</jettyVersion>
+		<jettyVersion>9.4.29.v20200521</jettyVersion>
 		<jersey.version>2.23.1</jersey.version>
 	</properties>
 
