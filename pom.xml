@@ -2,16 +2,17 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.olf.rs</groupId>
-	<artifactId>mock-ncip-server</artifactId>
+	<groupId>org.olf.folio.order</groupId>
+	<artifactId>order-import-poc</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>Mock NCIP server</name>
+	<packaging>war</packaging>
+	<name>Order Import POC</name>
 
 
 
 	<properties>
 		<!-- Adapt this to a version found on https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-maven-plugin/ -->
-		<jettyVersion>9.3.9.v20160517</jettyVersion>
+		<jettyVersion>9.4.29.v20200521</jettyVersion>
 		<jersey.version>2.23.1</jersey.version>
 	</properties>
 
@@ -51,7 +52,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.5.3</version>
+			<version>2.9.10.4</version>
 		</dependency>
        <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
