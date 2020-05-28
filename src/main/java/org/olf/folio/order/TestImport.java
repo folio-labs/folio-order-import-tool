@@ -209,8 +209,11 @@ public class TestImport {
 			eResource.put("accessProvider", vendorId);
 			orderLine.put("eresource",eResource);
 			orderLine.put("orderFormat", "Electronic Resource");
-			cost.put("quantityElectronic", quanityNo);
+			cost.put("quantityElectronic", 1);
 			cost.put("listUnitPriceElectronic", price);
+			location.put("quantityElectronic",quanityNo);
+			location.put("locationId",lookupTable.get(permLocationName));
+			locations.put(location);
 		}
 		else {
 			JSONObject physical = new JSONObject();
