@@ -55,7 +55,6 @@ public class TestImport {
 		tenant = (String) getMyContext().getAttribute("tenant");
 		String permLocationName = (String) getMyContext().getAttribute("permLocation");
 		String noteTypeName = (String) getMyContext().getAttribute("noteType");
-		String loanTypeName = (String) getMyContext().getAttribute("loanType");
 		String materialTypeName = (String) getMyContext().getAttribute("materialType");
 		
 		//GET THE FOLIO TOKEN
@@ -69,19 +68,13 @@ public class TestImport {
 		logger.info("TOKEN: " + token); 
 		
 		// GENERATE UUIDS FOR OBJECTS
-		UUID instanceUuid = UUID.randomUUID();
-		UUID holdingsUuid = UUID.randomUUID();
-		UUID itemUuid = UUID.randomUUID();
 		UUID parsedRecordId = UUID.randomUUID();
 		UUID rawRecordId = UUID.randomUUID();
 		UUID matchedId = UUID.randomUUID();
 		UUID snapshotId = UUID.randomUUID();
 		UUID recordTableId = UUID.randomUUID();
-		UUID matchedProfileId = UUID.randomUUID();
-		UUID purchaseOrderLineItemId = UUID.randomUUID();
 		UUID orderUUID = UUID.randomUUID();
 		UUID orderLineUUID = UUID.randomUUID();
-		UUID noteUUID = UUID.randomUUID();
 		
 		//LOOKUP REFERENCE TABLES 
 		//TODO
@@ -107,7 +100,7 @@ public class TestImport {
 				this.lookupTable = (HashMap<String, String>) myContext.getAttribute(Constants.LOOKUP_TABLE);
 		}
 			
-		//INITIALIZE ELECTORNIC TO FALSE
+		//INITIALIZE ELECTRONIC TO FALSE
 		boolean electronic = false;
 
 		//GET THE UPLOADED FILE
@@ -131,23 +124,12 @@ public class TestImport {
 	    
 	    try {
 	    	reader.hasNext();
+	    	record = reader.next();
 	    }
 	    catch(Exception e) {
 	    	logger.fatal(e.getMessage());
 	    	responseMessage.put("error", e.getMessage());
 	    }
-	    
-	    //CONSTRUCTING THE 999 OF THE MARC RECORD for FOLIO:
-	    record = reader.next();
-	    DataField field = MarcFactory.newInstance().newDataField();
-	    field.setTag("999");
-	    field.setIndicator1('f');
-	    field.setIndicator2('f');
-	    Subfield one = MarcFactory.newInstance().newSubfield('i', instanceUuid.toString());
-	    Subfield two = MarcFactory.newInstance().newSubfield('s',recordTableId.toString());
-	    field.addSubfield(one);
-	    field.addSubfield(two);
-	    record.addVariableField(field);
 	    
 	    //PULL TOGETHER THE TITLE
 	    DataField twoFourFive = (DataField) record.getVariableField("245");
@@ -189,146 +171,17 @@ public class TestImport {
 		JSONObject fundsObject = new JSONObject(fundResponse);
 		String fundId = (String) fundsObject.getJSONArray("funds").getJSONObject(0).get("id");
 		logger.info("FUNDS: " + fundsObject.get("funds"));
-	    
-	    //TRANSFORM THE RECORD INTO JSON
-	    logger.info("MARC RECORD: " + record.toString());
-	    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	    MarcJsonWriter jsonWriter =  new MarcJsonWriter(baos);
-	    jsonWriter.write(record);
-	    jsonWriter.close();
-	    String jsonString = baos.toString();
-	    JSONObject mRecord = new JSONObject(jsonString);
-	    JSONObject content = new JSONObject();
-	    content.put("content",mRecord);
-	    logger.info("MARC TO JSON: " + mRecord);
-	    
-
-		//GET THE RAW MARC READY TO POST TO THE API
-	    ByteArrayOutputStream rawBaos = new ByteArrayOutputStream();
-	    MarcWriter writer = new MarcStreamWriter(rawBaos,"UTF-8");
-	    writer.write(record);
-		JSONObject jsonWithRaw = new JSONObject();
-		jsonWithRaw.put("id", rawRecordId);
-		jsonWithRaw.put("content",rawBaos.toString("UTF8"));
-		
-		//TODO: I'M NOT ENTIRELY SURE IF THIS IS NECESSARY?
-		//WHAT THE CONSEQUENCES OF THIS ARE?
-		//TO POST TO SOURCE RECORD STORAGE A SNAPSHOT ID
-		//SEEMS TO BE REQUIRECD
-		JSONObject jobExecution = new JSONObject();
-		jobExecution.put("jobExecutionId", snapshotId.toString());
-		jobExecution.put("status", "PARSING_IN_PROGRESS");
-		
-		String snapshotEndpoint = baseOkapEndpoint + "source-storage/snapshots";
-		String snapShotResponse = callApiPost(snapshotEndpoint,  jobExecution,token);
-		
-		//INSERT INTO SOURCE RECORD STORAGE
-		//OBJECT FOR SOURCE RECORD STORAGE API CALL:
-		JSONObject sourceRecordStorageObject = new JSONObject();
-		sourceRecordStorageObject.put("recordType", "MARC");
-		sourceRecordStorageObject.put("snapshotId",snapshotId.toString());
-		sourceRecordStorageObject.put("matchedId", matchedId.toString());
-		//LINK THE INSTANCE TO THIS MARC RECORD
-		JSONObject externalId = new JSONObject();
-		externalId.put("instanceId",instanceUuid.toString());
-		sourceRecordStorageObject.put("externalIdsHolder", externalId);
-		//RAW RECORD
-		JSONObject rawRecordObject = new JSONObject();
-		rawRecordObject.put("id",rawRecordId.toString());
-		rawRecordObject.put("content",jsonWithRaw.toString());
-		//PARSED RECORD
-		JSONObject parsedRecord = new JSONObject();
-		parsedRecord.put("id", parsedRecordId.toString());
-		parsedRecord.put("content", mRecord);
-		sourceRecordStorageObject.put("rawRecord", rawRecordObject);
-		sourceRecordStorageObject.put("parsedRecord", parsedRecord);
-		
-		String storageEndpoint = baseOkapEndpoint + "source-storage/records";
-		String storageResponse = callApiPost(storageEndpoint, sourceRecordStorageObject,token);
-		
-		//INSERT INSTANCE
-		logger.info("INSERTING INTANCE: " + instanceUuid.toString());
-		JSONArray identifiers = buildIdentifiers(record,lookupTable);
-		JSONArray contributors = buildContributors(record, lookupTable);
-		
-		JSONObject instanceForAPI = new JSONObject();
-		instanceForAPI.put("id", instanceUuid.toString());
-		instanceForAPI.put("title", title);
-		instanceForAPI.put("source", "MARC");
-		instanceForAPI.put("instanceTypeId", lookupTable.get("text"));
-		instanceForAPI.put("identifiers", identifiers);
-		instanceForAPI.put("contributors", contributors);
-		instanceForAPI.put("discoverySuppress", true);
-		String instanceEndpoint = baseOkapEndpoint + "inventory/instances";
-		String instanceResponse = callApiPost(instanceEndpoint,  instanceForAPI,token);
 		
 		
-		//INSERT HOLDINGS
-		logger.info("INSERTING HOLDINGS...");
-		JSONObject holdings = new JSONObject();
-		holdings.put("instanceId", instanceUuid.toString());
-		holdings.put("permanentLocationId", lookupTable.get(permLocationName));
-		holdings.put("id", holdingsUuid.toString());
-		holdings.put("discoverySuppress", true);
+		//INSERT THE ORDER AND ORDER LINE:
 		
-		JSONArray eResources = new JSONArray();
-		String linkText = (String) getMyContext().getAttribute("textForElectronicResources");
-		List urls =  record.getVariableFields("856");
-		Iterator<DataField> iterator = urls.iterator();
-		while (iterator.hasNext()) {
-			DataField dataField = (DataField) iterator.next();
-			if (dataField != null && dataField.getSubfield('u') != null) {
-				String url = dataField.getSubfield('u').getData();
-				JSONObject eResource = new JSONObject();
-				eResource.put("uri", dataField.getSubfield('u').getData());
-				//TODO - DO WE WANT TO CHANGE THE LINK TEXT?
-				eResource.put("linkText", linkText);
-				//I 'THINK' THESE RELATIONSHIP TYPES ARE HARDCODED INTO FOLIO
-				//CANT BE LOOKED UP WITH AN API?
-				//https://github.com/folio-org/mod-inventory-storage/blob/master/reference-data/electronic-access-relationships/resource.json
-				eResource.put("relationshipId", "f5d0068e-6272-458e-8a81-b85e7b9a14aa");
-				eResources.put(eResource);
-			}
-		}
-		holdings.put("electronicAccess", eResources);
-		String holdingsEndpoint = baseOkapEndpoint + "holdings-storage/holdings";
-		String createHoldingsResponse = callApiPost(holdingsEndpoint, holdings,token);
-
-		
-		//INSERT THE ITEM
-		//ONLY INSERT AN ITEM IF THE ITEM  IS NOT ELECTRONIC
-		//**ONLY INSERTS ONE ITEM
-		//IN THE FUTURE...CREATE NUMBER OF ITEMS BASED ON THE
-		//QUANTITY IN THE MARC RECORD?
-		if (!electronic ) {
-			JSONObject item = new JSONObject();
-			JSONObject status = new JSONObject();
-			status.put("name", "On order");
-			JSONObject loanType = new JSONObject();
-			loanType.put("id",lookupTable.get(loanTypeName));
-			JSONObject materialType = new JSONObject();
-			materialType.put("id",lookupTable.get(materialTypeName));
-			item.put("id", itemUuid.toString());
-			item.put("holdingsRecordId",holdingsUuid.toString());
-			item.put("status", status);
-			item.put("materialType", materialType);
-			item.put("permanentLoanType", loanType);
-			item.put("discoverySuppress", true);
-			item.put("purchaseOrderLineIdentifier",purchaseOrderLineItemId.toString());
-			String itemEndpoint = baseOkapEndpoint + "inventory/items";
-			String createitemResponse = callApiPost(itemEndpoint, item,token);
-			logger.info("the item:");
-			logger.info(item.toString());
-			logger.info(createitemResponse);
-		}
-		
-	    //GET THE NEXT PO NUMBER
+		 //GET THE NEXT PO NUMBER
 		String poNumber = callApiGet(baseOkapEndpoint + "orders/po-number", token);
 		JSONObject poNumberObj = new JSONObject(poNumber);
 		logger.info("NEXT PO NUMBER: " + poNumberObj.get("poNumber"));
 		
 		
-		// POST TO COMPOSIT ORDERS
+		// POST TO COMPOSITE ORDERS
 		JSONObject order = new JSONObject();
 		order.put("poNumber", poNumberObj.get("poNumber"));
 		order.put("vendor", vendorId);
@@ -337,10 +190,12 @@ public class TestImport {
 		order.put("id", orderUUID.toString());
 		order.put("approved", true);
 		String orderResponse = callApiPost(baseOkapEndpoint + "orders/composite-orders",order,token); 
+		JSONObject approvedOrder = new JSONObject(orderResponse);
 		logger.info(orderResponse);
 
 		
 		// POST ORDER LINE
+		//FOLIO WILL CREATE THE INSTANCE, HOLDINGS, ITEM
 		JSONObject orderLine = new JSONObject();
 		JSONObject cost = new JSONObject();
 		JSONObject location = new JSONObject();
@@ -349,7 +204,7 @@ public class TestImport {
 			orderLine.put("orderFormat", "Electronic Resource");
 			JSONObject eResource = new JSONObject();
 			eResource.put("activated", false);
-			eResource.put("createInventory", "None");
+			eResource.put("createInventory", "Instance, Holding");
 			eResource.put("trial", false);
 			eResource.put("accessProvider", vendorId);
 			orderLine.put("eresource",eResource);
@@ -359,7 +214,7 @@ public class TestImport {
 		}
 		else {
 			JSONObject physical = new JSONObject();
-			physical.put("createInventory", "None");
+			physical.put("createInventory", "Instance, Holding, Item");
 			physical.put("materialType", lookupTable.get(materialTypeName));
 			orderLine.put("physical", physical);
 			orderLine.put("orderFormat", "Physical Resource");
@@ -389,7 +244,6 @@ public class TestImport {
 		orderLine.put("cost", cost);
 		orderLine.put("locations", locations);
 		orderLine.put("titleOrPackage",title);
-		orderLine.put("instanceId", instanceUuid.toString());
 		orderLine.put("acquisitionMethod", "Purchase");
 		JSONArray funds = new JSONArray();
 		JSONObject fundDist = new JSONObject();
@@ -421,31 +275,133 @@ public class TestImport {
 			logger.info(noteResponse);
 		}
 
-		JSONObject approvedOrder = new JSONObject(orderResponse);
+		
 
 		
-		//OPEN THE ORDER - ENCUMBERS THE MONEY
+		//OPEN THE ORDER - ENCUMBERS THE MONEY, CREATES THE INSTANCE, HOLDING & ITEM-IF PHYSICAL
 		approvedOrder.put("workflowStatus","Open");
 		String openResponse = callApiPut(baseOkapEndpoint + "orders/composite-orders/" +orderUUID.toString() ,approvedOrder,token); 
 		logger.info(openResponse);
 
-		//IF THIS IS A PHYSICAL ITEM
-		//LINK THE "PIECE" THAT WAS CREATED WHEN THE ORDER WAS OPENED
-		//WITH THE ITEM UUID
-		//SO WHEN THE ORDER IS RECEIVED THE STATUS OF THE ITEM WILL BE
-		//UPDATED FROM 'ON ORDER' TO 'IN PROCESS'
-		//AT THIS TIME, ONLY ONE ITEM (AND PIECE) IS CREATED BY THIS SCRIPT REGARDLESS OF QUANTITY IN THE MARC RECORD
-		//ALSO - THERE MAY BE SOME OTHER 'LINKS' MISSING.  WHEN THE ITEM IS RECEIVED AND THE LOCATION IS CHANGED DURING
-		//THE RECEIVING, THE ITEM LOCATION DOES NOT CHANGE
-		//WHEN I DUPLICATE THIS PROCESS WITH THE USER INTERFACE, A 2ND INSTANCE AND ITEM IS CREATED W/THE NEW LOCATION?
-		if (!electronic) {
-			String pieceResponse = callApiGet(baseOkapEndpoint + "orders-storage/pieces?query=poLineId=" + orderLineUUID.toString(),token);
-			JSONObject pieceResponseAsJson = new JSONObject(pieceResponse);
-			JSONObject piece = (JSONObject) pieceResponseAsJson.getJSONArray("pieces").get(0);
-			piece.put("itemId", itemUuid.toString());
-			piece.put("locationId", lookupTable.get(permLocationName));
-			String pieceUpdateResponse = callApiPut(baseOkapEndpoint + "orders-storage/pieces/" + piece.getString("id"), piece,token);
+		
+		//GET THE UPDATED PURCHASE ORDER FROM THE API AND PULL OUT THE ID FOR THE INSTANCE FOLIO CREATED:
+		String updatedPurchaseOrder = callApiGet(baseOkapEndpoint + "orders/composite-orders/" +orderUUID.toString() ,token); 
+		JSONObject updatedPurchaseOrderJson = new JSONObject(updatedPurchaseOrder);
+		String instanceId = updatedPurchaseOrderJson.getJSONArray("compositePoLines").getJSONObject(0).getString("instanceId");
+
+		
+		//PREPARING TO ADD THE MARC RECORD TO SOURCE RECORD STORAGE:
+		//CONSTRUCTING THE 999 OF THE MARC RECORD for FOLIO: 
+	    DataField field = MarcFactory.newInstance().newDataField();
+	    field.setTag("999");
+	    field.setIndicator1('f');
+	    field.setIndicator2('f');
+	    Subfield one = MarcFactory.newInstance().newSubfield('i', instanceId);
+	    Subfield two = MarcFactory.newInstance().newSubfield('s',recordTableId.toString());
+	    field.addSubfield(one);
+	    field.addSubfield(two);
+	    record.addVariableField(field);
+	    
+	    
+	    //TRANSFORM THE RECORD INTO JSON
+	    logger.info("MARC RECORD: " + record.toString());
+	    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	    MarcJsonWriter jsonWriter =  new MarcJsonWriter(baos);
+	    jsonWriter.write(record);
+	    jsonWriter.close();
+	    String jsonString = baos.toString();
+	    JSONObject mRecord = new JSONObject(jsonString);
+	    JSONObject content = new JSONObject();
+	    content.put("content",mRecord);
+	    logger.info("MARC TO JSON: " + mRecord);
+	    
+
+		//GET THE RAW MARC READY TO POST TO THE API
+	    ByteArrayOutputStream rawBaos = new ByteArrayOutputStream();
+	    MarcWriter writer = new MarcStreamWriter(rawBaos,"UTF-8");
+	    writer.write(record);
+		JSONObject jsonWithRaw = new JSONObject();
+		jsonWithRaw.put("id", rawRecordId);
+		jsonWithRaw.put("content",rawBaos.toString("UTF8"));
+		
+		//CREATING JOB EXECUTION?
+		//TODO: I'M NOT ENTIRELY SURE IF THIS IS NECESSARY?
+		//WHAT THE CONSEQUENCES OF THIS ARE?
+		//TO POST TO SOURCE RECORD STORAGE, A SNAPSHOT ID
+		//SEEMS TO BE REQUIRECD
+		JSONObject jobExecution = new JSONObject();
+		jobExecution.put("jobExecutionId", snapshotId.toString());
+		jobExecution.put("status", "PARSING_IN_PROGRESS");
+		String snapShotResponse = callApiPost(baseOkapEndpoint + "source-storage/snapshots",  jobExecution,token);
+		
+		//OBJECT FOR SOURCE RECORD STORAGE API CALL:
+		JSONObject sourceRecordStorageObject = new JSONObject();
+		sourceRecordStorageObject.put("recordType", "MARC");
+		sourceRecordStorageObject.put("snapshotId",snapshotId.toString());
+		sourceRecordStorageObject.put("matchedId", matchedId.toString());
+		//LINK THE INSTANCE TO SOURCE RECORD STORAGE
+		JSONObject externalId = new JSONObject();
+		externalId.put("instanceId",instanceId);
+		sourceRecordStorageObject.put("externalIdsHolder", externalId);
+		//RAW RECORD
+		JSONObject rawRecordObject = new JSONObject();
+		rawRecordObject.put("id",rawRecordId.toString());
+		rawRecordObject.put("content",jsonWithRaw.toString());
+		//PARSED RECORD
+		JSONObject parsedRecord = new JSONObject();
+		parsedRecord.put("id", parsedRecordId.toString());
+		parsedRecord.put("content", mRecord);
+		sourceRecordStorageObject.put("rawRecord", rawRecordObject);
+		sourceRecordStorageObject.put("parsedRecord", parsedRecord);
+		
+		String storageResponse = callApiPost(baseOkapEndpoint + "source-storage/records", sourceRecordStorageObject,token);
+		
+		//GET THE INSTANCE RECORD FOLIO CREATED, SO WE CAN ADD BIB INFO TO IT:
+		String instanceResponse = callApiGet(baseOkapEndpoint + "inventory/instances/" + instanceId, token);
+		JSONObject instanceAsJson = new JSONObject(instanceResponse);
+
+		//ADD IDENTIFIERS AND CONTRIBUTORS TO THE INSTANCE
+		//*AND* CHANGE THE SOURCE TO 'MARC'
+		//SO THE OPTION TO VIEW THE MARC RECORD SHOWS UP 
+		//IN INVENTORY!
+		JSONArray identifiers = buildIdentifiers(record,lookupTable);
+		JSONArray contributors = buildContributors(record, lookupTable);
+		instanceAsJson.put("title", title);
+		instanceAsJson.put("source", "MARC");
+		instanceAsJson.put("instanceTypeId", lookupTable.get("text"));
+		instanceAsJson.put("identifiers", identifiers);
+		instanceAsJson.put("contributors", contributors);
+		instanceAsJson.put("discoverySuppress", true);
+		String instanceUpdateResponse = callApiPut(baseOkapEndpoint + "inventory/instances/" + instanceId,  instanceAsJson,token);
+		
+		//GET THE HOLDINGS RECORD FOLIO CREATED, SO WE CAN ADD URLs FROM THE 856 IN THE MARC RECORD
+		String holdingResponse = callApiGet(baseOkapEndpoint + "holdings-storage/holdings?query=(instanceId==" + instanceId + ")", token);
+		JSONObject holdingsAsJson = new JSONObject(holdingResponse);
+		JSONObject holdingRecord = holdingsAsJson.getJSONArray("holdingsRecords").getJSONObject(0);
+		
+		JSONArray eResources = new JSONArray();
+		String linkText = (String) getMyContext().getAttribute("textForElectronicResources");
+		List urls =  record.getVariableFields("856");
+		Iterator<DataField> iterator = urls.iterator();
+		while (iterator.hasNext()) {
+			DataField dataField = (DataField) iterator.next();
+			if (dataField != null && dataField.getSubfield('u') != null) {
+				String url = dataField.getSubfield('u').getData();
+				JSONObject eResource = new JSONObject();
+				eResource.put("uri", dataField.getSubfield('u').getData());
+				//TODO - DO WE WANT TO CHANGE THE LINK TEXT?
+				eResource.put("linkText", linkText);
+				//I 'THINK' THESE RELATIONSHIP TYPES ARE HARDCODED INTO FOLIO
+				//CANT BE LOOKED UP WITH AN API?
+				//https://github.com/folio-org/mod-inventory-storage/blob/master/reference-data/electronic-access-relationships/resource.json
+				eResource.put("relationshipId", "f5d0068e-6272-458e-8a81-b85e7b9a14aa");
+				eResources.put(eResource);
+			}
 		}
+		//UPDATE THE HOLDINGS RECORD
+		holdingRecord.put("electronicAccess", eResources);
+		String createHoldingsResponse = callApiPut(baseOkapEndpoint + "holdings-storage/holdings/" + holdingRecord.getString("id"), holdingRecord,token);
+
 		
 		//SAVE THE PO NUMBER FOR THE RESPONSE
 		responseMessage.put("PONumber", poNumberObj.get("poNumber"));
@@ -700,7 +656,7 @@ public class TestImport {
 		//THE ORDERS-STORAGE ENDOINT WANTS 'TEXT/PLAIN'
 		//THE OTHER API CALL THAT USES PUT,
 		//WANTS 'APPLICATION/JSON'
-		if (url.contains("orders-storage")) {
+		if (url.contains("orders-storage") || url.contains("holdings-storage")) {
 			request.setHeader("Accept","text/plain");
 		}
 		HttpResponse response = client.execute(request);
