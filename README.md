@@ -7,6 +7,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * It only creates items if the material is print (which should be indicated in the 980$z field)
 * It lets FOLIO create the instance, holdings and item records using the "createInventory" value in the order line
 * It does all of this using the FOLIO API
+* It uses a property file to determine location, fiscal year, loan type, note type and material type
 
 ### API Calls
 * Posts a purchase order (approved and open) and one line item for each MARC record in a file (POST orders/composite-orders)
