@@ -329,9 +329,9 @@ public class OrderImportShortened {
 				logger.info("MARC TO JSON: " + mRecord);
 
 				//GET THE RAW MARC READY TO POST TO THE API
-			    ByteArrayOutputStream rawBaos = new ByteArrayOutputStream();
-			    MarcWriter writer = new MarcStreamWriter(rawBaos);
-			    writer.write(record);
+				ByteArrayOutputStream rawBaos = new ByteArrayOutputStream();
+				MarcWriter writer = new MarcStreamWriter(rawBaos);
+				writer.write(record);
 				JSONObject jsonWithRaw = new JSONObject();
 				jsonWithRaw.put("id", instanceId);
 				jsonWithRaw.put("content",rawBaos.toString());
