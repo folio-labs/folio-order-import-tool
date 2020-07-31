@@ -104,19 +104,20 @@
 								</div>
 							</div>
 						</div>
-						<!-- left box end -->
-					</div>
-				</div>
-			</div>
-			<div class="tile is-parent">
+									<div class="tile is-parent">
 				<article class="tile is-child notification is-light">
 					<div class="content">
-						<p class="title">Response</p>
+						<p class="title">Response<span style="color:#f5f5f5">6-29-20B</span></p>
 						<p class="subtitle"></p>
 						<div id="logcontent" class="content" style="font-family: 'Special Elite', cursive;"></div>
 					</div>
 				</article>
 			</div>
+						<!-- left box end -->
+					</div>
+				</div>
+			</div>
+
 		</div>
 	</div>
 	<!-- END CONTENTS-->
@@ -155,7 +156,7 @@ function sendRequest() {
 		processData: false,
 		contentType: false,
 		data: form_data,
-		url: "/service/order/upload",
+		url: "/order/import/service/upload",
 		success: showOrderInfo,
 		error: updateFailed
 	});
@@ -223,9 +224,19 @@ function showname() {
 	document.getElementById('file-name').innerHTML = name.files.item(0).name;
 }
 </script>
-<script id="orderTemplate" type="text/x-handlebars-template"> Uploaded File: {{fileName}}
+<script id="orderTemplate" type="text/x-handlebars-template"> 
+{{#each this}}
 	<br> <b>Created PO</b>: {{PONumber}}
 	<br> Title: {{title}}
-	<br> {{error}} </script>
+    <br> 001: {{theOne}}
+<br>
+     {{#if error}}
+	  <br> <b>ERROR:</b> {{error}} 
+     <hr>
+     <br>
+    {{/if}}
+{{/each}}
+
+</script>
 
 </html>

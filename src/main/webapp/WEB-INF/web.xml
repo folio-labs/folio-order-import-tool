@@ -23,7 +23,7 @@
   </servlet>
   <servlet-mapping>
     <servlet-name>JerseyTest</servlet-name>
-    <url-pattern>/service/*</url-pattern>
+    <url-pattern>/import/service/*</url-pattern>
   </servlet-mapping>
   
   
@@ -36,7 +36,7 @@
   </servlet>
   <servlet-mapping>
      <servlet-name>OrderController</servlet-name>
-     <url-pattern>/order</url-pattern>
+     <url-pattern>/import</url-pattern>
   </servlet-mapping>
     
     
