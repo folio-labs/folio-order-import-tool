@@ -66,7 +66,6 @@ public class OrderImportShortened {
 		String permLocationName = (String) getMyContext().getAttribute("permLocation");
 		String noteTypeName = (String) getMyContext().getAttribute("noteType");
 		String materialTypeName = (String) getMyContext().getAttribute("materialType");
-		//String fiscalYearCode =  (String) getMyContext().getAttribute("fiscalYearCode");
 		
 		//GET THE FOLIO TOKEN
 		JSONObject jsonObject = new JSONObject();
@@ -171,14 +170,14 @@ public class OrderImportShortened {
 			    //PUT THE TITLE IN THE RESPONSE MESSAGE
 			    responseMessage.put("title", title);
 
-			    //LOOK UP VENDOR 
-			    String organizationEndpoint = baseOkapEndpoint + "organizations-storage/organizations?limit=30&offset=0&query=((code='" + vendorCode + "'))";
-			    String orgLookupResponse = callApiGet(organizationEndpoint,  token);
-			    JSONObject orgObject = new JSONObject(orgLookupResponse);
-			    String vendorId = (String) orgObject.getJSONArray("organizations").getJSONObject(0).get("id");
-			    //LOOK UP THE FUND
-			    String fundEndpoint = baseOkapEndpoint + "finance/funds?limit=30&offset=0&query=((code='" + fundCode + "'))";
-			    String fundResponse = callApiGet(fundEndpoint, token);
+				//LOOK UP VENDOR 
+				String organizationEndpoint = baseOkapEndpoint + "organizations-storage/organizations?limit=30&offset=0&query=((code='" + vendorCode + "'))";
+				String orgLookupResponse = callApiGet(organizationEndpoint,  token);
+				JSONObject orgObject = new JSONObject(orgLookupResponse);
+				String vendorId = (String) orgObject.getJSONArray("organizations").getJSONObject(0).get("id");
+				//LOOK UP THE FUND
+				String fundEndpoint = baseOkapEndpoint + "finance/funds?limit=30&offset=0&query=((code='" + fundCode + "'))";
+				String fundResponse = callApiGet(fundEndpoint, token);
 				JSONObject fundsObject = new JSONObject(fundResponse);
 				String fundId = (String) fundsObject.getJSONArray("funds").getJSONObject(0).get("id");
 				
@@ -305,31 +304,29 @@ public class OrderImportShortened {
 				
 				//PREPARING TO ADD THE MARC RECORD TO SOURCE RECORD STORAGE:
 				//CONSTRUCTING THE 999 OF THE MARC RECORD for FOLIO: 
-			    DataField field = MarcFactory.newInstance().newDataField();
-			    field.setTag("999");
-			    field.setIndicator1('f');
-			    field.setIndicator2('f');
-			    Subfield one = MarcFactory.newInstance().newSubfield('i', instanceId);
-			    Subfield two = MarcFactory.newInstance().newSubfield('s',recordTableId.toString());
-			    field.addSubfield(one);
-			    field.addSubfield(two);
-			    record.addVariableField(field);
-			    record.getControlNumberField().setData(hrid);
-			    
-			    
-			    //TRANSFORM THE RECORD INTO JSON
-			    logger.info("MARC RECORD: " + record.toString());
-			    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			    MarcJsonWriter jsonWriter =  new MarcJsonWriter(baos);
-			    jsonWriter.setUnicodeNormalization(true);
-			    jsonWriter.write(record);
-			    jsonWriter.close();
-			    String jsonString = baos.toString();
-			    JSONObject mRecord = new JSONObject(jsonString);
-			    JSONObject content = new JSONObject();
-			    content.put("content",mRecord);
-			    logger.info("MARC TO JSON: " + mRecord);
-			    
+				DataField field = MarcFactory.newInstance().newDataField();
+				field.setTag("999");
+				field.setIndicator1('f');
+				field.setIndicator2('f');
+				Subfield one = MarcFactory.newInstance().newSubfield('i', instanceId);
+				Subfield two = MarcFactory.newInstance().newSubfield('s',recordTableId.toString());
+				field.addSubfield(one);
+				field.addSubfield(two);
+				record.addVariableField(field);
+				record.getControlNumberField().setData(hrid);
+
+				//TRANSFORM THE RECORD INTO JSON
+				logger.info("MARC RECORD: " + record.toString());
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				MarcJsonWriter jsonWriter =  new MarcJsonWriter(baos);
+				jsonWriter.setUnicodeNormalization(true);
+				jsonWriter.write(record);
+				jsonWriter.close();
+				String jsonString = baos.toString();
+				JSONObject mRecord = new JSONObject(jsonString);
+				JSONObject content = new JSONObject();
+				content.put("content",mRecord);
+				logger.info("MARC TO JSON: " + mRecord);
 
 				//GET THE RAW MARC READY TO POST TO THE API
 			    ByteArrayOutputStream rawBaos = new ByteArrayOutputStream();
@@ -421,7 +418,7 @@ public class OrderImportShortened {
 				instanceAsJson.put("natureOfContentTermIds", new JSONArray());
 				instanceAsJson.put("precedingTitles", new JSONArray());
 				instanceAsJson.put("succeedingTitles", new JSONArray());
-			    String instanceUpdateResponse = callApiPut(baseOkapEndpoint + "inventory/instances/" + instanceId,  instanceAsJson,token);
+				String instanceUpdateResponse = callApiPut(baseOkapEndpoint + "inventory/instances/" + instanceId,  instanceAsJson,token);
 				
 				//UPDATE THE HOLDINGS RECORD
 				holdingRecord.put("electronicAccess", eResources);
@@ -429,7 +426,7 @@ public class OrderImportShortened {
 				
 				//SAVE THE PO NUMBER FOR THE RESPONSE
 				responseMessage.put("PONumber", poNumberObj.get("poNumber"));
-			    responseMessage.put("theOne", hrid);
+				responseMessage.put("theOne", hrid);
 				
 				responseMessages.put(responseMessage);
 			}
