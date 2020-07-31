@@ -47,18 +47,16 @@ public class OrderService {
 			@FormDataParam("order-file") FormDataContentDisposition fileDetails) throws IOException, InterruptedException, Exception {
 
 		System.out.println(fileDetails.getFileName());
-		//TODO - CHANGE FILE NAME TO BE UNIQUE
 		String filePath = (String) servletRequest.getServletContext().getAttribute("uploadFilePath");
 		//String uploadedFileLocation = filePath + fileDetails.getFileName();
 		UUID fileName = UUID.randomUUID();
 		String uploadedFileLocation = filePath + fileName.toString() + ".mrc";
 		// SAVE FILE TO DISK
 		writeFile(uploadedInputStream, uploadedFileLocation);
-		// PASS FILE INFO TO 'TestImport' WHICH MAKES THE FOLIO API CALLS
+		// PASS FILE INFO TO 'OrderImportShortened' WHICH MAKES THE FOLIO API CALLS
 		OrderImportShortened testImport = new OrderImportShortened();
 		testImport.setMyContext(servletRequest.getServletContext());
 		try {
-			//org.json.JSONObject message = testImport.upload(fileDetails.getFileName());
 			JSONArray message = testImport.upload(fileName.toString() + ".mrc");
 			return Response.status(Response.Status.OK).entity(message.toString()).build();		
 		}
@@ -70,13 +68,9 @@ public class OrderService {
 	
 	@GET
 	public Response justACheck() throws IOException, InterruptedException, Exception {
-
 		    //RESET REFERENCE VALUES - SNAPSHOT CHANGES EVERY DAY
 		   servletRequest.getServletContext().setAttribute(Constants.LOOKUP_TABLE,null);
-		   return Response.status(Response.Status.OK).entity("OK").build();		
-			
-
-		
+		   return Response.status(Response.Status.OK).entity("OK").build();	
 	}
 
 
