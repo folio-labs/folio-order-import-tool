@@ -4,7 +4,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 ### What does it do?
 * It takes an uploaded file that contains MARC records and creates orders, instances, holdings, items and MARC records for each.
 * It uses the 980 field to get the fund code, vendor code, price, tag, quantity, notes and electronic/print indicator
-* It only creates items if the material is print (which should be indicated in the 980$z field)
+* It only creates items if the material is print (which should be indicated in the 980$z field) - It looks for the values ELECTRONIC or PRINT
 * It lets FOLIO create the instance, holdings and item records using the "createInventory" value in the order line
 * It does all of this using the FOLIO API
 * It uses a property file to determine location, fiscal year, loan type, note type and material type and default text for electronic resources (in case subfield z is missing)
