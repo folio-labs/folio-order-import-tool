@@ -100,10 +100,10 @@ public class OrderImportShortened {
 		//READ THE MARC RECORD FROM THE FILE AND VALIDATE IT
 		//VALIDATES THE FUND CODE, TAG (OBJECT CODE
 		MarcReader reader = new MarcStreamReader(in);
-	    Record record = null;
+	    	Record record = null;
 	    
-	    JSONArray validateRequiredResult = validateRequiredValues(reader, token, baseOkapEndpoint);
-	    if (!validateRequiredResult.isEmpty()) return validateRequiredResult;
+	   	 JSONArray validateRequiredResult = validateRequiredValues(reader, token, baseOkapEndpoint);
+	   	 if (!validateRequiredResult.isEmpty()) return validateRequiredResult;
 	    
 		//LOOKUP REFERENCE TABLES 
 		//TODO
@@ -125,24 +125,24 @@ public class OrderImportShortened {
 				this.lookupTable = lookupReferenceValues(referenceTables,token);
 				myContext.setAttribute(Constants.LOOKUP_TABLE, lookupTable);
 			}
-		else {
+		 else {
 				this.lookupTable = (HashMap<String, String>) myContext.getAttribute(Constants.LOOKUP_TABLE);
-		}
+		 }
 		
 		//READ THE MARC RECORD FROM THE FILE
 		in = new FileInputStream(filePath + fileName);
 		reader = new MarcStreamReader(in);
-	    record = null;
+	    	record = null;
 		
 		while (reader.hasNext()) {
 			try {
-				record = reader.next();
-				System.out.println(record.toString());
-				//GET THE 980s FROM THE MARC RECORD
-				DataField twoFourFive = (DataField) record.getVariableField("245");
+			    record = reader.next();
+			    System.out.println(record.toString());
+			    //GET THE 980s FROM THE MARC RECORD
+			    DataField twoFourFive = (DataField) record.getVariableField("245");
 			    String title = twoFourFive.getSubfieldsAsString("a");
 			    DataField nineEighty = (DataField) record.getVariableField("980");
-				String objectCode = nineEighty.getSubfieldsAsString("o");
+			    String objectCode = nineEighty.getSubfieldsAsString("o");
 			    String fundCode = nineEighty.getSubfieldsAsString("b");
 			    String vendorCode =  nineEighty.getSubfieldsAsString("v");
 			    String notes =  nineEighty.getSubfieldsAsString("n");
@@ -155,11 +155,11 @@ public class OrderImportShortened {
 			    if (electronicIndicator != null && electronicIndicator.equalsIgnoreCase("ELECTRONIC")) electronic = true;
 			    
 			    
-				// GENERATE UUIDS FOR OBJECTS
-				UUID snapshotId = UUID.randomUUID();
-				UUID recordTableId = UUID.randomUUID();
-				UUID orderUUID = UUID.randomUUID();
-				UUID orderLineUUID = UUID.randomUUID();
+			    // GENERATE UUIDS FOR OBJECTS
+			    UUID snapshotId = UUID.randomUUID();
+			    UUID recordTableId = UUID.randomUUID();
+			    UUID orderUUID = UUID.randomUUID();
+			    UUID orderLineUUID = UUID.randomUUID();
 			    
 			    //NOW WE CAN START CREATING THE PO!
 			    //PULL TOGETHER THE ENTIRE TITLE
@@ -174,9 +174,9 @@ public class OrderImportShortened {
 			    //LOOK UP VENDOR 
 			    String organizationEndpoint = baseOkapEndpoint + "organizations-storage/organizations?limit=30&offset=0&query=((code='" + vendorCode + "'))";
 			    String orgLookupResponse = callApiGet(organizationEndpoint,  token);
-				JSONObject orgObject = new JSONObject(orgLookupResponse);
-				String vendorId = (String) orgObject.getJSONArray("organizations").getJSONObject(0).get("id");
-				//LOOK UP THE FUND
+			    JSONObject orgObject = new JSONObject(orgLookupResponse);
+			    String vendorId = (String) orgObject.getJSONArray("organizations").getJSONObject(0).get("id");
+			    //LOOK UP THE FUND
 			    String fundEndpoint = baseOkapEndpoint + "finance/funds?limit=30&offset=0&query=((code='" + fundCode + "'))";
 			    String fundResponse = callApiGet(fundEndpoint, token);
 				JSONObject fundsObject = new JSONObject(fundResponse);
