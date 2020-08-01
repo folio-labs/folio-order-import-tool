@@ -27,6 +27,7 @@ import org.marc4j.MarcStreamReader;
 import org.marc4j.MarcStreamWriter;
 import org.marc4j.MarcTranslatedReader;
 import org.marc4j.MarcWriter;
+import org.marc4j.converter.impl.AnselToUnicode;
 import org.marc4j.marc.ControlField;
 import org.marc4j.marc.DataField;
 import org.marc4j.marc.MarcFactory;
@@ -131,14 +132,19 @@ public class OrderImportShortened {
 		//READ THE MARC RECORD FROM THE FILE
 		in = new FileInputStream(filePath + fileName);
 		reader = new MarcStreamReader(in);
-	    	record = null;
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		MarcWriter w = new MarcStreamWriter(byteArrayOutputStream,"UTF-8");
+		
+		AnselToUnicode conv = new AnselToUnicode();
+		w.setConverter(conv);
+		
+	    record = null;
 		
 		while (reader.hasNext()) {
 			try {
-			    record = reader.next();
-			    System.out.println(record.toString());
-			    //GET THE 980s FROM THE MARC RECORD
-			    DataField twoFourFive = (DataField) record.getVariableField("245");
+				record = reader.next();
+				//GET THE 980s FROM THE MARC RECORD
+				DataField twoFourFive = (DataField) record.getVariableField("245");
 			    String title = twoFourFive.getSubfieldsAsString("a");
 			    DataField nineEighty = (DataField) record.getVariableField("980");
 			    String objectCode = nineEighty.getSubfieldsAsString("o");
@@ -288,7 +294,7 @@ public class OrderImportShortened {
 					noteAsJson.put("domain", "orders");
 					noteAsJson.put("content", notes);
 					noteAsJson.put("title", notes);
-					String noteResponse = callApiPost(baseOkapEndpoint + "/notes",noteAsJson,token); 
+					String noteResponse = callApiPostWithUtf8(baseOkapEndpoint + "/notes",noteAsJson,token); 
 					logger.info(noteResponse);
 				}
 								
@@ -334,7 +340,7 @@ public class OrderImportShortened {
 				writer.write(record);
 				JSONObject jsonWithRaw = new JSONObject();
 				jsonWithRaw.put("id", instanceId);
-				jsonWithRaw.put("content",rawBaos.toString());
+				jsonWithRaw.put("content",byteArrayOutputStream);
 				
 				//CREATING JOB EXECUTION?
 				//TODO: I'M NOT ENTIRELY SURE IF THIS IS NECESSARY?
@@ -344,7 +350,7 @@ public class OrderImportShortened {
 				JSONObject jobExecution = new JSONObject();
 				jobExecution.put("jobExecutionId", snapshotId.toString());
 				jobExecution.put("status", "PARSING_IN_PROGRESS");
-				String snapShotResponse = callApiPost(baseOkapEndpoint + "source-storage/snapshots",  jobExecution,token);
+				String snapShotResponse = callApiPostWithUtf8(baseOkapEndpoint + "source-storage/snapshots",  jobExecution,token);
 				
 				//OBJECT FOR SOURCE RECORD STORAGE API CALL:
 				JSONObject sourceRecordStorageObject = new JSONObject();
@@ -367,7 +373,7 @@ public class OrderImportShortened {
 				sourceRecordStorageObject.put("parsedRecord", parsedRecord);
 				sourceRecordStorageObject.put("id", instanceId);
 				//CALL SOURCE RECORD STORAGE POST
-				String storageResponse = callApiPost(baseOkapEndpoint + "source-storage/records", sourceRecordStorageObject,token);
+				String storageResponse = callApiPostWithUtf8(baseOkapEndpoint + "source-storage/records", sourceRecordStorageObject,token);
 				
 				
 				//ADD IDENTIFIERS AND CONTRIBUTORS TO THE INSTANCE
@@ -760,36 +766,7 @@ public class OrderImportShortened {
 	}
 
 	
-	public String callApiPost(String url, JSONObject body, String token)
-			throws Exception, IOException, InterruptedException {
-		CloseableHttpClient client = HttpClients.custom().build();
-		HttpUriRequest request = RequestBuilder.post()
-				.setUri(url)
-				.setHeader("x-okapi-tenant", tenant)
-				.setHeader("x-okapi-token", token)
-				.setEntity(new StringEntity(body.toString()))
-				.setHeader("Accept", "application/json")
-				.setHeader("content-type","application/json")
-				.build();
 
-		HttpResponse response = client.execute(request);
-		HttpEntity entity = response.getEntity();
-		String responseString = EntityUtils.toString(entity, "UTF-8");
-		int responseCode = response.getStatusLine().getStatusCode();
-
-		logger.info("POST:");
-		logger.info(body.toString());
-		logger.info(url);
-		logger.info(responseCode);
-		logger.info(responseString);
-
-		if (responseCode > 399) {
-			throw new Exception(responseString);
-		}
-
-		return responseString;
-
-	}
 	
 	
 	
