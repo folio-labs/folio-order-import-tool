@@ -10,6 +10,8 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * It uses a property file to determine location, fiscal year, loan type, note type and material type and default text for electronic resources (in case subfield z is missing)
 
 ### API Calls
+* Several get calls to initialize reference values (like instance types, material types, note types)
+* Get next PO number (GET orders/po-number)
 * Posts a purchase order (approved and open) and one line item for each MARC record in a file (POST orders/composite-orders)
 * Retreives the puchase order (to get the ID of the instance FOLIO automatically created) (GET orders/composite-orders/theOrderUuid)
 * Retreive the new instance (GET inventory/instances/theinstanceid)
@@ -31,6 +33,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * Better way to get data out of the MARC record to include on the instance. 
 * Better way to store reference values needed for lookup
 * Current version contains some hard-coded values (e.g. currency: USD)
+* If duplicate PO number error - get the next PO number and try again
 
 ### What's new?
 * 7-31-2020
