@@ -40,6 +40,10 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
   - Better handling of special characters
   - Handles multiple records in a file
   - Validates each record in the file 
+  
+* 9-23-2020
+  - Removed the check for enough money in the budget
+  - Fixed where the electronic indicator is initialized (needed to be per record)
 
 
 
