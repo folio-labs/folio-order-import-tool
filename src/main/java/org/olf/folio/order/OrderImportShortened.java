@@ -78,8 +78,6 @@ public class OrderImportShortened {
 		//TODO: REMOVE
 		logger.info("TOKEN: " + token); 
 			
-		//INITIALIZE ELECTRONIC TO FALSE
-		boolean electronic = false;
 		
 		//GET THE UPLOADED FILE
 		String filePath = (String) myContext.getAttribute("uploadFilePath");
@@ -119,6 +117,7 @@ public class OrderImportShortened {
 		referenceTables.add(baseOkapEndpoint + "note-types?limit=1000");
 		referenceTables.add(baseOkapEndpoint + "material-types?limit=1000");
 		referenceTables.add(baseOkapEndpoint + "instance-types?limit=1000");
+		referenceTables.add(baseOkapEndpoint + "holdings-types?limit=1000");
 		 
 		 //SAVE REFERENCE TABLE VALUES (JUST LOOKUP THEM UP ONCE)
 		 if (myContext.getAttribute(Constants.LOOKUP_TABLE) == null) {
@@ -142,6 +141,9 @@ public class OrderImportShortened {
 		
 		while (reader.hasNext()) {
 			try {
+				//INITIALIZE ELECTRONIC TO FALSE
+				boolean electronic = false;
+				
 				record = reader.next();
 				//GET THE 980s FROM THE MARC RECORD
 				DataField twoFourFive = (DataField) record.getVariableField("245");
@@ -428,6 +430,10 @@ public class OrderImportShortened {
 				
 				//UPDATE THE HOLDINGS RECORD
 				holdingRecord.put("electronicAccess", eResources);
+				//IF THIS WAS AN ELECTRONIC RECORD, MARK THE HOLDING AS EHOLDING
+				if (electronic) {
+					holdingRecord.put("holdingsTypeId",this.lookupTable.get("Electronic"));
+				}
 				String createHoldingsResponse = callApiPut(baseOkapEndpoint + "holdings-storage/holdings/" + holdingRecord.getString("id"), holdingRecord,token);
 				
 				//SAVE THE PO NUMBER FOR THE RESPONSE
@@ -550,9 +556,7 @@ public class OrderImportShortened {
 				    if (objectValidationResult != null) responseMessages.put(objectValidationResult);
 				    JSONObject fundValidationResult = validateFund(fundCode, title, theOne, token, baseOkapEndpoint, price);
 				    if (fundValidationResult != null) responseMessages.put(fundValidationResult);
-				   // if (!responseMessages.isEmpty()) return responseMessages;
 				    return responseMessages;
-				   // return null;
 				    
 				}
 
@@ -822,7 +826,7 @@ public class OrderImportShortened {
 
 		    CloseableHttpResponse response = client.execute(request);
 			HttpEntity entity = response.getEntity();
-			String responseString = EntityUtils.toString(entity, "UTF-8");
+			String responseString = EntityUtils.toString(entity);
 			int responseCode = response.getStatusLine().getStatusCode();
 
 			logger.info("POST:");
@@ -890,7 +894,8 @@ public class OrderImportShortened {
 			responseMessage.put("PONumber", "~error~");
 			return responseMessage;
 		}
-		Iterator budgetsIterator = fundBalanceObject.getJSONArray("budgets").iterator();
+		//REMOVED ON 8-28 - NOW THAT THE BUDGETS CAN BE OVERSPENT
+		/*Iterator budgetsIterator = fundBalanceObject.getJSONArray("budgets").iterator();
 		boolean foundAGoodBudget = false;
 		while (budgetsIterator.hasNext()) {
 			JSONObject budget = (JSONObject) budgetsIterator.next();
@@ -906,7 +911,8 @@ public class OrderImportShortened {
 			responseMessage.put("theOne", id);
 			responseMessage.put("PONumber", "~error~");
 			return responseMessage;
-		}
+		}*/
+		//END REMOVED 8-28 BECAUSE BUDGETS CAN BE OVERSPENT
 		return null;
 	}
 	
