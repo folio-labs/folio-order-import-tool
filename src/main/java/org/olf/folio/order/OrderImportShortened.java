@@ -65,6 +65,7 @@ public class OrderImportShortened {
 		String apiPassword = (String) getMyContext().getAttribute("okapi_password");
 		tenant = (String) getMyContext().getAttribute("tenant");
 		String permLocationName = (String) getMyContext().getAttribute("permLocation");
+		String permELocationName = (String) getMyContext().getAttribute("permELocation");
 		String noteTypeName = (String) getMyContext().getAttribute("noteType");
 		String materialTypeName = (String) getMyContext().getAttribute("materialType");
 		
@@ -223,7 +224,7 @@ public class OrderImportShortened {
 					cost.put("quantityElectronic", 1);
 					cost.put("listUnitPriceElectronic", price);
 					location.put("quantityElectronic",quanityNo);
-					location.put("locationId",lookupTable.get(permLocationName));
+					location.put("locationId",lookupTable.get(permELocationName + "-location"));
 					locations.put(location);
 				}	
 				else {
@@ -235,7 +236,7 @@ public class OrderImportShortened {
 					cost.put("listUnitPrice", price);
 					cost.put("quantityPhysical", 1);
 					location.put("quantityPhysical",quanityNo);
-					location.put("locationId",lookupTable.get(permLocationName));
+					location.put("locationId",lookupTable.get(permLocationName + "-location"));
 					locations.put(location);
 				}
 				
@@ -321,8 +322,14 @@ public class OrderImportShortened {
 				field.addSubfield(one);
 				field.addSubfield(two);
 				record.addVariableField(field);
-				record.getControlNumberField().setData(hrid);
-
+			    if (record.getControlNumberField() != null) {
+			    	record.getControlNumberField().setData(hrid);
+			    }
+			    else {
+			    	ControlField cf = MarcFactory.newInstance().newControlField("001");
+			    	cf.setData(hrid);
+			    	record.addVariableField(cf);
+			    }
 				//TRANSFORM THE RECORD INTO JSON
 				logger.info("MARC RECORD: " + record.toString());
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -389,7 +396,7 @@ public class OrderImportShortened {
 				instanceAsJson.put("instanceTypeId", lookupTable.get("text"));
 				instanceAsJson.put("identifiers", identifiers);
 				instanceAsJson.put("contributors", contributors);
-				instanceAsJson.put("discoverySuppress", true);
+				instanceAsJson.put("discoverySuppress", false);
 				
 				
 				//GET THE HOLDINGS RECORD FOLIO CREATED, SO WE CAN ADD URLs FROM THE 856 IN THE MARC RECORD
@@ -477,6 +484,7 @@ public class OrderImportShortened {
 				JSONObject element = (JSONObject) elementsIterator.next();
 				String id = element.getString("id");
 				String name = element.getString("name");
+				if (endpoint.contains("locations")) name = name + "-location";
 				//SAVING ALL OF THE 'NAMES' SO THE UUIDs CAN BE LOOKED UP
 				lookUpTable.put(name,id);		
 			}
@@ -501,14 +509,14 @@ public class OrderImportShortened {
 				    
 				    DataField twoFourFive = (DataField) record.getVariableField("245");
 				    String title = twoFourFive.getSubfieldsAsString("a");
-				    String theOne = ((ControlField) record.getVariableField("001")).getData();
+				    //REMOVED - NOT NEEDED String theOne = ((ControlField) record.getVariableField("001")).getData();
 				    
 					if (nineEighty == null) {
 						JSONObject responseMessage = new JSONObject();
 						responseMessage.put("error", "Record is missing the 980 field");
 						responseMessage.put("PONumber", "~error~");
 						responseMessage.put("title", title);
-						responseMessage.put("theOne", theOne);
+						//responseMessage.put("theOne", theOne);
 						responseMessages.put(responseMessage);
 						continue;
 					}
@@ -537,7 +545,7 @@ public class OrderImportShortened {
 			        	if (entry.getValue()==null) {
 			        		JSONObject responseMessage = new JSONObject();
 			        		responseMessage.put("title", title);
-			        		responseMessage.put("theOne", theOne);
+			        		//responseMessage.put("theOne", theOne);
 						    responseMessage.put("error", entry.getKey() + " Missing");
 							responseMessage.put("PONumber", "~error~");
 							responseMessages.put(responseMessage);
@@ -550,11 +558,11 @@ public class OrderImportShortened {
 				    
 				    //VALIDATE THE ORGANIZATION, OBJECT CODE AND FUND
 				    //STOP THE PROCESS IF AN ERRORS WERE FOUND
-				    JSONObject orgValidationResult = validateOrganization(vendorCode, title, theOne, token, baseOkapEndpoint);
+				    JSONObject orgValidationResult = validateOrganization(vendorCode, title, token, baseOkapEndpoint);
 				    if (orgValidationResult != null) responseMessages.put(orgValidationResult);
-				    JSONObject objectValidationResult = validateObjectCode(objectCode, title, theOne, token, baseOkapEndpoint);
+				    JSONObject objectValidationResult = validateObjectCode(objectCode, title, token, baseOkapEndpoint);
 				    if (objectValidationResult != null) responseMessages.put(objectValidationResult);
-				    JSONObject fundValidationResult = validateFund(fundCode, title, theOne, token, baseOkapEndpoint, price);
+				    JSONObject fundValidationResult = validateFund(fundCode, title, token, baseOkapEndpoint, price);
 				    if (fundValidationResult != null) responseMessages.put(fundValidationResult);
 				    return responseMessages;
 				    
@@ -864,7 +872,7 @@ public class OrderImportShortened {
 	//TODO 
 	//THESE VALIDATION METHODS COULD
 	//USE IMPROVEMENT
-	public JSONObject validateFund(String fundCode, String title, String id, String token, String baseOkapiEndpoint, String price ) throws IOException, InterruptedException, Exception {
+	public JSONObject validateFund(String fundCode, String title, String token, String baseOkapiEndpoint, String price ) throws IOException, InterruptedException, Exception {
 		
 		//GET CURRENT FISCAL YEAR
 		String fiscalYearCode =  (String) getMyContext().getAttribute("fiscalYearCode");
@@ -890,7 +898,6 @@ public class OrderImportShortened {
 		if (fundBalanceObject.getJSONArray("budgets").length() < 1) {
 			responseMessage.put("error", "Fund code in file (" + fundCode + ") does not have a budget");
 			responseMessage.put("title", title);
-			responseMessage.put("theOne", id);
 			responseMessage.put("PONumber", "~error~");
 			return responseMessage;
 		}
@@ -916,7 +923,7 @@ public class OrderImportShortened {
 		return null;
 	}
 	
-	public JSONObject validateObjectCode(String objectCode, String title, String id, String token, String baseOkapiEndpoint ) throws IOException, InterruptedException, Exception {
+	public JSONObject validateObjectCode(String objectCode, String title, String token, String baseOkapiEndpoint ) throws IOException, InterruptedException, Exception {
 		//---------->VALIDATION: MAKE SURE THE TAG (AKA OBJECT CODE) EXISTS
 		JSONObject responseMessage = new JSONObject();
 		String tagEndpoint = baseOkapiEndpoint + "tags?query=(label==" + objectCode + ")";
@@ -925,14 +932,13 @@ public class OrderImportShortened {
 		if (tagObject.getJSONArray("tags").length() < 1) {
 			responseMessage.put("error", "Object code in the record (" + objectCode + ") does not exist in FOLIO");
 			responseMessage.put("title", title);
-			responseMessage.put("theOne", id);
 			responseMessage.put("PONumber", "~error~");
 			return responseMessage;
 		}
 		return null;
 	}
 	
-	public JSONObject validateOrganization(String orgCode, String title, String id, String token, String baseOkapiEndpoint ) throws IOException, InterruptedException, Exception {
+	public JSONObject validateOrganization(String orgCode, String title,  String token, String baseOkapiEndpoint ) throws IOException, InterruptedException, Exception {
 		JSONObject responseMessage = new JSONObject();
 	    //LOOK UP THE ORGANIZATION
 	    String organizationEndpoint = baseOkapiEndpoint + "organizations-storage/organizations?limit=30&offset=0&query=((code='" + orgCode + "'))";
@@ -942,7 +948,6 @@ public class OrderImportShortened {
 		if (orgObject.getJSONArray("organizations").length() < 1) {
 			responseMessage.put("error", "Organization code in file (" + orgCode + ") does not exist in FOLIO");
 			responseMessage.put("title", title);
-			responseMessage.put("theOne", id);
 			responseMessage.put("PONumber", "~error~");
 			return responseMessage;
 		}
