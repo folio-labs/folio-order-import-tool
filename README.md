@@ -36,14 +36,18 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * If duplicate PO number error - get the next PO number and try again
 
 ### What's new?
+* 11-16-2020
+ - Removed reference to the 001 field.  Wasn't necessary and was causing an error when it was missing.
+ 
+* 9-23-2020
+  - Removed the check for enough money in the budget
+  - Fixed where the electronic indicator is initialized (needed to be per record)
+  
 * 7-31-2020
   - Better handling of special characters
   - Handles multiple records in a file
   - Validates each record in the file 
-  
-* 9-23-2020
-  - Removed the check for enough money in the budget
-  - Fixed where the electronic indicator is initialized (needed to be per record)
+
 
 
 
