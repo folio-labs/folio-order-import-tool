@@ -37,7 +37,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 
 ### What's new?
 * 11-16-2020
- - Removed reference to the 001 field.  Wasn't necessary and was causing an error when it was missing.
+  - Removed reference to the 001 field.  Wasn't necessary and was causing an error when it was missing.
  
 * 9-23-2020
   - Removed the check for enough money in the budget
