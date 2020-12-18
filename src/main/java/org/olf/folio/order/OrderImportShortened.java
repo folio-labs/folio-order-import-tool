@@ -159,7 +159,7 @@ public class OrderImportShortened {
 			    String electronicIndicator = nineEighty.getSubfieldsAsString("z");
 			    String vendorItemId = nineEighty.getSubfieldsAsString("c");
 			    Integer quanityNo = 0; //INIT
-			    if (quantity != null)  quanityNo = Integer.valueOf(quantity);
+			    if (quantity != null)  quanityNo = Integer.valueOf(quantity); 
 			    if (electronicIndicator != null && electronicIndicator.equalsIgnoreCase("ELECTRONIC")) electronic = true;
 			    
 			    
@@ -213,6 +213,7 @@ public class OrderImportShortened {
 				JSONArray locations = new JSONArray();
 				JSONArray poLines = new JSONArray();
 				if (electronic) {
+					logger.trace("electronic=true");
 					orderLine.put("orderFormat", "Electronic Resource");
 					JSONObject eResource = new JSONObject();
 					eResource.put("activated", false);
@@ -228,6 +229,7 @@ public class OrderImportShortened {
 					locations.put(location);
 				}	
 				else {
+					logger.trace("electronic=false");
 					JSONObject physical = new JSONObject();
 					physical.put("createInventory", "Instance, Holding, Item");
 					physical.put("materialType", lookupTable.get(materialTypeName));
