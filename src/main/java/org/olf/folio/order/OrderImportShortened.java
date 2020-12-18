@@ -713,32 +713,27 @@ public class OrderImportShortened {
 	}
 	
 	
-	
 	public String callApiGet(String url, String token) throws Exception, IOException, InterruptedException {
-				CloseableHttpClient client = HttpClients.custom().build();
-				HttpUriRequest request = RequestBuilder.get().setUri(url)
-				.setHeader("x-okapi-tenant", tenant)
-				.setHeader("x-okapi-token", token)
-				.setHeader("Accept", "application/json")
-				.setHeader("content-type","application/json")
-				.build();
+		CloseableHttpClient client = HttpClients.custom().build();
+		HttpUriRequest request = RequestBuilder.get().setUri(url).setHeader("x-okapi-tenant", tenant)
+				.setHeader("x-okapi-token", token).setHeader("Accept", "application/json")
+				.setHeader("content-type", "application/json").build();
 
+		HttpResponse response = client.execute(request);
+		HttpEntity entity = response.getEntity();
+		String responseString = EntityUtils.toString(entity, "UTF-8");
+		int responseCode = response.getStatusLine().getStatusCode();
 
-				HttpResponse response = client.execute(request);
-				HttpEntity entity = response.getEntity();
-				String responseString = EntityUtils.toString(entity, "UTF-8");
-				int responseCode = response.getStatusLine().getStatusCode();
+		logger.info("GET:");
+		logger.info(url);
+		logger.info(responseCode);
+		logger.info(responseString);
 
-				logger.info("GET:");
-				logger.info(url);
-				logger.info(responseCode);
-				logger.info(responseString);
-
-				if (responseCode > 399) {
-					throw new Exception(responseString);
-				}
-
-				return responseString;
+		if (responseCode > 399) {
+			logger.error("Failed GET");
+			throw new Exception(responseString);
+		}
+		return responseString;
 
 	}
 
@@ -770,18 +765,13 @@ public class OrderImportShortened {
 		logger.info(responseString);
 
 		if (responseCode > 399) {
+			logger.error("Failed POST");
 			throw new Exception(responseString);
 		}
 
 		return responseString;
 
 	}
-
-	
-
-	
-	
-	
 	
 	public String callApiPut(String url, JSONObject body, String token)
 			throws Exception, IOException, InterruptedException {
@@ -811,12 +801,11 @@ public class OrderImportShortened {
 		logger.info(body.toString());
 		logger.info(url);
 		logger.info(responseCode);
-		//logger.info(responseString);
 
 		if (responseCode > 399) {
+			logger.error("Failed PUT");
 			throw new Exception("Response: " + responseCode);
 		}
-
 		return "ok";
 
 	}
@@ -824,6 +813,7 @@ public class OrderImportShortened {
 	public  String callApiAuth(String url,  JSONObject  body)
 			throws Exception, IOException, InterruptedException {
 		    CloseableHttpClient client = HttpClients.custom().build();
+		    
 		    HttpUriRequest request = RequestBuilder.post()
 		    		.setUri(url)
 		    		.setEntity(new StringEntity(body.toString()))
@@ -844,9 +834,9 @@ public class OrderImportShortened {
 			logger.info(responseString);
 
 			if (responseCode > 399) {
+				logger.error("FAILED Authn");
 				throw new Exception(responseString);
 			}
-
 			
 			String token = response.getFirstHeader("x-okapi-token").getValue();
 			return token;
