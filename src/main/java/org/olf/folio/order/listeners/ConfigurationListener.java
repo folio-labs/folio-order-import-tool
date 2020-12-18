@@ -24,7 +24,7 @@ public class ConfigurationListener implements ServletContextListener {
 			Iterator<String> keys = config.getKeys();
 			while (keys.hasNext()) {
 				String key = keys.next();
-				System.out.println(key);
+				System.out.println(key +": "+ config.getProperty(key));
 				context.setAttribute(key, config.getProperty(key));
 			}            
 		} catch (Exception e) {
