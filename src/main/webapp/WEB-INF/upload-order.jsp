@@ -156,7 +156,7 @@ function sendRequest() {
 		processData: false,
 		contentType: false,
 		data: form_data,
-		url: "/order/import/service/upload",
+		url: "http://localhost:8888/import/service/upload",
 		success: showOrderInfo,
 		error: updateFailed
 	});
