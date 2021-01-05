@@ -82,7 +82,7 @@
 							<div id="tabs-with-content">
 								<div class="tabs is-centered">
 									<ul>
-										<li><a>Upload File</a></li>
+									<li>Upload File</li>
 									</ul>
 								</div>
 								<div>
