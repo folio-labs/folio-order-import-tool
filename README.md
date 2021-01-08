@@ -22,10 +22,11 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * PUT to holdings (to add 856s to holdings) (PUT holdings-storage/holdings/...)
 
 ### If you want to try it 
-* It expects the properties file to be here: /yourhomefolder/order/import.properties  -- you will have to add the okapi userid/password and you may have to adjust the file upload path (where it will save the uploaded file)
-* clone the repo
+* copy the src/main/resources/application.properties.example file to src/main/resources/application.properties
+* you will have to add the okapi userid/password and you may have to adjust the file upload path (where it will save the uploaded file)
 * call: mvn jetty:run
-* It should start a jetty server and you should be able to point your browser to http://localhost:8888/import and try it
+* It should start a jetty server and you should be able to point your browser to http://localhost:8080/order-import-poc/import and try it
+* The entry point URL is defined in the jetty-maven-plugin configuation section in the pom.xml file. It may be changed as needed
 * I've included example MARC files but you will have to update them with your vendor, fund, object codes
 * The first call is a bit slow because it initializes reference values/UUIDs
 

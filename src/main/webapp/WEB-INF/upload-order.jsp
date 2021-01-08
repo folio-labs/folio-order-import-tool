@@ -10,7 +10,9 @@
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 	<script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
 	<link href="https://fonts.googleapis.com/css?family=Special+Elite" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css?family=Old+Standard+TT" rel="stylesheet"> </head>
+	<link href="https://fonts.googleapis.com/css?family=Old+Standard+TT" rel="stylesheet"> 
+</head>
+
 <style>
 .navbar>.container .navbar-brand,
 .container>.navbar .navbar-brand {
@@ -72,6 +74,7 @@
 	</div>
 	<br>
 	<!--CONTENTS-->
+	
 	<div class="container">
 		<div class="tile is-ancestor">
 			<div class="tile is-vertical is-8">
@@ -101,6 +104,7 @@
 											<button class="button is-primary" id="sendFile" name="sendFile" onclick="return sendRequest()">Send Request</button>
 										</div>
 									</section>
+									
 								</div>
 							</div>
 						</div>
@@ -146,9 +150,14 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
 <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.16/css/jquery.dataTables.css">
 <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.16/js/jquery.dataTables.js"></script>
+
 <script>
 function sendRequest() {
 	$('#sendFile').addClass('is-loading');
+	
+	var getUrl = window.location;
+	var uploadUrl = getUrl .protocol + "//" + getUrl.host + "/" + getUrl.pathname.split('/')[1]+"/import/service/upload";    
+    
 	var form_data = new FormData();
 	form_data.append('order-file', $('#order-file').get(0).files[0]);
 	$.ajax({
@@ -156,13 +165,13 @@ function sendRequest() {
 		processData: false,
 		contentType: false,
 		data: form_data,
-		url: "http://localhost:8888/import/service/upload",
+		url: uploadUrl ,
 		success: showOrderInfo,
 		error: updateFailed
 	});
 	e.preventDefault();
 	return false;
-}
+} 
 
 function showOrderInfo(response) {
 	//DISPLAY UPDATED LOG

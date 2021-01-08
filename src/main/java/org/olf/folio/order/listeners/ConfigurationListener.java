@@ -5,6 +5,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 
@@ -13,11 +14,19 @@ public class ConfigurationListener implements ServletContextListener {
 
 	public void contextInitialized(ServletContextEvent sce) {
 		ServletContext context = sce.getServletContext();
-		String path = "";
+		
 		try {
-			path = System.getProperty("user.home") + "/order/import.properties";
 			CompositeConfiguration config = new CompositeConfiguration();
-			config.addConfiguration(new PropertiesConfiguration(path));
+			
+			PropertiesConfiguration props = new PropertiesConfiguration();
+			try {
+			    props.load(context.getClassLoader().getResourceAsStream("application.properties"));
+			    
+			} catch (ConfigurationException e) {
+			    throw new RuntimeException(e);
+			}
+			config.addConfiguration(props);
+			
 			System.out.println("----------------------------");
 			System.out.println("initializing properties");
 			System.out.println("----------------------------");
@@ -29,7 +38,7 @@ public class ConfigurationListener implements ServletContextListener {
 			}            
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			System.out.println("FAILED TO START JETTY.  CANNOT FILE THE PROPERTY FILE: " + path);
+			System.out.println("FAILED TO START JETTY.  Cannot find application.properties ");
 			e.printStackTrace();
 		} 
 		
