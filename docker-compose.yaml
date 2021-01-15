@@ -1,0 +1,20 @@
+version: "3.8"
+services:
+  order-import-poc:
+    build:
+      context: .
+    environment:
+      - USE_SYSTEM_ENV=true
+      - baseOkapEndpoint=${baseOkapEndpoint}
+      - okapi_username=${okapi_username}
+      - okapi_password=${okapi_password}
+      - tenant=${tenant}
+      - permELocation=${permELocation}
+      - permLocation=${permLocation}
+      - fiscalYearCode=${fiscalYearCode}
+      - loanType=${loanType}
+      - textForElectronicResources=${textForElectronicResources}
+      - noteType=${noteType}
+      - materialType=${materialType}
+    ports:
+      - 8080:8080

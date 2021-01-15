@@ -37,6 +37,9 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * If duplicate PO number error - get the next PO number and try again
 
 ### What's new?
+* 1-15-2021
+  - Add Docker Support: See [Docker.md](Docker.md)
+
 * 11-16-2020
   - Removed reference to the 001 field.  Wasn't necessary and was causing an error when it was missing.
  
