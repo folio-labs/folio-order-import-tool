@@ -1,4 +1,13 @@
-# Use Jetty image
+FROM maven:3.6.3-openjdk-15-slim as maven
+
+COPY ./pom.xml ./pom.xml
+COPY ./src ./src
+
+RUN mvn dependency:go-offline -B
+RUN mvn package
+
 FROM jetty
-# copy WAR into image
-COPY /target/order-import-poc-0.0.1-SNAPSHOT.war /var/lib/jetty/webapps/order-import-poc.war
+
+WORKDIR $JETTY_BASE
+
+COPY --from=maven target/order-import-poc-*.war ./webapps/order-import-poc.war
