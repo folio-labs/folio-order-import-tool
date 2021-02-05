@@ -148,6 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.16/js/jquery.dataTables.js"></script>
 <script>
 function sendRequest() {
+
 	$('#sendFile').addClass('is-loading');
 	var form_data = new FormData();
 	form_data.append('order-file', $('#order-file').get(0).files[0]);
@@ -156,7 +157,7 @@ function sendRequest() {
 		processData: false,
 		contentType: false,
 		data: form_data,
-		url: "/order/import/service/upload",
+		url: "/import/service/upload",
 		success: showOrderInfo,
 		error: updateFailed
 	});

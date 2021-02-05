@@ -5,13 +5,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -21,11 +19,9 @@ import javax.servlet.ServletContext;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.marc4j.MarcJsonWriter;
-import org.marc4j.MarcPermissiveStreamReader;
 import org.marc4j.MarcReader;
 import org.marc4j.MarcStreamReader;
 import org.marc4j.MarcStreamWriter;
-import org.marc4j.MarcTranslatedReader;
 import org.marc4j.MarcWriter;
 import org.marc4j.converter.impl.AnselToUnicode;
 import org.marc4j.marc.ControlField;
@@ -46,15 +42,15 @@ import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
 public class OrderImportShortened {
-	
+
 	private static final Logger logger = Logger.getLogger(OrderImportShortened.class);
 	private ServletContext myContext;
 	private HashMap<String,String> lookupTable;
 	private String tenant;
-	
-	
 
-	
+
+
+
 	public  JSONArray  upload(String fileName) throws IOException, InterruptedException, Exception {
 
 		logger.info("...starting...");
@@ -68,7 +64,8 @@ public class OrderImportShortened {
 		String permELocationName = (String) getMyContext().getAttribute("permELocation");
 		String noteTypeName = (String) getMyContext().getAttribute("noteType");
 		String materialTypeName = (String) getMyContext().getAttribute("materialType");
-		
+		//String fiscalYearCode =  (String) getMyContext().getAttribute("fiscalYearCode");
+
 		//GET THE FOLIO TOKEN
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("username", apiUsername);
@@ -78,8 +75,8 @@ public class OrderImportShortened {
 
 		//TODO: REMOVE
 		logger.info("TOKEN: " + token); 
-			
-		
+
+
 		//GET THE UPLOADED FILE
 		String filePath = (String) myContext.getAttribute("uploadFilePath");
 		InputStream in = null;		
@@ -95,15 +92,15 @@ public class OrderImportShortened {
 			responseMessages.put(responseMessage);
 			return responseMessages;
 		}
-		
+
 		//READ THE MARC RECORD FROM THE FILE AND VALIDATE IT
 		//VALIDATES THE FUND CODE, TAG (OBJECT CODE
 		MarcReader reader = new MarcStreamReader(in);
-	    	Record record = null;
-	    
-	   	 JSONArray validateRequiredResult = validateRequiredValues(reader, token, baseOkapEndpoint);
-	   	 if (!validateRequiredResult.isEmpty()) return validateRequiredResult;
-	    
+		Record record = null;
+
+		JSONArray validateRequiredResult = validateRequiredValues(reader, token, baseOkapEndpoint);
+		if (!validateRequiredResult.isEmpty()) return validateRequiredResult;
+
 		//LOOKUP REFERENCE TABLES 
 		//TODO
 		//IMPROVE THIS - 'text' is repeated (it is a 'name' in more than one reference table)
@@ -119,65 +116,63 @@ public class OrderImportShortened {
 		referenceTables.add(baseOkapEndpoint + "material-types?limit=1000");
 		referenceTables.add(baseOkapEndpoint + "instance-types?limit=1000");
 		referenceTables.add(baseOkapEndpoint + "holdings-types?limit=1000");
-		 
-		 //SAVE REFERENCE TABLE VALUES (JUST LOOKUP THEM UP ONCE)
-		 if (myContext.getAttribute(Constants.LOOKUP_TABLE) == null) {
-				this.lookupTable = lookupReferenceValues(referenceTables,token);
-				myContext.setAttribute(Constants.LOOKUP_TABLE, lookupTable);
-			}
-		 else {
-				this.lookupTable = (HashMap<String, String>) myContext.getAttribute(Constants.LOOKUP_TABLE);
-		 }
-		
+
+		//SAVE REFERENCE TABLE VALUES (JUST LOOKUP THEM UP ONCE)
+		if (myContext.getAttribute(Constants.LOOKUP_TABLE) == null) {
+			this.lookupTable = lookupReferenceValues(referenceTables,token);
+			myContext.setAttribute(Constants.LOOKUP_TABLE, lookupTable);
+		}
+		else {
+			this.lookupTable = (HashMap<String, String>) myContext.getAttribute(Constants.LOOKUP_TABLE);
+		}
+
 		//READ THE MARC RECORD FROM THE FILE
 		in = new FileInputStream(filePath + fileName);
 		reader = new MarcStreamReader(in);
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		MarcWriter w = new MarcStreamWriter(byteArrayOutputStream,"UTF-8");
-		
+
 		AnselToUnicode conv = new AnselToUnicode();
 		w.setConverter(conv);
-		
-	    record = null;
-		
+
+		record = null;
+
 		while (reader.hasNext()) {
 			try {
 				//INITIALIZE ELECTRONIC TO FALSE
 				boolean electronic = false;
-				
+
 				record = reader.next();
 				//GET THE 980s FROM THE MARC RECORD
 				DataField twoFourFive = (DataField) record.getVariableField("245");
-			    String title = twoFourFive.getSubfieldsAsString("a");
-			    DataField nineEighty = (DataField) record.getVariableField("980");
-			    String objectCode = nineEighty.getSubfieldsAsString("o");
-			    String fundCode = nineEighty.getSubfieldsAsString("b");
-			    String vendorCode =  nineEighty.getSubfieldsAsString("v");
-			    String notes =  nineEighty.getSubfieldsAsString("n");
-			    String quantity =  nineEighty.getSubfieldsAsString("q");
-			    String price = nineEighty.getSubfieldsAsString("m");
-			    String electronicIndicator = nineEighty.getSubfieldsAsString("z");
-			    String vendorItemId = nineEighty.getSubfieldsAsString("c");
-			    Integer quanityNo = 0; //INIT
-			    if (quantity != null)  quanityNo = Integer.valueOf(quantity);
-			    if (electronicIndicator != null && electronicIndicator.equalsIgnoreCase("ELECTRONIC")) electronic = true;
-			    
-			    
-			    // GENERATE UUIDS FOR OBJECTS
-			    UUID snapshotId = UUID.randomUUID();
-			    UUID recordTableId = UUID.randomUUID();
-			    UUID orderUUID = UUID.randomUUID();
-			    UUID orderLineUUID = UUID.randomUUID();
-			    
-			    //NOW WE CAN START CREATING THE PO!
-			    //PULL TOGETHER THE ENTIRE TITLE
-			    JSONObject responseMessage = new JSONObject();
-			    String titleTwo = twoFourFive.getSubfieldsAsString("b");
-			    String titleThree = twoFourFive.getSubfieldsAsString("c");
-			    if (titleTwo != null) title += " " + titleTwo;
-			    if (titleThree != null) title += " " + titleThree;
-			    //PUT THE TITLE IN THE RESPONSE MESSAGE
-			    responseMessage.put("title", title);
+				String title = twoFourFive.getSubfieldsAsString("a");
+				DataField nineEighty = (DataField) record.getVariableField("980");
+				String objectCode = nineEighty.getSubfieldsAsString("o");
+				String projectCode = nineEighty.getSubfieldsAsString("r");
+				String fundCode = nineEighty.getSubfieldsAsString("b");
+				String vendorCode =  nineEighty.getSubfieldsAsString("v");
+				String notes =  nineEighty.getSubfieldsAsString("n");
+				//String quantity =  nineEighty.getSubfieldsAsString("q");
+				String price = nineEighty.getSubfieldsAsString("m");
+				String electronicIndicator = nineEighty.getSubfieldsAsString("z");
+				String vendorItemId = nineEighty.getSubfieldsAsString("c");
+				if (electronicIndicator != null && electronicIndicator.equalsIgnoreCase("ELECTRONIC")) electronic = true;
+
+				// GENERATE UUIDS FOR OBJECTS
+				UUID snapshotId = UUID.randomUUID();
+				UUID recordTableId = UUID.randomUUID();
+				UUID orderUUID = UUID.randomUUID();
+				UUID orderLineUUID = UUID.randomUUID();
+
+				//NOW WE CAN START CREATING THE PO!
+				//PULL TOGETHER THE ENTIRE TITLE
+				JSONObject responseMessage = new JSONObject();
+				String titleTwo = twoFourFive.getSubfieldsAsString("b");
+				String titleThree = twoFourFive.getSubfieldsAsString("c");
+				if (titleTwo != null) title += " " + titleTwo;
+				if (titleThree != null) title += " " + titleThree;
+				//PUT THE TITLE IN THE RESPONSE MESSAGE
+				responseMessage.put("title", title);
 
 				//LOOK UP VENDOR 
 				String organizationEndpoint = baseOkapEndpoint + "organizations-storage/organizations?limit=30&offset=0&query=((code='" + vendorCode + "'))";
@@ -189,12 +184,12 @@ public class OrderImportShortened {
 				String fundResponse = callApiGet(fundEndpoint, token);
 				JSONObject fundsObject = new JSONObject(fundResponse);
 				String fundId = (String) fundsObject.getJSONArray("funds").getJSONObject(0).get("id");
-				
+
 				//GET THE NEXT PO NUMBER
 				String poNumber = callApiGet(baseOkapEndpoint + "orders/po-number", token);
 				JSONObject poNumberObj = new JSONObject(poNumber);
 				logger.info("NEXT PO NUMBER: " + poNumberObj.get("poNumber"));
-				
+
 				// CREATING THE PURCHASE ORDER
 				JSONObject order = new JSONObject();
 				order.put("poNumber", poNumberObj.get("poNumber"));
@@ -204,7 +199,7 @@ public class OrderImportShortened {
 				order.put("id", orderUUID.toString());
 				order.put("approved", true);
 				order.put("workflowStatus","Open");
-				
+
 				// POST ORDER LINE
 				//FOLIO WILL CREATE THE INSTANCE, HOLDINGS, ITEM (IF PHYSICAL ITEM)
 				JSONObject orderLine = new JSONObject();
@@ -223,7 +218,7 @@ public class OrderImportShortened {
 					orderLine.put("orderFormat", "Electronic Resource");
 					cost.put("quantityElectronic", 1);
 					cost.put("listUnitPriceElectronic", price);
-					location.put("quantityElectronic",quanityNo);
+					location.put("quantityElectronic",1);
 					location.put("locationId",lookupTable.get(permELocationName + "-location"));
 					locations.put(location);
 				}	
@@ -235,11 +230,11 @@ public class OrderImportShortened {
 					orderLine.put("orderFormat", "Physical Resource");
 					cost.put("listUnitPrice", price);
 					cost.put("quantityPhysical", 1);
-					location.put("quantityPhysical",quanityNo);
+					location.put("quantityPhysical",1);
 					location.put("locationId",lookupTable.get(permLocationName + "-location"));
 					locations.put(location);
 				}
-				
+
 				//VENDOR REFERENCE NUMBER IF INCLUDED IN THE MARC RECORD:
 				if (vendorItemId != null) {
 					JSONObject vendorDetail = new JSONObject();
@@ -249,16 +244,26 @@ public class OrderImportShortened {
 					vendorDetail.put("vendorAccount", "");
 					orderLine.put("vendorDetail", vendorDetail);
 				}
-				
-				//TAG FOR THE PO LINE
-				if (objectCode != null) {
-					JSONArray tagList = new JSONArray();
+
+				JSONObject tags = new JSONObject();
+				JSONArray tagList = new JSONArray();
+
+				//TAG FOR THE PO LINE "OBJECT CODE"
+				//OBJECT CODE IS REQUIRED
+				if (objectCode != null) {		
 					tagList.put(objectCode);
-					JSONObject tags = new JSONObject();
+				}
+				//TAG FOR THE PO LINE "PROJECT CODE"
+				//PROJECT CODE IS OPTIONAL
+				if (projectCode != null && !projectCode.isEmpty()) {
+					tagList.put(projectCode);
+				}
+
+				if (!tagList.isEmpty()) {
 					tags.put("tagList", tagList);
 					orderLine.put("tags", tags);
 				}
-				
+
 				orderLine.put("id", orderLineUUID);
 				orderLine.put("source", "User");
 				cost.put("currency", "USD");
@@ -276,12 +281,12 @@ public class OrderImportShortened {
 				orderLine.put("purchaseOrderId", orderUUID.toString());
 				poLines.put(orderLine);
 				order.put("compositePoLines", poLines);
-				
+
 				//POST THE ORDER AND LINE:
 				String orderResponse = callApiPostWithUtf8(baseOkapEndpoint + "orders/composite-orders",order,token); 
 				JSONObject approvedOrder = new JSONObject(orderResponse);
 				logger.info(orderResponse);
-				
+
 				//INSERT THE NOTE IF THERE IS A NOTE IN THE MARC RECORD
 				if (notes != null && !notes.equalsIgnoreCase("")) {
 					logger.info("NOTE TYPE NAME: " + noteTypeName);
@@ -300,17 +305,17 @@ public class OrderImportShortened {
 					String noteResponse = callApiPostWithUtf8(baseOkapEndpoint + "/notes",noteAsJson,token); 
 					logger.info(noteResponse);
 				}
-								
+
 				//GET THE UPDATED PURCHASE ORDER FROM THE API AND PULL OUT THE ID FOR THE INSTANCE FOLIO CREATED:
 				String updatedPurchaseOrder = callApiGet(baseOkapEndpoint + "orders/composite-orders/" +orderUUID.toString() ,token); 
 				JSONObject updatedPurchaseOrderJson = new JSONObject(updatedPurchaseOrder);
 				String instanceId = updatedPurchaseOrderJson.getJSONArray("compositePoLines").getJSONObject(0).getString("instanceId");
-				
+
 				//GET THE INSTANCE RECORD FOLIO CREATED, SO WE CAN ADD BIB INFO TO IT:
 				String instanceResponse = callApiGet(baseOkapEndpoint + "inventory/instances/" + instanceId, token);
 				JSONObject instanceAsJson = new JSONObject(instanceResponse);
 				String hrid = instanceAsJson.getString("hrid");
-				
+
 				//PREPARING TO ADD THE MARC RECORD TO SOURCE RECORD STORAGE:
 				//CONSTRUCTING THE 999 OF THE MARC RECORD for FOLIO: 
 				DataField field = MarcFactory.newInstance().newDataField();
@@ -322,14 +327,16 @@ public class OrderImportShortened {
 				field.addSubfield(one);
 				field.addSubfield(two);
 				record.addVariableField(field);
-			    if (record.getControlNumberField() != null) {
-			    	record.getControlNumberField().setData(hrid);
-			    }
-			    else {
-			    	ControlField cf = MarcFactory.newInstance().newControlField("001");
-			    	cf.setData(hrid);
-			    	record.addVariableField(cf);
-			    }
+				if (record.getControlNumberField() != null) {
+					record.getControlNumberField().setData(hrid);
+				}
+				else {
+					ControlField cf = MarcFactory.newInstance().newControlField("001");
+					cf.setData(hrid);
+					record.addVariableField(cf);
+				}
+
+
 				//TRANSFORM THE RECORD INTO JSON
 				logger.info("MARC RECORD: " + record.toString());
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -343,6 +350,7 @@ public class OrderImportShortened {
 				content.put("content",mRecord);
 				logger.info("MARC TO JSON: " + mRecord);
 
+
 				//GET THE RAW MARC READY TO POST TO THE API
 				ByteArrayOutputStream rawBaos = new ByteArrayOutputStream();
 				MarcWriter writer = new MarcStreamWriter(rawBaos);
@@ -350,7 +358,7 @@ public class OrderImportShortened {
 				JSONObject jsonWithRaw = new JSONObject();
 				jsonWithRaw.put("id", instanceId);
 				jsonWithRaw.put("content",byteArrayOutputStream);
-				
+
 				//CREATING JOB EXECUTION?
 				//TODO: I'M NOT ENTIRELY SURE IF THIS IS NECESSARY?
 				//WHAT THE CONSEQUENCES OF THIS ARE?
@@ -360,7 +368,7 @@ public class OrderImportShortened {
 				jobExecution.put("jobExecutionId", snapshotId.toString());
 				jobExecution.put("status", "PARSING_IN_PROGRESS");
 				String snapShotResponse = callApiPostWithUtf8(baseOkapEndpoint + "source-storage/snapshots",  jobExecution,token);
-				
+
 				//OBJECT FOR SOURCE RECORD STORAGE API CALL:
 				JSONObject sourceRecordStorageObject = new JSONObject();
 				sourceRecordStorageObject.put("recordType", "MARC");
@@ -383,8 +391,8 @@ public class OrderImportShortened {
 				sourceRecordStorageObject.put("id", instanceId);
 				//CALL SOURCE RECORD STORAGE POST
 				String storageResponse = callApiPostWithUtf8(baseOkapEndpoint + "source-storage/records", sourceRecordStorageObject,token);
-				
-				
+
+
 				//ADD IDENTIFIERS AND CONTRIBUTORS TO THE INSTANCE
 				//*AND* CHANGE THE SOURCE TO 'MARC'
 				//SO THE OPTION TO VIEW THE MARC RECORD SHOWS UP 
@@ -397,13 +405,14 @@ public class OrderImportShortened {
 				instanceAsJson.put("identifiers", identifiers);
 				instanceAsJson.put("contributors", contributors);
 				instanceAsJson.put("discoverySuppress", false);
-				
-				
+
+
 				//GET THE HOLDINGS RECORD FOLIO CREATED, SO WE CAN ADD URLs FROM THE 856 IN THE MARC RECORD
 				String holdingResponse = callApiGet(baseOkapEndpoint + "holdings-storage/holdings?query=(instanceId==" + instanceId + ")", token);
 				JSONObject holdingsAsJson = new JSONObject(holdingResponse);
 				JSONObject holdingRecord = holdingsAsJson.getJSONArray("holdingsRecords").getJSONObject(0);
-				
+
+
 				JSONArray eResources = new JSONArray();
 				String linkText = (String) getMyContext().getAttribute("textForElectronicResources");
 				List urls =  record.getVariableFields("856");
@@ -419,22 +428,22 @@ public class OrderImportShortened {
 						eResource.put("uri", dataField.getSubfield('u').getData());
 						//TODO - DO WE WANT TO CHANGE THE LINK TEXT?
 						eResource.put("linkText", linkText);
-						//I 'THINK' THESE RELATIONSHIP TYPES ARE HARDCODED INTO FOLIO
-						//CANT BE LOOKED UP WITH AN API?
-						//https://github.com/folio-org/mod-inventory-storage/blob/master/reference-data/electronic-access-relationships/resource.json
+						//THIS RELATIONSHIP (UUID) IS BUILT INTO FOLIO
+						//TODO - MAKE IT DYNAMIC IN CASE IT IS CHANGED BY FOLIO
+						//IMPLEMENTER
 						eResource.put("relationshipId", "f5d0068e-6272-458e-8a81-b85e7b9a14aa");
 						eResources.put(eResource);
 					}
 				}
 
-				
+
 				//UPDATE THE INSTANCE RECORD
 				instanceAsJson.put("electronicAccess", eResources);
 				instanceAsJson.put("natureOfContentTermIds", new JSONArray());
 				instanceAsJson.put("precedingTitles", new JSONArray());
 				instanceAsJson.put("succeedingTitles", new JSONArray());
 				String instanceUpdateResponse = callApiPut(baseOkapEndpoint + "inventory/instances/" + instanceId,  instanceAsJson,token);
-				
+
 				//UPDATE THE HOLDINGS RECORD
 				holdingRecord.put("electronicAccess", eResources);
 				//IF THIS WAS AN ELECTRONIC RECORD, MARK THE HOLDING AS EHOLDING
@@ -446,7 +455,7 @@ public class OrderImportShortened {
 				//SAVE THE PO NUMBER FOR THE RESPONSE
 				responseMessage.put("PONumber", poNumberObj.get("poNumber"));
 				responseMessage.put("theOne", hrid);
-				
+
 				responseMessages.put(responseMessage);
 			}
 			catch(Exception e) {
@@ -458,13 +467,13 @@ public class OrderImportShortened {
 				return responseMessages;
 			}
 		}
-	    
-		
+
+
 		return responseMessages;
 
 	}
-	
-	
+
+
 	public  HashMap<String,String> lookupReferenceValues(List<String> lookupTables,String token) throws IOException, InterruptedException, Exception  {
 		Map<String, String> lookUpTable = new HashMap<String,String>();
 
@@ -492,96 +501,100 @@ public class OrderImportShortened {
 
 		return (HashMap<String, String>) lookUpTable;
 	}
-	
-	
 
 
-	
+
+
+
 	public JSONArray validateRequiredValues(MarcReader reader,String token, String baseOkapEndpoint ) {
-		
-	    Record record = null;
-	    JSONArray responseMessages = new JSONArray();
+
+		Record record = null;
+		JSONArray responseMessages = new JSONArray();
 		while(reader.hasNext()) {
-				try {
-			    	record = reader.next();    					    
-			    	//GET THE 980s FROM THE MARC RECORD
-				    DataField nineEighty = (DataField) record.getVariableField("980");
-				    
-				    DataField twoFourFive = (DataField) record.getVariableField("245");
-				    String title = twoFourFive.getSubfieldsAsString("a");
-				    //REMOVED - NOT NEEDED String theOne = ((ControlField) record.getVariableField("001")).getData();
-				    
-					if (nineEighty == null) {
-						JSONObject responseMessage = new JSONObject();
-						responseMessage.put("error", "Record is missing the 980 field");
-						responseMessage.put("PONumber", "~error~");
-						responseMessage.put("title", title);
-						//responseMessage.put("theOne", theOne);
-						responseMessages.put(responseMessage);
-						continue;
-					}
-			    	
-					
-					String objectCode = nineEighty.getSubfieldsAsString("o");
-				    String fundCode = nineEighty.getSubfieldsAsString("b");
-				    String vendorCode =  nineEighty.getSubfieldsAsString("v");
-				    String notes =  nineEighty.getSubfieldsAsString("n");
-				    String quantity =  nineEighty.getSubfieldsAsString("q");
-				    String price = nineEighty.getSubfieldsAsString("m");
-				    String electronicIndicator = nineEighty.getSubfieldsAsString("z");
-				    String vendorItemId = nineEighty.getSubfieldsAsString("c");
-				    Integer quanityNo = 0;
-				    if (quantity != null)  quanityNo = Integer.valueOf(quantity);
+			try {
+				record = reader.next();    					    
+				//GET THE 980s FROM THE MARC RECORD
+				DataField nineEighty = (DataField) record.getVariableField("980");
 
-				    
-				    Map<String, String> requiredFields = new HashMap<String, String>();
-				    requiredFields.put("Object code",objectCode);
-				    requiredFields.put("Fund code",fundCode);
-				    requiredFields.put("Vendor Code",vendorCode);
-				    requiredFields.put("Price" , price);
-				    
-				    // MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
-			        for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
-			        	if (entry.getValue()==null) {
-			        		JSONObject responseMessage = new JSONObject();
-			        		responseMessage.put("title", title);
-			        		//responseMessage.put("theOne", theOne);
-						    responseMessage.put("error", entry.getKey() + " Missing");
-							responseMessage.put("PONumber", "~error~");
-							responseMessages.put(responseMessage);
-			        	}
-			        }
-			        
-			        if (!responseMessages.isEmpty()) return responseMessages;
-			        
+				DataField twoFourFive = (DataField) record.getVariableField("245");
+				String title = twoFourFive.getSubfieldsAsString("a");
+				//REMOVED - NOT NEEDED String theOne = ((ControlField) record.getVariableField("001")).getData();
 
-				    
-				    //VALIDATE THE ORGANIZATION, OBJECT CODE AND FUND
-				    //STOP THE PROCESS IF AN ERRORS WERE FOUND
-				    JSONObject orgValidationResult = validateOrganization(vendorCode, title, token, baseOkapEndpoint);
-				    if (orgValidationResult != null) responseMessages.put(orgValidationResult);
-				    JSONObject objectValidationResult = validateObjectCode(objectCode, title, token, baseOkapEndpoint);
-				    if (objectValidationResult != null) responseMessages.put(objectValidationResult);
-				    JSONObject fundValidationResult = validateFund(fundCode, title, token, baseOkapEndpoint, price);
-				    if (fundValidationResult != null) responseMessages.put(fundValidationResult);
-				    return responseMessages;
-				    
+				if (nineEighty == null) {
+					JSONObject responseMessage = new JSONObject();
+					responseMessage.put("error", "Record is missing the 980 field");
+					responseMessage.put("PONumber", "~error~");
+					responseMessage.put("title", title);
+					//responseMessage.put("theOne", theOne);
+					responseMessages.put(responseMessage);
+					continue;
 				}
 
-	    
-		    catch(Exception e) {
-		    	logger.fatal(e.getMessage());
-		    	JSONObject responseMessage = new JSONObject();
-		    	responseMessage.put("error", e.getMessage());
-		    	responseMessage.put("PONumber", "~error~");
-		    	responseMessages.put(responseMessage);
-		    }
+
+				String objectCode = nineEighty.getSubfieldsAsString("o");
+				String projectCode = nineEighty.getSubfieldsAsString("r");
+				String fundCode = nineEighty.getSubfieldsAsString("b");
+				String vendorCode =  nineEighty.getSubfieldsAsString("v");
+				String notes =  nineEighty.getSubfieldsAsString("n");
+				//String quantity =  nineEighty.getSubfieldsAsString("q");
+				String price = nineEighty.getSubfieldsAsString("m");
+				String electronicIndicator = nineEighty.getSubfieldsAsString("z");
+				String vendorItemId = nineEighty.getSubfieldsAsString("c");
+
+				Map<String, String> requiredFields = new HashMap<String, String>();
+				requiredFields.put("Object code",objectCode);
+				requiredFields.put("Fund code",fundCode);
+				requiredFields.put("Vendor Code",vendorCode);
+				requiredFields.put("Price" , price);
+
+				// MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
+				for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
+					if (entry.getValue()==null) {
+						JSONObject responseMessage = new JSONObject();
+						responseMessage.put("title", title);
+						responseMessage.put("error", entry.getKey() + " Missing");
+						responseMessage.put("PONumber", "~error~");
+						responseMessages.put(responseMessage);
+					}
+				}
+
+				if (!responseMessages.isEmpty()) return responseMessages;
+
+
+
+				//VALIDATE THE ORGANIZATION, OBJECT CODE AND FUND
+				//STOP THE PROCESS IF AN ERRORS WERE FOUND
+				JSONObject orgValidationResult = validateOrganization(vendorCode, title, token, baseOkapEndpoint);
+				if (orgValidationResult != null) responseMessages.put(orgValidationResult);
+				JSONObject objectValidationResult = validateObjectCode(objectCode, title, token, baseOkapEndpoint);
+				if (objectValidationResult != null) responseMessages.put(objectValidationResult);
+				//NEW FOR PROJECT CODE
+				//PROJECT CODE IS NOT REQUIRED - BUT IF IT IS THERE, MAKE SURE IT'S A VALID CODE
+				if (projectCode != null && !projectCode.isEmpty()) {
+					JSONObject projectValidationResult = validateObjectCode(projectCode, title, token, baseOkapEndpoint);
+					if (projectValidationResult != null) responseMessages.put(projectValidationResult);
+				}
+				//END NEW
+				JSONObject fundValidationResult = validateFund(fundCode, title, token, baseOkapEndpoint, price);
+				if (fundValidationResult != null) responseMessages.put(fundValidationResult);
+
+				if (!responseMessages.isEmpty()) return responseMessages; //?
+
+				}
+
+			catch(Exception e) {
+				logger.fatal(e.getMessage());
+				JSONObject responseMessage = new JSONObject();
+				responseMessage.put("error", e.getMessage());
+				responseMessage.put("PONumber", "~error~");
+				responseMessages.put(responseMessage);
+			}
 		}
 		return responseMessages;
-		
+
 	}
-	
-	
+
+
 	//TODO - FIX THESE METHODS THAT GATHER DETAILS FROM THE MARC RECORD.
 	//THEY WERE HURRILY CODED
 	//JUST WANTED TO GET SOME DATA IN THE INSTANCE
@@ -598,7 +611,7 @@ public class OrderImportShortened {
 		}
 		return contributors;
 	}
-	
+
 	public JSONObject makeContributor( DataField field, HashMap<String,String> lookupTable, String name_type_id, String[] subfieldArray) {
 		List<String> list = Arrays.asList(subfieldArray);
 		JSONObject contributor = new JSONObject();
@@ -629,16 +642,16 @@ public class OrderImportShortened {
 					contributorName +=  subfield.getData();
 				}
 			}
-			
+
 		}
 		contributor.put("name", contributorName);
 		return contributor;
 	}
-	
-	
-   public JSONArray buildIdentifiers(Record record,HashMap<String,String> lookupTable) {
+
+
+	public JSONArray buildIdentifiers(Record record,HashMap<String,String> lookupTable) {
 		JSONArray identifiers = new JSONArray();
-		
+
 		List fields = record.getDataFields();
 		Iterator fieldsIterator = fields.iterator();
 		while (fieldsIterator.hasNext()) {
@@ -655,7 +668,7 @@ public class OrderImportShortened {
 						if (field.getSubfield('c') != null) fullValue += " "  + field.getSubfieldsAsString("c");
 						if (field.getSubfield('q') != null) fullValue += " " + field.getSubfieldsAsString("q");
 						identifier.put("value",fullValue);
-						
+
 						identifier.put("identifierTypeId", lookupTable.get("ISBN"));
 						identifiers.put(identifier);
 					}
@@ -676,7 +689,7 @@ public class OrderImportShortened {
 						if (field.getSubfield('c') != null) fullValue += " " + field.getSubfieldsAsString("c");
 						if (field.getSubfield('q') != null) fullValue += " " + field.getSubfieldsAsString("q");
 						identifier.put("value",fullValue);
-						
+
 						identifier.put("identifierTypeId", lookupTable.get("ISSN"));
 						identifiers.put(identifier);
 					}
@@ -702,21 +715,21 @@ public class OrderImportShortened {
 						}
 					}
 				}
-				
-				
+
+
 			}
-			
+
 		}
 		return identifiers;
-		
-		
+
+
 	}
-	
-	
-	
+
+
+
 	public String callApiGet(String url, String token) throws Exception, IOException, InterruptedException {
-				CloseableHttpClient client = HttpClients.custom().build();
-				HttpUriRequest request = RequestBuilder.get().setUri(url)
+		CloseableHttpClient client = HttpClients.custom().build();
+		HttpUriRequest request = RequestBuilder.get().setUri(url)
 				.setHeader("x-okapi-tenant", tenant)
 				.setHeader("x-okapi-token", token)
 				.setHeader("Accept", "application/json")
@@ -724,21 +737,21 @@ public class OrderImportShortened {
 				.build();
 
 
-				HttpResponse response = client.execute(request);
-				HttpEntity entity = response.getEntity();
-				String responseString = EntityUtils.toString(entity, "UTF-8");
-				int responseCode = response.getStatusLine().getStatusCode();
+		HttpResponse response = client.execute(request);
+		HttpEntity entity = response.getEntity();
+		String responseString = EntityUtils.toString(entity, "UTF-8");
+		int responseCode = response.getStatusLine().getStatusCode();
 
-				logger.info("GET:");
-				logger.info(url);
-				logger.info(responseCode);
-				logger.info(responseString);
+		logger.info("GET:");
+		logger.info(url);
+		logger.info(responseCode);
+		logger.info(responseString);
 
-				if (responseCode > 399) {
-					throw new Exception(responseString);
-				}
+		if (responseCode > 399) {
+			throw new Exception(responseString);
+		}
 
-				return responseString;
+		return responseString;
 
 	}
 
@@ -777,12 +790,7 @@ public class OrderImportShortened {
 
 	}
 
-	
 
-	
-	
-	
-	
 	public String callApiPut(String url, JSONObject body, String token)
 			throws Exception, IOException, InterruptedException {
 		CloseableHttpClient client = HttpClients.custom().build();
@@ -795,7 +803,7 @@ public class OrderImportShortened {
 				.setHeader("Accept", "application/json")
 				.setHeader("Content-type","application/json")
 				.build();
-		
+
 		//TODO
 		//UGLY WORK-AROUND
 		//THE ORDERS-STORAGE ENDOINT WANTS 'TEXT/PLAIN'
@@ -820,36 +828,36 @@ public class OrderImportShortened {
 		return "ok";
 
 	}
-	
+
 	public  String callApiAuth(String url,  JSONObject  body)
 			throws Exception, IOException, InterruptedException {
-		    CloseableHttpClient client = HttpClients.custom().build();
-		    HttpUriRequest request = RequestBuilder.post()
-		    		.setUri(url)
-		    		.setEntity(new StringEntity(body.toString()))
-					.setHeader("x-okapi-tenant",tenant)
-					.setHeader("Accept", "application/json").setVersion(HttpVersion.HTTP_1_1)
-					.setHeader("content-type","application/json")
-					.build();
+		CloseableHttpClient client = HttpClients.custom().build();
+		HttpUriRequest request = RequestBuilder.post()
+				.setUri(url)
+				.setEntity(new StringEntity(body.toString()))
+				.setHeader("x-okapi-tenant",tenant)
+				.setHeader("Accept", "application/json").setVersion(HttpVersion.HTTP_1_1)
+				.setHeader("content-type","application/json")
+				.build();
 
-		    CloseableHttpResponse response = client.execute(request);
-			HttpEntity entity = response.getEntity();
-			String responseString = EntityUtils.toString(entity);
-			int responseCode = response.getStatusLine().getStatusCode();
+		CloseableHttpResponse response = client.execute(request);
+		HttpEntity entity = response.getEntity();
+		String responseString = EntityUtils.toString(entity);
+		int responseCode = response.getStatusLine().getStatusCode();
 
-			logger.info("POST:");
-			logger.info(body.toString());
-			logger.info(url);
-			logger.info(responseCode);
-			logger.info(responseString);
+		logger.info("POST:");
+		logger.info(body.toString());
+		logger.info(url);
+		logger.info(responseCode);
+		logger.info(responseString);
 
-			if (responseCode > 399) {
-				throw new Exception(responseString);
-			}
+		if (responseCode > 399) {
+			throw new Exception(responseString);
+		}
 
-			
-			String token = response.getFirstHeader("x-okapi-token").getValue();
-			return token;
+
+		String token = response.getFirstHeader("x-okapi-token").getValue();
+		return token;
 
 	}
 
@@ -862,24 +870,24 @@ public class OrderImportShortened {
 	public void setMyContext(ServletContext myContext) {
 		this.myContext = myContext;
 	}
-	
+
 	static String readFile(String path, Charset encoding)  throws IOException  {
-		  byte[] encoded = Files.readAllBytes(Paths.get(path));
-		  return new String(encoded, encoding);
+		byte[] encoded = Files.readAllBytes(Paths.get(path));
+		return new String(encoded, encoding);
 	}
-	
+
 
 	//TODO 
 	//THESE VALIDATION METHODS COULD
 	//USE IMPROVEMENT
 	public JSONObject validateFund(String fundCode, String title, String token, String baseOkapiEndpoint, String price ) throws IOException, InterruptedException, Exception {
-		
+
 		//GET CURRENT FISCAL YEAR
 		String fiscalYearCode =  (String) getMyContext().getAttribute("fiscalYearCode");
 		String fundEndpoint = baseOkapiEndpoint + "finance/funds?limit=30&offset=0&query=((code='" + fundCode + "'))";
-		
+
 		JSONObject responseMessage = new JSONObject();
-		
+
 		String fundResponse = callApiGet(fundEndpoint, token);
 		JSONObject fundsObject = new JSONObject(fundResponse);
 		//----------->VALIDATION #1: MAKE SURE THE FUND CODE EXISTS
@@ -890,7 +898,7 @@ public class OrderImportShortened {
 		}
 		String fundId = (String) fundsObject.getJSONArray("funds").getJSONObject(0).get("id");
 		logger.info("FUNDS: " + fundsObject.get("funds"));
-		
+
 		//----------->VALIDATION #2: MAKE SURE THE FUND CODE FOR THE CURRENT FISCAL HAS ENOUGH MONEY
 		String fundBalanceQuery = baseOkapiEndpoint + "finance/budgets?query=(name=="  + fundCode + "-" + fiscalYearCode + ")";
 		String fundBalanceResponse = callApiGet(fundBalanceQuery, token);
@@ -911,7 +919,7 @@ public class OrderImportShortened {
 			BigDecimal wantedToSpend = new BigDecimal(price);
 			if (availableMoney.compareTo(wantedToSpend) > 0)  foundAGoodBudget = true;
 		}
-		
+
 		if (!foundAGoodBudget) {
 			responseMessage.put("error", "Fund code in file (" + fundCode + ") does not an active budget with enough money to open a purchase order which will encumber funds.  Using fund code: " + fundCode);
 			responseMessage.put("title", title);
@@ -922,7 +930,7 @@ public class OrderImportShortened {
 		//END REMOVED 8-28 BECAUSE BUDGETS CAN BE OVERSPENT
 		return null;
 	}
-	
+
 	public JSONObject validateObjectCode(String objectCode, String title, String token, String baseOkapiEndpoint ) throws IOException, InterruptedException, Exception {
 		//---------->VALIDATION: MAKE SURE THE TAG (AKA OBJECT CODE) EXISTS
 		JSONObject responseMessage = new JSONObject();
@@ -937,12 +945,12 @@ public class OrderImportShortened {
 		}
 		return null;
 	}
-	
+
 	public JSONObject validateOrganization(String orgCode, String title,  String token, String baseOkapiEndpoint ) throws IOException, InterruptedException, Exception {
 		JSONObject responseMessage = new JSONObject();
-	    //LOOK UP THE ORGANIZATION
-	    String organizationEndpoint = baseOkapiEndpoint + "organizations-storage/organizations?limit=30&offset=0&query=((code='" + orgCode + "'))";
-	    String orgLookupResponse = callApiGet(organizationEndpoint,  token);
+		//LOOK UP THE ORGANIZATION
+		String organizationEndpoint = baseOkapiEndpoint + "organizations-storage/organizations?limit=30&offset=0&query=((code='" + orgCode + "'))";
+		String orgLookupResponse = callApiGet(organizationEndpoint,  token);
 		JSONObject orgObject = new JSONObject(orgLookupResponse);
 		//---------->VALIDATION: MAKE SURE THE ORGANIZATION CODE EXISTS
 		if (orgObject.getJSONArray("organizations").length() < 1) {
@@ -953,6 +961,6 @@ public class OrderImportShortened {
 		}
 		return null;
 	}
-	
+
 
 }

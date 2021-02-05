@@ -5,6 +5,17 @@
    xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
    metadata-complete="false"
    version="3.1">
+   
+   <servlet-mapping>
+    <servlet-name>default</servlet-name>
+    <url-pattern>*.js</url-pattern>
+    <url-pattern>*.css</url-pattern>
+    <url-pattern>*.ico</url-pattern>
+    <url-pattern>*.png</url-pattern>
+    <url-pattern>*.jpg</url-pattern>
+    <url-pattern>*.htc</url-pattern>
+    <url-pattern>*.gif</url-pattern>
+</servlet-mapping> 
 
   <servlet>
     <servlet-name>JerseyTest</servlet-name>

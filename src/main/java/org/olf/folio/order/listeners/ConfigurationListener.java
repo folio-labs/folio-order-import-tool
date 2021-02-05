@@ -26,18 +26,18 @@ public class ConfigurationListener implements ServletContextListener {
 				String key = keys.next();
 				System.out.println(key);
 				context.setAttribute(key, config.getProperty(key));
-			}            
+			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			System.out.println("FAILED TO START JETTY.  CANNOT FILE THE PROPERTY FILE: " + path);
 			e.printStackTrace();
 		} 
-		
+
 	}
 
 	public void contextDestroyed(ServletContextEvent sce) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

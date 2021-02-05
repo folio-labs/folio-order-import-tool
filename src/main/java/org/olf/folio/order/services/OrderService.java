@@ -18,17 +18,8 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.olf.folio.order.Constants;
-import org.olf.folio.order.JustMarc;
-import org.olf.folio.order.JustMarcFile;
-import org.olf.folio.order.OrderImport;
 import org.olf.folio.order.OrderImportShortened;
-import org.olf.folio.order.TestImport;
-import org.olf.folio.order.TestImportJustMarc;
-import org.olf.folio.order.TestImportOrderFirst;
-
-
 
 
 
@@ -48,29 +39,31 @@ public class OrderService {
 
 		System.out.println(fileDetails.getFileName());
 		String filePath = (String) servletRequest.getServletContext().getAttribute("uploadFilePath");
-		//String uploadedFileLocation = filePath + fileDetails.getFileName();
 		UUID fileName = UUID.randomUUID();
 		String uploadedFileLocation = filePath + fileName.toString() + ".mrc";
 		// SAVE FILE TO DISK
 		writeFile(uploadedInputStream, uploadedFileLocation);
 		// PASS FILE INFO TO 'OrderImportShortened' WHICH MAKES THE FOLIO API CALLS
-		OrderImportShortened testImport = new OrderImportShortened();
-		testImport.setMyContext(servletRequest.getServletContext());
+		OrderImportShortened orderImportShortened = new OrderImportShortened();
+		orderImportShortened.setMyContext(servletRequest.getServletContext());
 		try {
-			JSONArray message = testImport.upload(fileName.toString() + ".mrc");
+			JSONArray message = orderImportShortened.upload(fileName.toString() + ".mrc");
 			return Response.status(Response.Status.OK).entity(message.toString()).build();		
 		}
 		catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getLocalizedMessage()).build();		
 		}
-		
+
 	}
-	
+
 	@GET
 	public Response justACheck() throws IOException, InterruptedException, Exception {
-		    //RESET REFERENCE VALUES - SNAPSHOT CHANGES EVERY DAY
-		   servletRequest.getServletContext().setAttribute(Constants.LOOKUP_TABLE,null);
-		   return Response.status(Response.Status.OK).entity("OK").build();	
+
+		//RESET REFERENCE VALUES 
+		String filePath = (String) servletRequest.getServletContext().getAttribute("baseOkapEndpoint");
+		servletRequest.getServletContext().setAttribute(Constants.LOOKUP_TABLE,null);
+		return Response.status(Response.Status.OK).entity("OK:" + filePath).build();		
+
 	}
 
 
