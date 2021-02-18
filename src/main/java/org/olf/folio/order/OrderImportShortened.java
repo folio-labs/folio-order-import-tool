@@ -276,6 +276,7 @@ public class OrderImportShortened {
 				fundDist.put("distributionType", "percentage");
 				fundDist.put("value", 100);
 				fundDist.put("fundId", fundId);
+				fundDist.put("code", fundCode);
 				funds.put(fundDist);
 				orderLine.put("fundDistribution", funds);
 				orderLine.put("purchaseOrderId", orderUUID.toString());
