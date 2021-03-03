@@ -234,12 +234,32 @@ public class OrderImportShortened {
 				}
 
 				//VENDOR REFERENCE NUMBER IF INCLUDED IN THE MARC RECORD:
+				/*
 				if (vendorItemId != null) {
 					JSONObject vendorDetail = new JSONObject();
 					vendorDetail.put("instructions", "");
 					vendorDetail.put("refNumber", vendorItemId);
 					vendorDetail.put("refNumberType", "Internal vendor number");
 					vendorDetail.put("vendorAccount", "");
+					orderLine.put("vendorDetail", vendorDetail);
+				}
+				*/
+
+				//CHANGE FOR IRIS:
+				//VENDOR REF. NUMBER IS NOW A COLLECTION
+				//AND TYPE WAS CHANGED FROM 'Internal vendor number' to 'Vendor internal number'
+				//- REPLACE ABOVE WITH:
+				//VENDOR REFERENCE NUMBER IF INCLUDED IN THE MARC RECORD:
+				if (vendorItemId != null) {
+					JSONArray referenceNumbers = new JSONArray();
+					JSONObject vendorDetail = new JSONObject();
+					vendorDetail.put("instructions", "");
+					vendorDetail.put("vendorAccount", "");
+					JSONObject referenceNumber = new JSONObject();
+					referenceNumber.put("refNumber", vendorItemId);
+					referenceNumber.put("refNumberType", "Vendor internal number");
+					referenceNumbers.put(referenceNumber);
+					vendorDetail.put("referenceNumbers", referenceNumbers);
 					orderLine.put("vendorDetail", vendorDetail);
 				}
 
@@ -450,7 +470,10 @@ public class OrderImportShortened {
 					holdingRecord.put("holdingsTypeId",this.lookupTable.get("Electronic"));
 				}
 				String createHoldingsResponse = callApiPut(baseOkapEndpoint + "holdings-storage/holdings/" + holdingRecord.getString("id"), holdingRecord,token);
-				
+
+				createInvoice(baseOkapEndpoint, token,
+						      poNumberObj.getString("poNumber"), title, price, orderLineUUID, vendorId);
+
 				//SAVE THE PO NUMBER FOR THE RESPONSE
 				responseMessage.put("PONumber", poNumberObj.get("poNumber"));
 				responseMessage.put("theOne", hrid);
@@ -467,9 +490,52 @@ public class OrderImportShortened {
 			}
 		}
 
-
 		return responseMessages;
 
+	}
+
+	private void createInvoice(String baseOkapiEndPoint,
+							   String token,
+							   String poNumber,
+							   String title,
+							   String price,
+							   UUID orderLineUUID,
+							   String vendorId) throws Exception {
+		final String BATCH_GROUP_ID = "2a2cb998-1437-41d1-88ad-01930aaeadd5"; // ='FOLIO'
+		final String CURRENCY       = "USD";
+		final String PAYMENT_METHOD = "EFT";
+		final String STATUS = "Reviewed";
+		final String SOURCE = "API";
+		final int     INVOICE_LINE_QUANTITY = 1;
+		final String  INVOICE_LINE_STATUS   = "Reviewed";
+		final boolean RELEASE_ENCUMBRANCE  = true;
+
+		//POST INVOICE
+		JSONObject invoice = new JSONObject();
+		UUID invoiceUUID = UUID.randomUUID();
+
+		invoice.put("id", invoiceUUID);
+		invoice.put("poNumbers",(new JSONArray()).put(poNumber)); // optional
+		invoice.put("batchGroupId", BATCH_GROUP_ID); // required
+		invoice.put("currency",CURRENCY); // required
+		invoice.put("invoiceDate","2018-07-20T00:00:00.000+0000"); // required
+		invoice.put("paymentMethod", PAYMENT_METHOD); // required
+		invoice.put("status", STATUS); // required
+		invoice.put("source", SOURCE); // required
+		invoice.put("vendorInvoiceNo","xyz"); // required
+		invoice.put("vendorId", vendorId); // required
+
+		JSONObject invoiceLine = new JSONObject();
+		invoiceLine.put("description", title);  // required
+		invoiceLine.put("invoiceId", invoiceUUID); // required
+		invoiceLine.put("invoiceLineStatus", INVOICE_LINE_STATUS); // required
+		invoiceLine.put("subTotal", price);  // required
+		invoiceLine.put("quantity", INVOICE_LINE_QUANTITY); // required
+		invoiceLine.put("releaseEncumbrance", RELEASE_ENCUMBRANCE);  // required
+		invoiceLine.put("poLineId", orderLineUUID);
+
+		callApiPostWithUtf8(baseOkapiEndPoint + "invoice/invoices",invoice,token);
+		callApiPostWithUtf8(baseOkapiEndPoint + "invoice/invoice-lines",invoiceLine,token);
 	}
 
 
