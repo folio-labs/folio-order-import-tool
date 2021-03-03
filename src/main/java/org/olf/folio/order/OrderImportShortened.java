@@ -244,6 +244,24 @@ public class OrderImportShortened {
 					vendorDetail.put("vendorAccount", "");
 					orderLine.put("vendorDetail", vendorDetail);
 				}
+				
+				//CHANGE FOR IRIS: 
+				//VENDOR REF. NUMBER IS NOW A COLLECTION
+				//AND TYPE WAS CHANGED FROM 'Internal vendor number' to 'Vendor internal number'
+				//- REPLACE ABOVE WITH:
+				/*VENDOR REFERENCE NUMBER IF INCLUDED IN THE MARC RECORD:
+				if (vendorItemId != null) {
+					JSONArray referenceNumbers = new JSONArray();
+					JSONObject vendorDetail = new JSONObject();
+					vendorDetail.put("instructions", "");
+					vendorDetail.put("vendorAccount", "");
+					JSONObject referenceNumber = new JSONObject();
+					referenceNumber.put("refNumber", vendorItemId);
+					referenceNumber.put("refNumberType", "Vendor internal number");
+					referenceNumbers.put(referenceNumber);
+					vendorDetail.put("referenceNumbers", referenceNumbers);
+					orderLine.put("vendorDetail", vendorDetail);
+				}*/
 
 				JSONObject tags = new JSONObject();
 				JSONArray tagList = new JSONArray();
