@@ -105,8 +105,7 @@ public class OrderImportShortened {
 		//TODO
 		//IMPROVE THIS - 'text' is repeated (it is a 'name' in more than one reference table)
 		List<String> referenceTables = new ArrayList<String>(); 
-		referenceTables.add(baseOkapEndpoint +"identifier-types?limit=1000");
-		referenceTables.add(baseOkapEndpoint + "contributor-types?limit=1000");
+		referenceTables.add(baseOkapEndpoint + "identifier-types?limit=1000");
 		referenceTables.add(baseOkapEndpoint + "classification-types?limit=1000");
 		referenceTables.add(baseOkapEndpoint + "contributor-types?limit=1000");
 		referenceTables.add(baseOkapEndpoint + "contributor-name-types?limit=1000");
@@ -215,7 +214,6 @@ public class OrderImportShortened {
 					eResource.put("trial", false);
 					eResource.put("accessProvider", vendorId);
 					orderLine.put("eresource",eResource);
-					orderLine.put("orderFormat", "Electronic Resource");
 					cost.put("quantityElectronic", 1);
 					cost.put("listUnitPriceElectronic", price);
 					location.put("quantityElectronic",1);

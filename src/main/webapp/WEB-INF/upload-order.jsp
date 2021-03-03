@@ -90,7 +90,7 @@
 										<form name="request" id="request">
 											<div class="file has-name">
 												<label class="file-label">
-													<input class="file-input" type="file" name="order-file" id="order-file" onchange="showname()"> <span class="file-cta">
+													<input class="file-input" type="file" name="order-file" id="order-file" onchange="showName()"> <span class="file-cta">
 														<span class="file-icon"> <i class="fas fa-upload"></i>
 													</span> <span class="file-label"> Choose a file... </span> </span> <span class="file-name" id="file-name"> .... </span> </label>
 											</div>
@@ -192,7 +192,7 @@ Handlebars.registerHelper('formatTime', function(date, format) {
 let tabsWithContent = (function() {
 	let tabs = document.querySelectorAll('.tabs li');
 	let tabsContent = document.querySelectorAll('.tab-content');
-	let deactvateAllTabs = function() {
+	let deactivateAllTabs = function() {
 		tabs.forEach(function(tab) {
 			tab.classList.remove('is-active');
 		});
@@ -210,7 +210,7 @@ let tabsWithContent = (function() {
 	};
 	tabs.forEach(function(tab) {
 		tab.addEventListener('click', function() {
-			deactvateAllTabs();
+			deactivateAllTabs();
 			hideTabsContent();
 			tab.classList.add('is-active');
 			activateTabsContent(tab);
@@ -220,7 +220,7 @@ let tabsWithContent = (function() {
 })();
 </script>
 <script>
-function showname() {
+function showName() {
 	var name = document.getElementById('order-file');
 	document.getElementById('file-name').innerHTML = name.files.item(0).name;
 }
