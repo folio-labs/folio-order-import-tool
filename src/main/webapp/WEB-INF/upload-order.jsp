@@ -67,7 +67,7 @@
 	</nav>
 	<div class="container">
 		<div class="field">
-			<label class="label">Upload Order:</label>
+			<label class="label">Upload File:</label>
 		</div>
 	</div>
 	<br>
@@ -82,7 +82,7 @@
 							<div id="tabs-with-content">
 								<div class="tabs is-centered">
 									<ul>
-										<li><a>Upload File</a></li>
+										<li><a>Upload Order</a></li>
 									</ul>
 								</div>
 								<div>
