@@ -20,7 +20,5 @@ public class OrderController extends HttpServlet {
 		 rd = request.getRequestDispatcher("WEB-INF/upload-order.jsp");
 		 rd.forward(request, response);	
 	}
-	
-
 
 }

@@ -17,10 +17,7 @@ import org.junit.jupiter.api.Disabled;
  
 public class MyTest {
     
-	@Test
-	public void nullTest() {
-		//
-	} 
+	 
 	@Test
 	public void testConfig() { 
 		try { 
