@@ -99,7 +99,7 @@ public class OrderImportShortened {
 		//READ THE MARC RECORD FROM THE FILE AND VALIDATE IT
 		//VALIDATES THE FUND CODE, TAG (OBJECT CODE
 		MarcReader reader = new MarcStreamReader(in);
-	    	Record record = null;
+	    Record record = null;
 	    
 	   	 JSONArray validateRequiredResult = validateRequiredValues(reader, token, baseOkapEndpoint);
 	   	 if (!validateRequiredResult.isEmpty()) return validateRequiredResult;
@@ -149,8 +149,8 @@ public class OrderImportShortened {
 				//GET THE 980s FROM THE MARC RECORD
 				DataField twoFourFive = (DataField) record.getVariableField("245");
 			    String title = twoFourFive.getSubfieldsAsString("a");
-			    DataField nineEighty = (DataField) record.getVariableField("980");
-			    String objectCode = nineEighty.getSubfieldsAsString("o");
+			    DataField nineEighty = (DataField) record.getVariableField("980"); 
+			    
 			    String fundCode = nineEighty.getSubfieldsAsString("b");
 			    String vendorCode =  nineEighty.getSubfieldsAsString("v");
 			    String notes =  nineEighty.getSubfieldsAsString("n");
@@ -250,16 +250,7 @@ public class OrderImportShortened {
 					vendorDetail.put("refNumberType", "Internal vendor number");
 					vendorDetail.put("vendorAccount", "");
 					orderLine.put("vendorDetail", vendorDetail);
-				}
-				
-				//TAG FOR THE PO LINE
-				if (objectCode != null) {
-					JSONArray tagList = new JSONArray();
-					tagList.put(objectCode);
-					JSONObject tags = new JSONObject();
-					tags.put("tagList", tagList);
-					orderLine.put("tags", tags);
-				}
+				}				
 				
 				orderLine.put("id", orderLineUUID);
 				orderLine.put("source", "User");
@@ -522,9 +513,7 @@ public class OrderImportShortened {
 						responseMessages.put(responseMessage);
 						continue;
 					}
-			    	
 					
-					String objectCode = nineEighty.getSubfieldsAsString("o");
 				    String fundCode = nineEighty.getSubfieldsAsString("b");
 				    String vendorCode =  nineEighty.getSubfieldsAsString("v");
 				    String notes =  nineEighty.getSubfieldsAsString("n");
@@ -536,8 +525,7 @@ public class OrderImportShortened {
 				    if (quantity != null)  quanityNo = Integer.valueOf(quantity);
 
 				    
-				    Map<String, String> requiredFields = new HashMap<String, String>();
-				    requiredFields.put("Object code",objectCode);
+				    Map<String, String> requiredFields = new HashMap<String, String>(); 
 				    requiredFields.put("Fund code",fundCode);
 				    requiredFields.put("Vendor Code",vendorCode);
 				    requiredFields.put("Price" , price);
@@ -562,8 +550,8 @@ public class OrderImportShortened {
 				    //STOP THE PROCESS IF AN ERRORS WERE FOUND
 				    JSONObject orgValidationResult = validateOrganization(vendorCode, title, token, baseOkapEndpoint);
 				    if (orgValidationResult != null) responseMessages.put(orgValidationResult);
-				    JSONObject objectValidationResult = validateObjectCode(objectCode, title, token, baseOkapEndpoint);
-				    if (objectValidationResult != null) responseMessages.put(objectValidationResult);
+				    
+				    				    
 				    JSONObject fundValidationResult = validateFund(fundCode, title, token, baseOkapEndpoint, price);
 				    if (fundValidationResult != null) responseMessages.put(fundValidationResult);
 				    return responseMessages;
@@ -915,20 +903,7 @@ public class OrderImportShortened {
 		return null;
 	}
 	
-	public JSONObject validateObjectCode(String objectCode, String title, String token, String baseOkapiEndpoint ) throws IOException, InterruptedException, Exception {
-		//---------->VALIDATION: MAKE SURE THE TAG (AKA OBJECT CODE) EXISTS
-		JSONObject responseMessage = new JSONObject();
-		String tagEndpoint = baseOkapiEndpoint + "tags?query=(label==" + objectCode + ")";
-		String tagResponse = callApiGet(tagEndpoint,  token);
-		JSONObject tagObject = new JSONObject(tagResponse);
-		if (tagObject.getJSONArray("tags").length() < 1) {
-			responseMessage.put("error", "Object code in the record (" + objectCode + ") does not exist in FOLIO");
-			responseMessage.put("title", title);
-			responseMessage.put("PONumber", "~error~");
-			return responseMessage;
-		}
-		return null;
-	}
+	
 	
 	public JSONObject validateOrganization(String orgCode, String title,  String token, String baseOkapiEndpoint ) throws IOException, InterruptedException, Exception {
 		JSONObject responseMessage = new JSONObject();

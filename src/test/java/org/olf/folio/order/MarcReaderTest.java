@@ -31,19 +31,17 @@ public class MarcReaderTest {
 		while (reader.hasNext()) {
 			record = reader.next();
 			DataField twoFourFive = (DataField) record.getVariableField("245");
-		    String title = twoFourFive.getSubfieldsAsString("a");
-		    DataField nineEighty = (DataField) record.getVariableField("980");
-		    String objectCode = nineEighty.getSubfieldsAsString("o");
-		    String fundCode = nineEighty.getSubfieldsAsString("b");
-		    String vendorCode =  nineEighty.getSubfieldsAsString("v");
-		    
-		    System.out.println("vendorCode: "+ vendorCode);
-		    System.out.println("objectCode: "+ objectCode);
-		    System.out.println("fundCode: "+ fundCode);
+			String title = twoFourFive.getSubfieldsAsString("a");
+			DataField nineEighty = (DataField) record.getVariableField("980");
+			String fundCode = nineEighty.getSubfieldsAsString("b");
+			String vendorCode =  nineEighty.getSubfieldsAsString("v");
 			
+			System.out.println("vendorCode: "+ vendorCode);
+			System.out.println("fundCode: "+ fundCode);
+		
 		}
 
 	}
-    
+
 
 }
