@@ -20,6 +20,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.olf.folio.order.Constants;
+import org.olf.folio.order.OrderImport;
 //import org.olf.folio.order.JustMarc;
 //import org.olf.folio.order.JustMarcFile;
 //import org.olf.folio.order.OrderImport;
@@ -54,7 +55,8 @@ public class OrderService {
 		// SAVE FILE TO DISK
 		writeFile(uploadedInputStream, uploadedFileLocation);
 		// PASS FILE INFO TO 'OrderImportShortened' WHICH MAKES THE FOLIO API CALLS
-		OrderImportShortened testImport = new OrderImportShortened();
+		//OrderImportShortened testImport = new OrderImportShortened();
+		OrderImport  testImport = new OrderImport();
 		testImport.setMyContext(servletRequest.getServletContext());
 		try {
 			JSONArray message = testImport.upload(fileName.toString() + ".mrc");

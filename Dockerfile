@@ -4,7 +4,7 @@ COPY ./pom.xml ./pom.xml
 COPY ./src ./src
 
 RUN mvn dependency:go-offline -B
-RUN mvn package
+RUN mvn package -DskipTests=true
 
 FROM jetty
 
