@@ -475,7 +475,7 @@ public class OrderImportShortened {
 
 				if (importInvoice) {
 					createInvoice(baseOkapEndpoint, token,
-							poNumberObj.getString("poNumber"), title, price, orderLineUUID, vendorId, nineEighty);
+							poNumberObj.getString("poNumber"), title, orderLineUUID, vendorId, nineEighty);
 				}
 
 				//SAVE THE PO NUMBER FOR THE RESPONSE
@@ -503,7 +503,6 @@ public class OrderImportShortened {
 							   String token,
 							   String poNumber,
 							   String title,
-							   String price,
 							   UUID orderLineUUID,
 							   String vendorId,
 							   DataField nineEighty) throws Exception {
@@ -520,10 +519,12 @@ public class OrderImportShortened {
 		// MARC field values:
 		final String vendorInvoiceNo = nineEighty.getSubfieldsAsString("h");
 		final String invoiceDate = nineEighty.getSubfieldsAsString("i");
+		final String subTotal = nineEighty.getSubfieldsAsString("j");
+		// TODO ? final String quantity = nineEighty.getSubfieldsAsString("q");
 
 		// tbd
-		final String STATUS = "Reviewed";
-		final String  INVOICE_LINE_STATUS   = "Reviewed";
+		final String STATUS = "Open";
+		final String  INVOICE_LINE_STATUS   = "Open";
 		final boolean RELEASE_ENCUMBRANCE  = true;
 
 		//CREATE INVOICE OBJECTS
@@ -545,7 +546,7 @@ public class OrderImportShortened {
 		invoiceLine.put("description", title);  // required
 		invoiceLine.put("invoiceId", invoiceUUID); // required
 		invoiceLine.put("invoiceLineStatus", INVOICE_LINE_STATUS); // required
-		invoiceLine.put("subTotal", price);  // required
+		invoiceLine.put("subTotal", subTotal);  // required
 		invoiceLine.put("quantity", INVOICE_LINE_QUANTITY); // required
 		invoiceLine.put("releaseEncumbrance", RELEASE_ENCUMBRANCE);  // required
 		invoiceLine.put("poLineId", orderLineUUID);
