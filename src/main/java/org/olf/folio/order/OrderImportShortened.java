@@ -162,6 +162,7 @@ public class OrderImportShortened {
 
 				// EXTENDED MAPPING, UC
 				String selector = nineEighty.getSubfieldsAsString("f");
+				String donor = nineEighty.getSubfieldsAsString("p");
 
 				// GENERATE UUIDS FOR OBJECTS
 				UUID snapshotId = UUID.randomUUID();
@@ -309,6 +310,7 @@ public class OrderImportShortened {
 
 				// EXTENDED MAPPING, UC
 				if (selector != null)  orderLine.put("selector", selector);
+				if (donor != null) orderLine.put("donor", donor);
 
 				//POST THE ORDER AND LINE:
 				String orderResponse = callApiPostWithUtf8(baseOkapEndpoint + "orders/composite-orders",order,token); 
