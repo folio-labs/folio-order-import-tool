@@ -158,6 +158,10 @@ public class OrderImportShortened {
 				String electronicIndicator = nineEighty.getSubfieldsAsString("z");
 				String vendorItemId = nineEighty.getSubfieldsAsString("c");
 				if (electronicIndicator != null && electronicIndicator.equalsIgnoreCase("ELECTRONIC")) electronic = true;
+				String currency = "USD";
+
+				// EXTENDED MAPPING, UC
+				String selector = nineEighty.getSubfieldsAsString("f");
 
 				// GENERATE UUIDS FOR OBJECTS
 				UUID snapshotId = UUID.randomUUID();
@@ -286,7 +290,7 @@ public class OrderImportShortened {
 
 				orderLine.put("id", orderLineUUID);
 				orderLine.put("source", "User");
-				cost.put("currency", "USD");
+				cost.put("currency", currency);
 				orderLine.put("cost", cost);
 				orderLine.put("locations", locations);
 				orderLine.put("titleOrPackage",title);
@@ -302,6 +306,9 @@ public class OrderImportShortened {
 				orderLine.put("purchaseOrderId", orderUUID.toString());
 				poLines.put(orderLine);
 				order.put("compositePoLines", poLines);
+
+				// EXTENDED MAPPING, UC
+				if (selector != null)  orderLine.put("selector", selector);
 
 				//POST THE ORDER AND LINE:
 				String orderResponse = callApiPostWithUtf8(baseOkapEndpoint + "orders/composite-orders",order,token); 
@@ -475,7 +482,7 @@ public class OrderImportShortened {
 
 				if (importInvoice) {
 					createInvoice(baseOkapEndpoint, token,
-							poNumberObj.getString("poNumber"), title, orderLineUUID, vendorId, nineEighty);
+							poNumberObj.getString("poNumber"), title, orderLineUUID, vendorId, currency, nineEighty);
 				}
 
 				//SAVE THE PO NUMBER FOR THE RESPONSE
@@ -505,12 +512,13 @@ public class OrderImportShortened {
 							   String title,
 							   UUID orderLineUUID,
 							   String vendorId,
+							   String currency,
 							   DataField nineEighty) throws Exception {
 		// Hard-coded values
 		final String BATCH_GROUP_ID = "2a2cb998-1437-41d1-88ad-01930aaeadd5"; // ='FOLIO', System default
-		final String CURRENCY       = "USD";
+
 		final String SOURCE = "API";
-		final int     INVOICE_LINE_QUANTITY = 1;
+		final int    INVOICE_LINE_QUANTITY = 1;
 
 		// Static config values:
 		final String PAYMENT_METHOD_PROPERTY = "paymentMethod";
@@ -534,7 +542,7 @@ public class OrderImportShortened {
 		invoice.put("id", invoiceUUID);
 		invoice.put("poNumbers",(new JSONArray()).put(poNumber)); // optional
 		invoice.put("batchGroupId", BATCH_GROUP_ID); // required
-		invoice.put("currency",CURRENCY); // required
+		invoice.put("currency",currency); // required
 		invoice.put("invoiceDate",invoiceDate); // required
 		invoice.put("paymentMethod", PAYMENT_METHOD); // required
 		invoice.put("status", STATUS); // required
