@@ -10,7 +10,6 @@ services:
       - okapi_password=${okapi_password}
       - tenant=${tenant}
       - permELocation=${permELocation}
-      - permLocation=${permLocation}
       - fiscalYearCode=${fiscalYearCode}
       - loanType=${loanType}
       - textForElectronicResources=${textForElectronicResources}

@@ -9,7 +9,6 @@ okapi_password = CHANGE ME
 tenant = CHANGE ME
 
 permELocation = serv\,remo
-permLocation = Mann
 fiscalYearCode = FY2021
 loanType = Can circulate
 textForElectronicResources = Avaialble to Snapshot Users

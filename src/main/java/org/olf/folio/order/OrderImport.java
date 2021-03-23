@@ -60,7 +60,7 @@ public class OrderImport {
 		String apiPassword = (String) getMyContext().getAttribute("okapi_password");
 		tenant = (String) getMyContext().getAttribute("tenant");
 		
-		String permLocationName = (String) getMyContext().getAttribute("permLocation");
+		//String permLocationName = (String) getMyContext().getAttribute("permLocation");
 		String permELocationName = (String) getMyContext().getAttribute("permELocation");
 		String noteTypeName = (String) getMyContext().getAttribute("noteType");
 		String materialTypeName = (String) getMyContext().getAttribute("materialType");
@@ -154,6 +154,9 @@ public class OrderImport {
 				String electronicIndicator = marcUtils.getElectronicIndicator(nineEighty);
 				if (electronicIndicator != null && electronicIndicator.equalsIgnoreCase("ELECTRONIC")) electronic = true;
 				
+				String permLocationName = marcUtils.getLocation(nineFiveTwo);
+				logger.debug("permLocationName: "+ permLocationName);
+				
 			    // GENERATE UUIDS FOR OBJECTS
 			    UUID snapshotId = UUID.randomUUID();
 			    UUID recordTableId = UUID.randomUUID();
@@ -217,10 +220,9 @@ public class OrderImport {
 					cost.put("quantityElectronic", 1);
 					cost.put("listUnitPriceElectronic", price);
 					location.put("quantityElectronic",quanityNo);
-					location.put("locationId",lookupTable.get(permELocationName + "-location"));
+					location.put("locationId", lookupTable.get(permELocationName + "-location"));
 					locations.put(location);
-				}	
-				else {
+				} else {
 					logger.trace("electronic=false");
 					JSONObject physical = new JSONObject();
 					physical.put("createInventory", "Instance, Holding, Item");
@@ -440,6 +442,7 @@ public class OrderImport {
 				//SAVE THE PO NUMBER FOR THE RESPONSE
 				responseMessage.put("PONumber", poNumberObj.get("poNumber"));
 				responseMessage.put("theOne", hrid);
+				responseMessage.put("location", permLocationName +" ("+ lookupTable.get(permELocationName + "-location") +")");
 				
 				responseMessages.put(responseMessage);
 			}
@@ -505,11 +508,13 @@ public class OrderImport {
 				String vendorItemId = marcUtils.getVendorItemId(nineEighty);
 			    String notes =  marcUtils.getNotes(nineEighty);
 
+			    String permLocationName = marcUtils.getLocation(nineFiveTwo);
 			    
 			    Map<String, String> requiredFields = new HashMap<String, String>(); 
 			    requiredFields.put("Fund code", fundCode);
 			    requiredFields.put("Vendor Code", vendorCode);
 			    requiredFields.put("Price" , price);
+			    requiredFields.put("PermLocation", permLocationName);
 			    
 			    // MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
 		        for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
@@ -750,6 +755,7 @@ public class OrderImport {
 		JSONObject orgObject = new JSONObject(orgLookupResponse);
 		//---------->VALIDATION: MAKE SURE THE ORGANIZATION CODE EXISTS
 		if (orgObject.getJSONArray("organizations").length() < 1) {
+			logger.error(orgObject.toString(3));
 			responseMessage.put("error", "Organization code in file (" + orgCode + ") does not exist in FOLIO");
 			responseMessage.put("title", title);
 			responseMessage.put("PONumber", "~error~");

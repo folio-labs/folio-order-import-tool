@@ -25,7 +25,7 @@ public class ConfigurationListener implements ServletContextListener {
 				config.setProperty("tenant", System.getenv("tenant"));
 		 
 				config.setProperty("permELocation", System.getenv("permELocation"));
-				config.setProperty("permLocation", System.getenv("permLocation"));
+				//config.setProperty("permLocation", System.getenv("permLocation"));
 				config.setProperty("fiscalYearCode", System.getenv("fiscalYearCode"));
 				config.setProperty("loanType", System.getenv("loanType"));
 				config.setProperty("textForElectronicResources", System.getenv("textForElectronicResources"));

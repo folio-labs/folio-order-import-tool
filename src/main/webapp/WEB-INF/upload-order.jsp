@@ -112,7 +112,7 @@
 										<div><p><b>Environment variables</b></p></div>
 										<div>baseOkapEndpoint: <% out.print(getServletContext().getAttribute("baseOkapEndpoint"));%></div>
 										<div>permELocation: <% out.print(getServletContext().getAttribute("permELocation"));%></div>
-										<div>permLocation: <% out.print(getServletContext().getAttribute("permLocation"));%></div>
+										<!--  <div>permLocation: <% out.print(getServletContext().getAttribute("permLocation"));%></div> -->
 										<div>fiscalYearCode: <% out.print(getServletContext().getAttribute("fiscalYearCode"));%></div>
                                         <div>materialType: <% out.print(getServletContext().getAttribute("materialType"));%></div>
 									</section>
@@ -250,6 +250,7 @@ function showname() {
 {{#each this}}
 	<br> <b>Created PO</b>: {{PONumber}}
 	<br> Title: {{title}}
+    <br> Location: {{location}}
     <br> 001: {{theOne}}
 <br>
      {{#if error}}
