@@ -26,7 +26,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * The script supports three modes of invoice imports, as configured in import.properties:
   - Never import an invoice: This is default behavior so either leave out any invoice properties or set `importInvoice = false`
   - Import an invoice if invoice data are found in the MARC: Set `importInvoice = true`  and `failIfNoInvoiceData = 'false'`
-  - Importing an invoice is mandatory: Set `impoortInvoice = true` and `failIfNoInvoiceData = true`
+  - Importing an invoice is mandatory: Set `importInvoice = true` and `failIfNoInvoiceData = true`
 * Will import one invoice and one invoice line
 
 ### If you want to try it 
