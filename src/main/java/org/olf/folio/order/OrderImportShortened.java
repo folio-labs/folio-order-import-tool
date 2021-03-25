@@ -163,6 +163,7 @@ public class OrderImportShortened {
 
 				// EXTENDED MAPPING, UC
 				String selector = nineEighty.getSubfieldsAsString("f");
+				String vendorAccount = nineEighty.getSubfieldsAsString("g");
 				String donor = nineEighty.getSubfieldsAsString("p");
 
 				// GENERATE UUIDS FOR OBJECTS
@@ -248,7 +249,7 @@ public class OrderImportShortened {
 					vendorDetail.put("instructions", "");
 					vendorDetail.put("refNumber", vendorItemId);
 					vendorDetail.put("refNumberType", "Internal vendor number");
-					vendorDetail.put("vendorAccount", "");
+					vendorDetail.put("vendorAccount", (vendorAccount == null ? "" : vendorAccount));
 					orderLine.put("vendorDetail", vendorDetail);
 				}
 				*/
@@ -262,7 +263,7 @@ public class OrderImportShortened {
 					JSONArray referenceNumbers = new JSONArray();
 					JSONObject vendorDetail = new JSONObject();
 					vendorDetail.put("instructions", "");
-					vendorDetail.put("vendorAccount", "");
+					vendorDetail.put("vendorAccount", (vendorAccount == null ? "" : vendorAccount));
 					JSONObject referenceNumber = new JSONObject();
 					referenceNumber.put("refNumber", vendorItemId);
 					referenceNumber.put("refNumberType", "Vendor internal number");
