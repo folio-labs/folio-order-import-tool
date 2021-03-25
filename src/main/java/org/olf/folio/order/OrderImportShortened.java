@@ -49,7 +49,8 @@ public class OrderImportShortened {
 	private String tenant;
 	private Boolean importInvoice;
 	private Boolean failIfNoInvoiceData;
-
+	private static final String HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE =  "88914775-f677-4759-b57b-1a33b90b24e0";
+	private static final String ITEM_NOTE_TYPE_ID_BOOKPLATE = "???";
 
 	public  JSONArray  upload(String fileName) throws IOException, InterruptedException, Exception {
 
@@ -440,7 +441,7 @@ public class OrderImportShortened {
 				//GET THE HOLDINGS RECORD FOLIO CREATED, SO WE CAN ADD URLs FROM THE 856 IN THE MARC RECORD
 				String holdingResponse = callApiGet(baseOkapEndpoint + "holdings-storage/holdings?query=(instanceId==" + instanceId + ")", token);
 				JSONObject holdingsAsJson = new JSONObject(holdingResponse);
-				JSONObject holdingRecord = holdingsAsJson.getJSONArray("holdingsRecords").getJSONObject(0);
+				JSONObject holdingsRecord = holdingsAsJson.getJSONArray("holdingsRecords").getJSONObject(0);
 
 
 				JSONArray eResources = new JSONArray();
@@ -475,12 +476,20 @@ public class OrderImportShortened {
 				String instanceUpdateResponse = callApiPut(baseOkapEndpoint + "inventory/instances/" + instanceId,  instanceAsJson,token);
 
 				//UPDATE THE HOLDINGS RECORD
-				holdingRecord.put("electronicAccess", eResources);
+				holdingsRecord.put("electronicAccess", eResources);
 				//IF THIS WAS AN ELECTRONIC RECORD, MARK THE HOLDING AS EHOLDING
 				if (electronic) {
-					holdingRecord.put("holdingsTypeId",this.lookupTable.get("Electronic"));
+					holdingsRecord.put("holdingsTypeId",this.lookupTable.get("Electronic"));
+					// UC
+					JSONObject bookplateNote = new JSONObject();
+					bookplateNote.put("holdingsNoteTypeId", HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE);
+					bookplateNote.put("note",donor);
+					bookplateNote.put("staffOnly", false);
+					JSONArray holdingsNotes = (holdingsRecord.has("notes") ? holdingsRecord.getJSONArray("notes") : new JSONArray());
+					holdingsNotes.put(bookplateNote);
+					holdingsRecord.put("notes",holdingsNotes);
 				}
-				String createHoldingsResponse = callApiPut(baseOkapEndpoint + "holdings-storage/holdings/" + holdingRecord.getString("id"), holdingRecord,token);
+				String createHoldingsResponse = callApiPut(baseOkapEndpoint + "holdings-storage/holdings/" + holdingsRecord.getString("id"), holdingsRecord,token);
 
 				if (importInvoice) {
 					createInvoice(baseOkapEndpoint, token,
