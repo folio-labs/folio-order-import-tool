@@ -858,10 +858,16 @@ public class OrderImportShortened {
 						}
 					}
 				}
-
-
+				// System control number, for UC
+				if (field.getTag().equalsIgnoreCase("035")) {
+					if (subfield.getCode() == 'a') {
+						JSONObject identifier = new JSONObject();
+						identifier.put("value", field.getSubfieldsAsString("a"));
+						identifier.put("identifierTypeId", lookupTable.get("System control number"));
+						identifiers.put(identifier);
+					}
+				}
 			}
-
 		}
 		return identifiers;
 
