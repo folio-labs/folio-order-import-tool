@@ -50,7 +50,6 @@ public class OrderImportShortened {
 	private Boolean importInvoice;
 	private Boolean failIfNoInvoiceData;
 	private static final String HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE =  "88914775-f677-4759-b57b-1a33b90b24e0";
-	private static final String ITEM_NOTE_TYPE_ID_BOOKPLATE = "???";
 
 	public  JSONArray  upload(String fileName) throws IOException, InterruptedException, Exception {
 
@@ -165,6 +164,8 @@ public class OrderImportShortened {
 				String selector = nineEighty.getSubfieldsAsString("f");
 				String vendorAccount = nineEighty.getSubfieldsAsString("g");
 				String donor = nineEighty.getSubfieldsAsString("p");
+				String refNumberType = nineEighty.getSubfieldsAsString("u");
+				String rush = nineEighty.getSubfieldsAsString("w");
 
 				// GENERATE UUIDS FOR OBJECTS
 				UUID snapshotId = UUID.randomUUID();
@@ -266,7 +267,7 @@ public class OrderImportShortened {
 					vendorDetail.put("vendorAccount", (vendorAccount == null ? "" : vendorAccount));
 					JSONObject referenceNumber = new JSONObject();
 					referenceNumber.put("refNumber", vendorItemId);
-					referenceNumber.put("refNumberType", "Vendor internal number");
+					referenceNumber.put("refNumberType", (refNumberType == null ? "Vendor internal number" : refNumberType));
 					referenceNumbers.put(referenceNumber);
 					vendorDetail.put("referenceNumbers", referenceNumbers);
 					orderLine.put("vendorDetail", vendorDetail);
@@ -298,6 +299,7 @@ public class OrderImportShortened {
 				orderLine.put("locations", locations);
 				orderLine.put("titleOrPackage",title);
 				orderLine.put("acquisitionMethod", "Purchase");
+				orderLine.put("rush", "RUSH".equalsIgnoreCase(rush));
 				JSONArray funds = new JSONArray();
 				JSONObject fundDist = new JSONObject();
 				fundDist.put("distributionType", "percentage");
