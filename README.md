@@ -50,10 +50,10 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |022 ($z $y $n)|Idenfifiers|instance.identifiers[].value /w type 'Invalid ISSN'|No| |
 |100, 700|Contributors|instance.contributors.name /w contributor name type 'Personal name" and contributor type from $4 or 'bkp'|No| |
 |245 $a ($b $c)|Instance title|instance.title, orderline.titleOrPackage|Yes|
-|856 $u |URI|instance.electronicAccess[].uri, holdingsRecord.electronicAccess[].uri|No|
-|856 $z |Link text|instance.electronicAccess[].linkText, holdingsRecord.electronicAccess[].linkText|No|Static config value textForElectronicResources (see separate table)||
-|980 $b |Fund code|orderLine.funDistribution[].fundCode and (resolved to) .fundId, | Yes| |Fund code must exist in FOLIO|
-|980 $c |Vendor item id|orderLine.vendorDetail.referenceNumbers[].refNumber, refNumberType set to "Vendor internal number", but see 980$u|No|
+|856 $u |URI|instance. electronicAccess[]. uri, holdingsRecord.electronicAccess[].uri|No|
+|856 $z |Link text|instance. electronicAccess[]. linkText, holdingsRecord.electronicAccess[].linkText|No|Static config value textForElectronicResources (see separate table)||
+|980 $b |Fund code|orderLine. funDistribution[]. fundCode and (resolved to) .fundId, | Yes| |Fund code must exist in FOLIO|
+|980 $c |Vendor item id|orderLine. vendorDetail. referenceNumbers[] .refNumber, refNumberType set to "Vendor internal number", but see 980$u|No|
 |980 $m |Price|orderLine.cost.listUnitPriceElectronic or orderLine.cost.listUnitPrice|Yes| |Format: [9999.99]|
 |980 $n |Notes|Notes of link.type "poLine", domain "orders", and note type from config|No|
 |980 $o |Object code|orderLine tag list|Yes|
@@ -65,7 +65,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |980 $f |Selector|orderLine.selector|No|
 |980 $g |Vendor account|orderLine.vendorDetail.vendorAccount|No|
 |980 $p |Donor|orderLine.donor, holdingsRecord.notes[].note /w note type 'Electronic bookplate' and staffOnly false|No|
-|980 $u |RefNumberType|orderLine.vendorDetail.referenceNumbers[].refNumberType|No|"Vendor internal number"|Allowed values:
+|980 $u |Reference number type|orderLine. vendorDetail. referenceNumbers[]. refNumberType|No|"Vendor internal number"|Allowed values:
 |980 $w |Rush indicator|orderLine.rush|No|false|Values: [RUSH], nothing|
 |INVOICES|
 |980 $h|Vendor invoice no|invoice.vendorInvoiceNo|Yes*|
@@ -79,9 +79,9 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |-------------|-------|--------|----------------|--------|-------|
 |permELocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if electronic resource|The location must exist in FOLIO|
 |permLocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if physical resource|The location must exist in FOLIO|
-|textForElectronicResources|A link text|Available to Snapshot Users|instance.electronicAccess[].linkText|
+|text For Electronic Resources|A link text|Available to Snapshot Users|instance.electronicAccess[].linkText|
 |noteType|The name of a note type for note in 980$n|General note|notes[].note.typeId (name resolved to id)|No|The note type must exist in FOLIO|
-|materialType|The name of a material type|book|orderLine.physical.materialType| |The material type must exist in FOLIO|
+|materialType|The name of a material type|book|orderLine. physical. materialType| |The material type must exist in FOLIO|
 |INVOICES|
 |paymentMethod|Payment method code|EFT|invoice.paymentMethod|Yes|One of a list of enumerated values|
 
