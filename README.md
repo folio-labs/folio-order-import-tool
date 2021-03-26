@@ -52,7 +52,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |245 $a ($b $c)|Instance title|instance.title, orderline.titleOrPackage|Yes|
 |856 $u |URI|instance. electronicAccess[]. uri, holdingsRecord.electronicAccess[].uri|No|
 |856 $z |Link text|instance. electronicAccess[]. linkText, holdingsRecord. electronicAccess[]. linkText|No|Static config value text-For-Electronic-Resources (see separate table)||
-|980 $b |Fund code|orderLine. funDistribution[]. fundCode and (resolved to) .fundId, | Yes| |Fund code must exist in FOLIO|
+|980 $b |Fund code|orderLine. fundDistribution[]. fundCode and (resolved to) .fundId, | Yes| |Fund code must exist in FOLIO|
 |980 $c |Vendor item id|orderLine. vendorDetail. referenceNumbers[] .refNumber, refNumberType set to "Vendor internal number", but see 980$u|No|
 |980 $m |Price|orderLine.cost.listUnitPriceElectronic or orderLine.cost.listUnitPrice|Yes| |Format: [9999.99]|
 |980 $n |Notes|Notes of link.type "poLine", domain "orders", and note type from config|No|
