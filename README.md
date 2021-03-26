@@ -10,7 +10,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * It does all of this using the FOLIO API
 * It uses a property file to determine location, fiscal year, loan type, note type and material type and default text for electronic resources (in case subfield z is missing)
 
-### Optional Invoice import
+#### Optional Invoice import
 * The script supports three modes of invoice imports, as configured in import.properties:
   - Never import an invoice: This is default behavior so either leave out any invoice properties or set `importInvoice = false`
   - Import an invoice if invoice data are found in the MARC: Set `importInvoice = true`  and `failIfNoInvoiceData = 'false'`
