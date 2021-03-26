@@ -75,7 +75,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 
 `*` if importing invoices
 
-#### Configured static values
+#### Static values, configured in import.properties
 |Property name|Description|Examples|Target properties|Required|Content|
 |-------------|-------|--------|----------------|--------|-------|
 |permELocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if electronic resource|The location must exist in FOLIO|
