@@ -72,6 +72,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |980 $i|Invoice date|invoice.invoiceDate|Yes*| |Format: [YYYY-MM-DD]|
 |980 $j|Sub total|invoiceLine.subTotal|No| |Format: [9999.99]|
 |980 $v|See comments for 980$v above| |
+
 `*` if importing invoices
 
 #### Configured static values
