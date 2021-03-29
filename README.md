@@ -64,6 +64,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |035 $a |Identifiers|instance.identifiers[].value /w type 'System control number'|No|
 |980 $f |Selector|orderLine.selector|No|
 |980 $g |Vendor account|orderLine.vendorDetail.vendorAccount|No|
+|980 $k |Currency|orderLine. cost. currency, invoice.currency|No|"USD"|Three letter currency code|
 |980 $p |Donor|orderLine.donor, holdingsRecord.notes[].note /w note type 'Electronic bookplate' and staffOnly false|No|
 |980 $u |Reference number type|orderLine. vendorDetail. referenceNumbers[]. refNumberType|No|"Vendor internal number"||
 |980 $w |Rush indicator|orderLine.rush|No|false|Values: [RUSH], nothing|
@@ -89,7 +90,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 #### Hard-coded values
 |Target properties|Value|
 |-----------------|-----|
-|orderLine.cost|"USD"|
+|orderLine.cost.currency|"USD" (but see 980$k)|
 |order.orderType|"One-Time"|
 |order.reEncumber|false|
 |order.approved|true|

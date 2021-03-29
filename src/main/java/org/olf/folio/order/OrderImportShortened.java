@@ -161,6 +161,7 @@ public class OrderImportShortened {
 				String currency = "USD";
 
 				// EXTENDED MAPPING, UC
+				currency = nineEighty.getSubfieldsAsString("k") == null ? currency : nineEighty.getSubfieldsAsString("k");
 				String selector = nineEighty.getSubfieldsAsString("f");
 				String vendorAccount = nineEighty.getSubfieldsAsString("g");
 				String donor = nineEighty.getSubfieldsAsString("p");
