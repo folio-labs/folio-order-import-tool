@@ -642,11 +642,8 @@ public class OrderImportShortened {
 				String projectCode = nineEighty.getSubfieldsAsString("r");
 				String fundCode = nineEighty.getSubfieldsAsString("b");
 				String vendorCode =  nineEighty.getSubfieldsAsString("v");
-				String notes =  nineEighty.getSubfieldsAsString("n");
 				//String quantity =  nineEighty.getSubfieldsAsString("q");
 				String price = nineEighty.getSubfieldsAsString("m");
-				String electronicIndicator = nineEighty.getSubfieldsAsString("z");
-				String vendorItemId = nineEighty.getSubfieldsAsString("c");
 
 				Map<String, String> requiredFields = new HashMap<String, String>();
 				requiredFields.put("Object code",objectCode);
@@ -860,7 +857,7 @@ public class OrderImportShortened {
 				}
 				// System control number, for UC
 				if (field.getTag().equalsIgnoreCase("035")) {
-					if (subfield.getCode() == 'a') {
+					if (field.getIndicator2() == '9' && subfield.getCode() == 'a') {
 						JSONObject identifier = new JSONObject();
 						identifier.put("value", field.getSubfieldsAsString("a"));
 						identifier.put("identifierTypeId", lookupTable.get("System control number"));
