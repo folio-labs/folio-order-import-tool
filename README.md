@@ -10,7 +10,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * It does all of this using the FOLIO API
 * It uses a property file to determine location, fiscal year, loan type, note type and material type and default text for electronic resources (in case subfield z is missing)
 
-### Optional Invoice import
+#### Optional Invoice import
 * The script supports three modes of invoice imports, as configured in import.properties:
   - Never import an invoice: This is default behavior so either leave out any invoice properties or set `importInvoice = false`
   - Import an invoice if invoice data are found in the MARC: Set `importInvoice = true`  and `failIfNoInvoiceData = 'false'`
@@ -52,7 +52,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |245 $a ($b $c)|Instance title|instance.title, orderline.titleOrPackage|Yes|
 |856 $u |URI|instance. electronicAccess[]. uri, holdingsRecord.electronicAccess[].uri|No|
 |856 $z |Link text|instance. electronicAccess[]. linkText, holdingsRecord. electronicAccess[]. linkText|No|Static config value text-For-Electronic-Resources (see separate table)||
-|980 $b |Fund code|orderLine. funDistribution[]. fundCode and (resolved to) .fundId, | Yes| |Fund code must exist in FOLIO|
+|980 $b |Fund code|orderLine. fundDistribution[]. fundCode and (resolved to) .fundId, | Yes| |Fund code must exist in FOLIO|
 |980 $c |Vendor item id|orderLine. vendorDetail. referenceNumbers[] .refNumber, refNumberType set to "Vendor internal number", but see 980$u|No|
 |980 $m |Price|orderLine.cost.listUnitPriceElectronic or orderLine.cost.listUnitPrice|Yes| |Format: [9999.99]|
 |980 $n |Notes|Notes of link.type "poLine", domain "orders", and note type from config|No|
@@ -72,9 +72,10 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |980 $i|Invoice date|invoice.invoiceDate|Yes*| |Format: [YYYY-MM-DD]|
 |980 $j|Sub total|invoiceLine.subTotal|No| |Format: [9999.99]|
 |980 $v|See comments for 980$v above| |
+
 `*` if importing invoices
 
-#### Configured static values
+#### Static values, configured in import.properties
 |Property name|Description|Examples|Target properties|Required|Content|
 |-------------|-------|--------|----------------|--------|-------|
 |permELocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if electronic resource|The location must exist in FOLIO|
