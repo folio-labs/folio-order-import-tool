@@ -251,7 +251,7 @@ public class OrderImportShortened {
 				}
 
 				//VENDOR REFERENCE NUMBER IF INCLUDED IN THE MARC RECORD:
-				/*
+				///* PRE-IRIS
 				if (vendorItemId != null) {
 					JSONObject vendorDetail = new JSONObject();
 					vendorDetail.put("instructions", "");
@@ -260,9 +260,9 @@ public class OrderImportShortened {
 					vendorDetail.put("vendorAccount", (vendorAccount == null ? "" : vendorAccount));
 					orderLine.put("vendorDetail", vendorDetail);
 				}
-				*/
+				//*/
 
-				//CHANGE FOR IRIS:
+				/* CHANGE FOR IRIS:
 				//VENDOR REF. NUMBER IS NOW A COLLECTION
 				//AND TYPE WAS CHANGED FROM 'Internal vendor number' to 'Vendor internal number'
 				//- REPLACE ABOVE WITH:
@@ -279,7 +279,7 @@ public class OrderImportShortened {
 					vendorDetail.put("referenceNumbers", referenceNumbers);
 					orderLine.put("vendorDetail", vendorDetail);
 				}
-
+                */
 				JSONObject tags = new JSONObject();
 				JSONArray tagList = new JSONArray();
 
@@ -653,7 +653,7 @@ public class OrderImportShortened {
 				String price = nineEighty.getSubfieldsAsString("m");
 
 				Map<String, String> requiredFields = new HashMap<String, String>();
-				requiredFields.put("Object code",objectCode);
+				//requiredFields.put("Object code",objectCode);
 				requiredFields.put("Fund code",fundCode);
 				requiredFields.put("Vendor Code",vendorCode);
 				requiredFields.put("Price" , price);
@@ -675,6 +675,7 @@ public class OrderImportShortened {
 				//STOP THE PROCESS IF AN ERRORS WERE FOUND
 				JSONObject orgValidationResult = validateOrganization(vendorCode, title, token, baseOkapEndpoint);
 				if (orgValidationResult != null) responseMessages.put(orgValidationResult);
+				/*
 				JSONObject objectValidationResult = validateObjectCode(objectCode, title, token, baseOkapEndpoint);
 				if (objectValidationResult != null) responseMessages.put(objectValidationResult);
 				//NEW FOR PROJECT CODE
@@ -683,6 +684,8 @@ public class OrderImportShortened {
 					JSONObject projectValidationResult = validateObjectCode(projectCode, title, token, baseOkapEndpoint);
 					if (projectValidationResult != null) responseMessages.put(projectValidationResult);
 				}
+				*/
+
 				//END NEW
 				JSONObject fundValidationResult = validateFund(fundCode, title, token, baseOkapEndpoint, price);
 				if (fundValidationResult != null) responseMessages.put(fundValidationResult);
@@ -1035,15 +1038,26 @@ public class OrderImportShortened {
 	//USE IMPROVEMENT
 	public JSONObject validateFund(String fundCode, String title, String token, String baseOkapiEndpoint, String price ) throws IOException, InterruptedException, Exception {
 
-		//GET CURRENT FISCAL YEAR
-		String fiscalYearCode =  (String) getMyContext().getAttribute("fiscalYearCode");
-		String fundEndpoint = baseOkapiEndpoint + "finance/funds?limit=30&offset=0&query=((code='" + fundCode + "'))";
-
 		JSONObject responseMessage = new JSONObject();
 
+		//GET CURRENT FISCAL YEAR
+		String fiscalYearCode =  (String) getMyContext().getAttribute("fiscalYearCode");
+		String fiscalYearsEndpoint = baseOkapiEndpoint + "finance/fiscal-years?query=(code='"  + fiscalYearCode + "')";
+		String fiscalYearResponse = callApiGet(fiscalYearsEndpoint,token);
+		JSONObject fiscalYearsObject = new JSONObject(fiscalYearResponse);
+		//----------->VALIDATION #1: MAKE SURE THE FISCAL YEAR CODE EXISTS
+		if (fiscalYearsObject.getJSONArray("fiscalYears").length() < 1) {
+			responseMessage.put("error", "Fiscal year code in file (" + fiscalYearCode + ") does not exist in FOLIO");
+			responseMessage.put("PONumber", "~error~");
+			return responseMessage;
+		}
+		String fiscalYearId = (String) new JSONObject(fiscalYearResponse).getJSONArray("fiscalYears").getJSONObject(0).get("id");
+
+		// GET FUND
+		String fundEndpoint = baseOkapiEndpoint + "finance/funds?limit=30&offset=0&query=((code='" + fundCode + "'))";
 		String fundResponse = callApiGet(fundEndpoint, token);
 		JSONObject fundsObject = new JSONObject(fundResponse);
-		//----------->VALIDATION #1: MAKE SURE THE FUND CODE EXISTS
+		//----------->VALIDATION #2: MAKE SURE THE FUND CODE EXISTS
 		if (fundsObject.getJSONArray("funds").length() < 1) {
 			responseMessage.put("error", "Fund code in file (" + fundCode + ") does not exist in FOLIO");
 			responseMessage.put("PONumber", "~error~");
@@ -1052,12 +1066,12 @@ public class OrderImportShortened {
 		String fundId = (String) fundsObject.getJSONArray("funds").getJSONObject(0).get("id");
 		logger.info("FUNDS: " + fundsObject.get("funds"));
 
-		//----------->VALIDATION #2: MAKE SURE THE FUND CODE FOR THE CURRENT FISCAL HAS ENOUGH MONEY
-		String fundBalanceQuery = baseOkapiEndpoint + "finance/budgets?query=(name=="  + fundCode + "-" + fiscalYearCode + ")";
+		//----------->VALIDATION #3: MAKE SURE THE FUND CODE EXISTS FOR THE CURRENT FISCAL YEAR
+		String fundBalanceQuery = baseOkapiEndpoint + "finance/budgets?query=(fundId==" + "%22" + fundId + "%22" + "+and+" + "fiscalYearId==" + "%22" + fiscalYearId + "%22)";
 		String fundBalanceResponse = callApiGet(fundBalanceQuery, token);
 		JSONObject fundBalanceObject = new JSONObject(fundBalanceResponse);
 		if (fundBalanceObject.getJSONArray("budgets").length() < 1) {
-			responseMessage.put("error", "Fund code in file (" + fundCode + ") does not have a budget");
+			responseMessage.put("error", "Fund code in file (" + fundCode + ") does not have a budget for fiscal year code in file (" + fiscalYearCode +")");
 			responseMessage.put("title", title);
 			responseMessage.put("PONumber", "~error~");
 			return responseMessage;
