@@ -66,6 +66,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |980 $g |Vendor account|orderLine.vendorDetail.vendorAccount|No|
 |980 $k |Currency|orderLine. cost. currency, invoice.currency|No|"USD"|Three letter currency code|
 |980 $p |Donor|orderLine.donor, holdingsRecord.notes[].note /w note type 'Electronic bookplate' and staffOnly false|No|
+|980 $t (for now) |Acquisition method|orderLine.acquisitionMethod|No|"Purchase"|One of nine allowed strings|
 |980 $u |Reference number type|orderLine. vendorDetail. referenceNumbers[]. refNumberType|No|"Vendor internal number"||
 |980 $w |Rush indicator|orderLine.rush|No|false|Values: [RUSH] or nothing|
 |INVOICES|
@@ -90,7 +91,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 #### Hard-coded values
 |Target properties|Value|
 |-----------------|-----|
-|orderLine.cost.currency|"USD" (but see 980$k)|
+|orderLine.cost.currency|"USD" (but see 980$k for UC)|
 |order.orderType|"One-Time"|
 |order.reEncumber|false|
 |order.approved|true|
@@ -98,6 +99,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |orderLine.source|"User"|
 |orderLine.receiptStatus|"Receipt Not Required" if 980$z = ELECTRONIC|
 |orderLine.fundDistribution.funds[].fundDist.distributionType|"percentage"|
+|orderLine.acquisitionMethod|"Purchase" (but see 980$t for UC)|
 |orderLine.fundDistribution.funds[].fundDist.value|100|
 |instance.source|"MARC"|
 |instance.instanceTypeId|UUID for 'text'|

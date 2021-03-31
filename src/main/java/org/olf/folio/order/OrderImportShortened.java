@@ -159,9 +159,11 @@ public class OrderImportShortened {
 				String vendorItemId = nineEighty.getSubfieldsAsString("c");
 				if (electronicIndicator != null && electronicIndicator.equalsIgnoreCase("ELECTRONIC")) electronic = true;
 				String currency = "USD";
+				String acquisitionMethod = "Purchase";
 
 				// EXTENDED MAPPING, UC
 				currency = nineEighty.getSubfieldsAsString("k") == null ? currency : nineEighty.getSubfieldsAsString("k");
+				acquisitionMethod = nineEighty.getSubfieldsAsString("t") == null ? acquisitionMethod : nineEighty.getSubfieldsAsString("t");
 				String selector = nineEighty.getSubfieldsAsString("f");
 				String vendorAccount = nineEighty.getSubfieldsAsString("g");
 				String donor = nineEighty.getSubfieldsAsString("p");
@@ -300,7 +302,7 @@ public class OrderImportShortened {
 				orderLine.put("cost", cost);
 				orderLine.put("locations", locations);
 				orderLine.put("titleOrPackage",title);
-				orderLine.put("acquisitionMethod", "Purchase");
+				orderLine.put("acquisitionMethod", acquisitionMethod);
 				orderLine.put("rush", "RUSH".equalsIgnoreCase(rush)); // UC extension
 				JSONArray funds = new JSONArray();
 				JSONObject fundDist = new JSONObject();
