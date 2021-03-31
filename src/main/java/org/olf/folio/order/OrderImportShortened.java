@@ -219,6 +219,7 @@ public class OrderImportShortened {
 				JSONArray poLines = new JSONArray();
 				if (electronic) {
 					orderLine.put("orderFormat", "Electronic Resource");
+					orderLine.put("receiptStatus", "Receipt Not Required"); // UC extension
 					JSONObject eResource = new JSONObject();
 					eResource.put("activated", false);
 					eResource.put("createInventory", "Instance, Holding");
@@ -300,7 +301,7 @@ public class OrderImportShortened {
 				orderLine.put("locations", locations);
 				orderLine.put("titleOrPackage",title);
 				orderLine.put("acquisitionMethod", "Purchase");
-				orderLine.put("rush", "RUSH".equalsIgnoreCase(rush));
+				orderLine.put("rush", "RUSH".equalsIgnoreCase(rush)); // UC extension
 				JSONArray funds = new JSONArray();
 				JSONObject fundDist = new JSONObject();
 				fundDist.put("distributionType", "percentage");
