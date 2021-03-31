@@ -80,13 +80,16 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 #### Static values, configured in import.properties
 |Property name|Description|Examples|Target properties|Required|Content|
 |-------------|-------|--------|----------------|--------|-------|
-|permELocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if electronic resource|The location must exist in FOLIO|
-|permLocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if physical resource|The location must exist in FOLIO|
+|permLocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if physical resource and not uploading invoice|The location must exist in FOLIO|
+|permELocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if electronic resource and not uploading invoice|The location must exist in FOLIO|
 |text For Electronic Resources|A link text|Available to Snapshot Users|instance. electronicAccess[]. linkText|
 |noteType|The name of a note type for note in 980$n|General note|notes[].note.typeId (name resolved to id)|No|The note type must exist in FOLIO|
 |materialType|The name of a material type|book|orderLine. physical. materialType| |The material type must exist in FOLIO|
 |INVOICES|
 |paymentMethod|Payment method code|EFT|invoice.paymentMethod|Yes|One of a list of enumerated values|
+|permLocationWithInvoiceImport|The name of a FOLIO location|Annex|orderLine.locations[].id (name resolved ot id|Yes, if physical resource and uploading invoice|The location must exist in FOLIO|
+|permELocationWithInvoiceImport|The name of a FOLIO location|Online|orderLine.locations[].id (name resolved ot id|Yes, if electronic resource and uploading invoice|The location must exist in FOLIO|
+
 
 #### Hard-coded values
 |Target properties|Value|

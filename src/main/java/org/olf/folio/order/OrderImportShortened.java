@@ -65,8 +65,11 @@ public class OrderImportShortened {
 		String noteTypeName = (String) getMyContext().getAttribute("noteType");
 		String materialTypeName = (String) getMyContext().getAttribute("materialType");
 		//String fiscalYearCode =  (String) getMyContext().getAttribute("fiscalYearCode");
+		// UC extensions to import.properties
 		importInvoice = "true".equalsIgnoreCase((String) getMyContext().getAttribute("importInvoice"));
 		failIfNoInvoiceData =  "true".equalsIgnoreCase((String) getMyContext().getAttribute("failIfNoInvoiceData"));
+		permLocationName = (String) (importInvoice ? getMyContext().getAttribute("permLocationWithInvoiceImport") : permLocationName);
+		permELocationName = (String) (importInvoice ? getMyContext().getAttribute("permELocationWithInvoiceImport") : permELocationName);
 
 		//GET THE FOLIO TOKEN
 		JSONObject jsonObject = new JSONObject();
