@@ -59,7 +59,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |980 $o |Object code|orderLine tag list|Yes|
 |980 $r |Project code|orderLine tag list|No|
 |980 $v |Vendor code|order.vendor.vendorId (code resolved to id)|Yes| |Vendor code must exist in FOLIO|
-|980 $z |Electronic indicator|orderLine.orderFormat ("Electronic Resource" or "Physical Resource")|No|"Physical resource"|Values: [ELECTRONIC], arbitrary text, nothing|
+|980 $z |Electronic indicator|orderLine.orderFormat ("Electronic Resource" or "Physical Resource")|No|"Physical resource"|Values: [ELECTRONIC] or arbitrary text or nothing|
 |UCHICAGO|
 |035 $a |Identifiers|instance.identifiers[].value /w type 'System control number'|No|
 |980 $f |Selector|orderLine.selector|No|
@@ -67,7 +67,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |980 $k |Currency|orderLine. cost. currency, invoice.currency|No|"USD"|Three letter currency code|
 |980 $p |Donor|orderLine.donor, holdingsRecord.notes[].note /w note type 'Electronic bookplate' and staffOnly false|No|
 |980 $u |Reference number type|orderLine. vendorDetail. referenceNumbers[]. refNumberType|No|"Vendor internal number"||
-|980 $w |Rush indicator|orderLine.rush|No|false|Values: [RUSH], nothing|
+|980 $w |Rush indicator|orderLine.rush|No|false|Values: [RUSH] or nothing|
 |INVOICES|
 |980 $h|Vendor invoice no|invoice.vendorInvoiceNo|Yes*|
 |980 $i|Invoice date|invoice.invoiceDate|Yes*| |Format: [YYYY-MM-DD]|
@@ -96,7 +96,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |order.approved|true|
 |order.workflowStatus|"Open"|
 |orderLine.source|"User"|
-|orderLine.acquisitionMethod|"Purchase"|
+|orderLine.receiptStatus|"Receipt Not Required" if 980$z = ELECTRONIC|
 |orderLine.fundDistribution.funds[].fundDist.distributionType|"percentage"|
 |orderLine.fundDistribution.funds[].fundDist.value|100|
 |instance.source|"MARC"|
