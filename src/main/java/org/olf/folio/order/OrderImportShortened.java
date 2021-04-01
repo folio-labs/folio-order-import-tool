@@ -175,6 +175,7 @@ public class OrderImportShortened {
 				String refNumberType = nineEighty.getSubfieldsAsString("u");
 				String rush = nineEighty.getSubfieldsAsString("w");
 				String userLimit = getFirst856(record) != null ? getFirst856(record).getSubfieldsAsString("x") : null;
+				String billTo = nineEighty.getSubfieldsAsString("s");
 
 				// GENERATE UUIDS FOR OBJECTS
 				UUID snapshotId = UUID.randomUUID();
@@ -217,6 +218,10 @@ public class OrderImportShortened {
 				order.put("id", orderUUID.toString());
 				order.put("approved", true);
 				order.put("workflowStatus","Open");
+
+				// UC extension
+				String addressId = (billTo != null ? findAddressId(baseOkapEndpoint, token, billTo) : null);
+				if (addressId != null) order.put("billTo", addressId);
 
 				// POST ORDER LINE
 				//FOLIO WILL CREATE THE INSTANCE, HOLDINGS, ITEM (IF PHYSICAL ITEM)
@@ -537,6 +542,22 @@ public class OrderImportShortened {
 		} else {
 			return null;
 		}
+	}
+
+	private String findAddressId (String baseOkapiEndpoint, String token, String name) throws Exception {
+		String configsEndpoint = baseOkapiEndpoint + "/configurations/entries?limit=1000&query=%28module%3DTENANT%20and%20configName%3Dtenant.addresses%29";
+		String configsResponse = callApiGet(configsEndpoint,  token);
+		JSONObject configsObject = new JSONObject(configsResponse);
+		if (configsObject.has("configs")) {
+			JSONArray addresses = configsObject.getJSONArray("configs");
+			for (int i=0; i<addresses.length(); i++) {
+				JSONObject address = addresses.getJSONObject(i);
+				if (new JSONObject(address.getString("value")).getString("name").equals(name)) {
+					return address.getString("id");
+				}
+			}
+		}
+		return null;
 	}
 
 	private void createInvoice(String baseOkapiEndPoint,
@@ -1141,5 +1162,17 @@ public class OrderImportShortened {
 		return null;
 	}
 
+	// UC extension, for potentially validating name of billTo address (980$s)
+	public JSONObject validateAddress (String name, String title, String token, String baseOkapiEndpoint) throws Exception {
+		JSONObject responseMessage = new JSONObject();
+		String address = findAddressId(baseOkapiEndpoint, token, name);
+		if (address == null) {
+			responseMessage.put("error", "Address with the (" + name + ") does not exist in FOLIO");
+			responseMessage.put("title", title);
+			responseMessage.put("PONumber", "~error~");
+			return responseMessage;
+		}
+		return null;
+	}
 
 }
