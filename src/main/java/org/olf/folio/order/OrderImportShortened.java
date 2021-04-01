@@ -224,10 +224,13 @@ public class OrderImportShortened {
 				// UC - LOOK UP EXPENSE CLASS
 				String expenseClassId = null;
 				if (expenseClassCode != null && !expenseClassCode.isEmpty()) {
-					String expenseClassEndpoint = baseOkapEndpoint + "finance/expense-classes?limit=30&query((code='" + expenseClassCode + "'))";
+					String expenseClassEndpoint = baseOkapEndpoint + "finance/expense-classes?limit=30&query=code='" + expenseClassCode + "'";
 					String expenseClassResponse = callApiGet(expenseClassEndpoint, token);
 					JSONObject expenseClassesObject = new JSONObject(expenseClassResponse);
-					expenseClassId = (String) expenseClassesObject.getJSONArray("expenseClasses").getJSONObject(0).get("id");
+					JSONArray expenseClasses = expenseClassesObject.getJSONArray("expenseClasses");
+					if (expenseClasses != null && !expenseClasses.isEmpty()) {
+						expenseClassId = (String) expenseClasses.getJSONObject(0).get("id");
+					}
 				}
 
 				//GET THE NEXT PO NUMBER
