@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.servlet.ServletContext;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.marc4j.MarcJsonWriter;
@@ -65,6 +66,7 @@ public class OrderImportShortened {
 		String noteTypeName = (String) getMyContext().getAttribute("noteType");
 		String materialTypeName = (String) getMyContext().getAttribute("materialType");
 		//String fiscalYearCode =  (String) getMyContext().getAttribute("fiscalYearCode");
+
 		// UC extensions to import.properties
 		importInvoice = "true".equalsIgnoreCase((String) getMyContext().getAttribute("importInvoice"));
 		failIfNoInvoiceData =  "true".equalsIgnoreCase((String) getMyContext().getAttribute("failIfNoInvoiceData"));
@@ -172,6 +174,7 @@ public class OrderImportShortened {
 				String donor = nineEighty.getSubfieldsAsString("p");
 				String refNumberType = nineEighty.getSubfieldsAsString("u");
 				String rush = nineEighty.getSubfieldsAsString("w");
+				String userLimit = getFirst856(record) != null ? getFirst856(record).getSubfieldsAsString("x") : null;
 
 				// GENERATE UUIDS FOR OBJECTS
 				UUID snapshotId = UUID.randomUUID();
@@ -228,6 +231,7 @@ public class OrderImportShortened {
 					JSONObject eResource = new JSONObject();
 					eResource.put("activated", false);
 					eResource.put("createInventory", "Instance, Holding");
+					if (userLimit != null) 	eResource.put("userLimit", userLimit); // UC extension
 					eResource.put("trial", false);
 					eResource.put("accessProvider", vendorId);
 					orderLine.put("eresource",eResource);
@@ -526,6 +530,14 @@ public class OrderImportShortened {
 
 	}
 
+	private DataField getFirst856 (Record record) {
+		List fields =  record.getVariableFields("856");
+		if (fields != null && !fields.isEmpty()) {
+			return (DataField) fields.get(0);
+		} else {
+			return null;
+		}
+	}
 
 	private void createInvoice(String baseOkapiEndPoint,
 							   String token,
