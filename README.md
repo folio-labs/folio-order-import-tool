@@ -41,7 +41,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * To effectuate changes of import properties, restart the service
 
 ### Mappings
-|MARC fields|Description|Target properties|Req.|Default|Content (incoming)|
+|MARC fields|Description|Target properties|Required|Default|Content (incoming)|
 |-----------|-----------|-----------------|--------|-------|--------|
 |020 $a ($c $q)|Identifiers|instance.identifiers[].value /w type 'ISBN'|No| |
 |020 $z ($c $q)|Identifiers|instance.identifiers[].value /w type 'Invalid ISBN'|No| |
@@ -56,7 +56,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |980 $c |Vendor item id|orderLine. vendorDetail. referenceNumbers[] .refNumber, refNumberType set to "Vendor internal number", but see 980$u|No|
 |980 $m |Price|orderLine.cost.listUnitPriceElectronic or orderLine.cost.listUnitPrice|Yes| |Format: [9999.99]|
 |980 $n |Notes|Notes of link.type "poLine", domain "orders", and note type from config|No|
-|980 $o |Object code|orderLine tag list|Yes|
+|980 $o |Object code|orderLine tag list|Yes - unless optional config property objectCodeRequired is set to false|
 |980 $r |Project code|orderLine tag list|No|
 |980 $v |Vendor code|order.vendor.vendorId (code resolved to id)|Yes| |Vendor code must exist in FOLIO|
 |980 $z |Electronic indicator|orderLine.orderFormat ("Electronic Resource" or "Physical Resource")|No|"Physical resource"|Values: [ELECTRONIC] or arbitrary text or nothing|

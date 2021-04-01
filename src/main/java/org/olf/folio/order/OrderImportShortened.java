@@ -50,6 +50,7 @@ public class OrderImportShortened {
 	private String tenant;
 	private Boolean importInvoice;
 	private Boolean failIfNoInvoiceData;
+	private Boolean objectCodeRequired = true;
 	private static final String HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE =  "88914775-f677-4759-b57b-1a33b90b24e0";
 
 	public  JSONArray  upload(String fileName) throws IOException, InterruptedException, Exception {
@@ -68,6 +69,8 @@ public class OrderImportShortened {
 		//String fiscalYearCode =  (String) getMyContext().getAttribute("fiscalYearCode");
 
 		// UC extensions to import.properties
+		// objectCode is required unless objectCodeRequired is explicitly set to false in import.properties
+		objectCodeRequired = ! ("false".equalsIgnoreCase((String) getMyContext().getAttribute("objectCodeRequired")));
 		importInvoice = "true".equalsIgnoreCase((String) getMyContext().getAttribute("importInvoice"));
 		failIfNoInvoiceData =  "true".equalsIgnoreCase((String) getMyContext().getAttribute("failIfNoInvoiceData"));
 		permLocationName = (String) (importInvoice ? getMyContext().getAttribute("permLocationWithInvoiceImport") : permLocationName);
@@ -686,14 +689,14 @@ public class OrderImportShortened {
 				String price = nineEighty.getSubfieldsAsString("m");
 
 				Map<String, String> requiredFields = new HashMap<String, String>();
-				//requiredFields.put("Object code",objectCode);
+				if (objectCodeRequired)  requiredFields.put("Object code",objectCode);
 				requiredFields.put("Fund code",fundCode);
 				requiredFields.put("Vendor Code",vendorCode);
 				requiredFields.put("Price" , price);
 
 				// MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
 				for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
-					if (entry.getValue()==null) {
+					if (entry.getValue()==null || entry.getValue().isEmpty()) {
 						JSONObject responseMessage = new JSONObject();
 						responseMessage.put("title", title);
 						responseMessage.put("error", entry.getKey() + " Missing");
@@ -708,16 +711,17 @@ public class OrderImportShortened {
 				//STOP THE PROCESS IF AN ERRORS WERE FOUND
 				JSONObject orgValidationResult = validateOrganization(vendorCode, title, token, baseOkapEndpoint);
 				if (orgValidationResult != null) responseMessages.put(orgValidationResult);
-				/*
-				JSONObject objectValidationResult = validateObjectCode(objectCode, title, token, baseOkapEndpoint);
-				if (objectValidationResult != null) responseMessages.put(objectValidationResult);
+
+				if (objectCode != null && !objectCode.isEmpty()) {
+					JSONObject objectValidationResult = validateObjectCode(objectCode, title, token, baseOkapEndpoint);
+					if (objectValidationResult != null) responseMessages.put(objectValidationResult);
+				}
 				//NEW FOR PROJECT CODE
 				//PROJECT CODE IS NOT REQUIRED - BUT IF IT IS THERE, MAKE SURE IT'S A VALID CODE
 				if (projectCode != null && !projectCode.isEmpty()) {
 					JSONObject projectValidationResult = validateObjectCode(projectCode, title, token, baseOkapEndpoint);
 					if (projectValidationResult != null) responseMessages.put(projectValidationResult);
 				}
-				*/
 
 				//END NEW
 				JSONObject fundValidationResult = validateFund(fundCode, title, token, baseOkapEndpoint, price);
