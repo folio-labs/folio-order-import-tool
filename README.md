@@ -63,6 +63,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |UCHICAGO|
 |035 $a |Identifiers|instance.identifiers[].value /w type 'System control number'|No|
 |856 (first occurrence) $x|User limit|orderLine.eResource.userLimit if ELECTRONIC|No| |Integer|
+|856 (first occurrence) $y|Access provider code|orderLine.eresource.accessProvider if ELECTRONIC|No|Vendor code (if 856$y is not present or the code does not resolve to an existing organization)| |
 |980 $f |Selector|orderLine.selector|No|
 |980 $g |Vendor account|orderLine.vendorDetail.vendorAccount|No|
 |980 $k |Currency|orderLine. cost. currency, invoice.currency|No|"USD"|Three letter currency code|

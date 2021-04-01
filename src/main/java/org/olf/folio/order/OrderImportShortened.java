@@ -177,7 +177,10 @@ public class OrderImportShortened {
 				String donor = nineEighty.getSubfieldsAsString("p");
 				String refNumberType = nineEighty.getSubfieldsAsString("u");
 				String rush = nineEighty.getSubfieldsAsString("w");
-				String userLimit = getFirst856(record) != null ? getFirst856(record).getSubfieldsAsString("x") : null;
+				DataField first856 = getFirst856(record);
+				String userLimit = first856 != null ? first856.getSubfieldsAsString("x") : null;
+				String accessProviderCode = first856 != null ? first856.getSubfieldsAsString("y") : null;
+				accessProviderCode = (accessProviderCode == null || accessProviderCode.isEmpty() ? vendorCode : accessProviderCode);
 				String billTo = nineEighty.getSubfieldsAsString("s");
 
 				// GENERATE UUIDS FOR OBJECTS
@@ -206,6 +209,17 @@ public class OrderImportShortened {
 				String fundResponse = callApiGet(fundEndpoint, token);
 				JSONObject fundsObject = new JSONObject(fundResponse);
 				String fundId = (String) fundsObject.getJSONArray("funds").getJSONObject(0).get("id");
+
+				// UC - LOOK UP ACCESS PROVIDER, FALL BACK to VENDOR
+				organizationEndpoint = baseOkapEndpoint + "organizations-storage/organizations?limit=30&offset=0&query=((code='" + accessProviderCode + "'))";
+				orgLookupResponse = callApiGet(organizationEndpoint,  token);
+				orgObject = new JSONObject(orgLookupResponse);
+				String accessProviderId;
+				if (orgObject.getJSONArray("organizations") != null && !orgObject.getJSONArray("organizations").isEmpty()) {
+					accessProviderId = (String) orgObject.getJSONArray("organizations").getJSONObject(0).get("id");
+				} else {
+					accessProviderId = vendorId;
+				}
 
 				//GET THE NEXT PO NUMBER
 				String poNumber = callApiGet(baseOkapEndpoint + "orders/po-number", token);
@@ -241,7 +255,7 @@ public class OrderImportShortened {
 					eResource.put("createInventory", "Instance, Holding");
 					if (userLimit != null) 	eResource.put("userLimit", userLimit); // UC extension
 					eResource.put("trial", false);
-					eResource.put("accessProvider", vendorId);
+					eResource.put("accessProvider", accessProviderId);
 					orderLine.put("eresource",eResource);
 					cost.put("quantityElectronic", 1);
 					cost.put("listUnitPriceElectronic", price);
