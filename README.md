@@ -72,6 +72,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |980 $t (for now) |Acquisition method|orderLine.acquisitionMethod|No|"Purchase"|One of nine allowed strings|
 |980 $u |Reference number type|orderLine. vendorDetail. referenceNumbers[]. refNumberType|No|"Vendor internal number"||
 |980 $w |Rush indicator|orderLine.rush|No|false|Values: [RUSH] or nothing|
+|980 $y |Expense class|orderLine. fundDistribution. expenseClass|No| |Code of an existing expense class in FOLIO|
 |INVOICES|
 |980 $h|Vendor invoice no|invoice.vendorInvoiceNo|Yes*|
 |980 $i|Invoice date|invoice.invoiceDate|Yes*| |Format: [YYYY-MM-DD]|

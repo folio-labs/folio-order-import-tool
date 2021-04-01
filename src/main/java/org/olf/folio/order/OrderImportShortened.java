@@ -177,6 +177,7 @@ public class OrderImportShortened {
 				String donor = nineEighty.getSubfieldsAsString("p");
 				String refNumberType = nineEighty.getSubfieldsAsString("u");
 				String rush = nineEighty.getSubfieldsAsString("w");
+				String expenseClassCode = nineEighty.getSubfieldsAsString("y");
 				DataField first856 = getFirst856(record);
 				String userLimit = first856 != null ? first856.getSubfieldsAsString("x") : null;
 				String accessProviderCode = first856 != null ? first856.getSubfieldsAsString("y") : null;
@@ -219,6 +220,14 @@ public class OrderImportShortened {
 					accessProviderId = (String) orgObject.getJSONArray("organizations").getJSONObject(0).get("id");
 				} else {
 					accessProviderId = vendorId;
+				}
+				// UC - LOOK UP EXPENSE CLASS
+				String expenseClassId = null;
+				if (expenseClassCode != null && !expenseClassCode.isEmpty()) {
+					String expenseClassEndpoint = baseOkapEndpoint + "finance/expense-classes?limit=30&query((code='" + expenseClassCode + "'))";
+					String expenseClassResponse = callApiGet(expenseClassEndpoint, token);
+					JSONObject expenseClassesObject = new JSONObject(expenseClassResponse);
+					expenseClassId = (String) expenseClassesObject.getJSONArray("expenseClasses").getJSONObject(0).get("id");
 				}
 
 				//GET THE NEXT PO NUMBER
@@ -339,6 +348,7 @@ public class OrderImportShortened {
 				fundDist.put("value", 100);
 				fundDist.put("fundId", fundId);
 				fundDist.put("code", fundCode);
+				if (expenseClassId != null) fundDist.put("expenseClassId", expenseClassId);
 				funds.put(fundDist);
 				orderLine.put("fundDistribution", funds);
 				orderLine.put("purchaseOrderId", orderUUID.toString());
