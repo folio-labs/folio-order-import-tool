@@ -54,7 +54,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |856 $z |Link text|instance. electronicAccess[]. linkText, holdingsRecord. electronicAccess[]. linkText|No|Static config value text-For-Electronic-Resources (see separate table)||
 |980 $b |Fund code|orderLine. fundDistribution[]. fundCode and (resolved to) .fundId, | Yes| |Fund code must exist in FOLIO|
 |980 $c |Vendor item id|orderLine. vendorDetail. referenceNumbers[] .refNumber, refNumberType set to "Vendor internal number", but see 980$u|No|
-|980 $m |Price|orderLine.cost.listUnitPriceElectronic or orderLine.cost.listUnitPrice|Yes| |Format: [9999.99]|
+|980 $m |Price|orderLine. cost. listUnitPriceElectronic or orderLine. cost. listUnitPrice|Yes| |Format: [9999.99]|
 |980 $n |Notes|Notes of link.type "poLine", domain "orders", and note type from config|No|
 |980 $o |Object code|orderLine tag list|Yes - unless optional config property object-Code-Required is set to false|
 |980 $r |Project code|orderLine tag list|No|
@@ -63,9 +63,9 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |UCHICAGO|
 |035 $a |Identifiers|instance.identifiers[].value /w type 'System control number'|No|
 |856 (first occurrence) $x|User limit|orderLine.eResource.userLimit if ELECTRONIC|No| |Integer|
-|856 (first occurrence) $y|Access provider code|orderLine.eresource.accessProvider if ELECTRONIC|No|Vendor code (if 856$y is not present or the code does not resolve to an existing org.)| |
+|856 (first occurrence) $y|Access provider code|orderLine. eresource. accessProvider if ELECTRONIC|No|Vendor code (if 856$y is not present or the code does not resolve to an existing org.)| |
 |980 $f |Selector|orderLine.selector|No|
-|980 $g |Vendor account|orderLine.vendorDetail.vendorAccount|No|
+|980 $g |Vendor account|orderLine. vendorDetail. vendorAccount|No|
 |980 $k |Currency|orderLine. cost. currency, invoice.currency|No|"USD"|Three letter currency code|
 |980 $p |Donor|orderLine.donor, holdingsRecord.notes[].note /w note type 'Electronic bookplate' and staffOnly false|No|
 |980 $s |Bill to|order.billTo|No| |Name of existing address in FOLIO|
