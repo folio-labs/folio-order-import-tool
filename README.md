@@ -67,7 +67,7 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 |980 $f |Selector|orderLine.selector|No|
 |980 $g |Vendor account|orderLine. vendorDetail. vendorAccount|No|
 |980 $k |Currency|orderLine. cost. currency, invoice.currency|No|"USD"|Three letter currency code|
-|980 $p |Donor|orderLine.donor, holdingsRecord.notes[].note /w note type 'Electronic bookplate' and staffOnly false|No|
+|980 $p |Donor|orderLine.donor, Electronic: holdingsRecord.notes[].note /w note type 'Electronic bookplate' and staffOnly false. Physical: item.notes[].note /w note type 'Electronic bookplate' and staffOnly false|No|
 |980 $s |Bill to|order.billTo|No| |Name of existing address in FOLIO|
 |980 $t (for now) |Acquisition method|orderLine.acquisitionMethod|No|"Purchase"|One of nine allowed strings|
 |980 $u |Reference number type|orderLine. vendorDetail. referenceNumbers[]. refNumberType|No|"Vendor internal number"||

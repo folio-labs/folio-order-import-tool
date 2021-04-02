@@ -52,6 +52,7 @@ public class OrderImportShortened {
 	private Boolean failIfNoInvoiceData;
 	private Boolean objectCodeRequired = true;
 	private static final String HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE =  "88914775-f677-4759-b57b-1a33b90b24e0";
+	private static final String ITEM_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE = "f3ae3823-d096-4c65-8734-0c1efd2ffea8";
 
 	public  JSONArray  upload(String fileName) throws IOException, InterruptedException, Exception {
 
@@ -529,16 +530,36 @@ public class OrderImportShortened {
 				//IF THIS WAS AN ELECTRONIC RECORD, MARK THE HOLDING AS EHOLDING
 				if (electronic) {
 					holdingsRecord.put("holdingsTypeId",this.lookupTable.get("Electronic"));
+
 					// UC
-					JSONObject bookplateNote = new JSONObject();
-					bookplateNote.put("holdingsNoteTypeId", HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE);
-					bookplateNote.put("note",donor);
-					bookplateNote.put("staffOnly", false);
-					JSONArray holdingsNotes = (holdingsRecord.has("notes") ? holdingsRecord.getJSONArray("notes") : new JSONArray());
-					holdingsNotes.put(bookplateNote);
-					holdingsRecord.put("notes",holdingsNotes);
+					if (donor != null) {
+						JSONObject bookplateNote = new JSONObject();
+						bookplateNote.put("holdingsNoteTypeId", HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE);
+						bookplateNote.put("note", donor);
+						bookplateNote.put("staffOnly", false);
+						JSONArray holdingsNotes = (holdingsRecord.has("notes") ? holdingsRecord.getJSONArray("notes") : new JSONArray());
+						holdingsNotes.put(bookplateNote);
+						holdingsRecord.put("notes", holdingsNotes);
+					}
 				}
 				String createHoldingsResponse = callApiPut(baseOkapEndpoint + "holdings-storage/holdings/" + holdingsRecord.getString("id"), holdingsRecord,token);
+
+				// UC
+				if (!electronic && donor != null) {
+					//IF PHYSICAL RESOURCE WITH DONOR INFO, GET THE ITEM FOLIO CREATED, SO WE CAN ADD NOTE ABOUT DONOR
+					String itemsResponse = callApiGet(baseOkapEndpoint + "inventory/items?query=(holdingsRecordId==" + holdingsRecord.get("id") + ")", token);
+					JSONObject itemsAsJson = new JSONObject(itemsResponse);
+					JSONObject item = itemsAsJson.getJSONArray("items").getJSONObject(0);
+					JSONObject bookplateNote = new JSONObject();
+					bookplateNote.put("itemNoteTypeId", ITEM_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE);
+					bookplateNote.put("note", donor);
+					bookplateNote.put("staffOnly", false);
+					JSONArray itemNotes = (item.has("notes") ? item.getJSONArray("notes") : new JSONArray());
+					itemNotes.put(bookplateNote);
+					item.put("notes", itemNotes);
+					//UPDATE THE ITEM
+					callApiPut(baseOkapEndpoint + "inventory/items/" + item.getString("id"), item, token);
+				}
 
 				if (importInvoice) {
 					createInvoice(baseOkapEndpoint, token,
