@@ -42,13 +42,14 @@ jobs:
 
       - name: Fill in the execution role ARN in the Amazon ECS task definition
         id: task-def-exec-arn
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        uses: microsoft/variable-substitution@v1
         with:
-          task-definition: task-definition.json
+          files: "task-definition.json"
+        env:
           executionRoleArn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/folio-contrib-dev_oimp-poc_ecs_task_execution_role
 
       - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def-image-id
+        id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: task-definition.json
