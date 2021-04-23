@@ -31,6 +31,58 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * Optionally POST an invoice (POST invoice/invoices)
 * Optionally POST an invoice line (POST invoice/invoice-lines)
 
+### User permissions
+To access the APIs, the FOLIO user defined in the `import.properties` file needs the following permissions:
+
+```json
+    "permissions": [
+        "configuration.entries.collection.get",
+        "finance.budgets.collection.get",
+        "finance.expense-classes.collection.get",
+        "finance.fiscal-years.collection.get",
+        "finance.funds.collection.get",
+        "finance-storage.budget-expense-classes.collection.get",
+        "inventory.instances.collection.get",
+        "inventory.instances.item.get",
+        "inventory.instances.item.post",
+        "inventory.instances.item.put",
+        "inventory.items.collection.get",
+        "inventory.items.item.post",
+        "inventory.items.item.put",
+        "inventory-storage.classification-types.collection.get",
+        "inventory-storage.contributor-name-types.collection.get",
+        "inventory-storage.contributor-types.collection.get",
+        "inventory-storage.identifier-types.collection.get",
+        "inventory-storage.holdings.collection.get",
+        "inventory-storage.holdings.item.get",
+        "inventory-storage.holdings.item.post",
+        "inventory-storage.holdings.item.put",
+        "inventory-storage.holdings-types.collection.get",
+        "inventory-storage.instance-types.collection.get",
+        "inventory-storage.items.item.get",
+        "inventory-storage.locations.collection.get",
+        "inventory-storage.loan-types.collection.get",
+        "inventory-storage.material-types.collection.get",
+        "invoice.invoices.collection.get",
+        "invoice.invoices.item.get",
+        "invoice.invoices.item.post",
+        "invoice.invoice-lines.item.post",
+        "invoice.invoice-lines.collection.get",
+        "invoice.invoice-lines.item.get",
+        "note.types.collection.get",
+        "notes.domain.all",
+        "notes.item.post",
+        "orders.collection.get",
+        "orders.item.get",
+        "orders.item.post",
+        "orders.po-number.item.get",
+        "organizations-storage.organizations.collection.get",
+        "source-storage.records.post",
+        "source-storage.snapshots.post",
+        "tags.collection.get"
+    ]
+```
+
 ### If you want to try it 
 * It expects the properties file to be here: /yourhomefolder/order/import.properties  -- you will have to add the okapi userid/password and you may have to adjust the file upload path (where it will save the uploaded file)
 * clone the repo
@@ -39,6 +91,19 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * I've included example MARC files but you will have to update them with your vendor, fund, object codes
 * The first call is a bit slow because it initializes reference values/UUIDs
 * To effectuate changes of import properties, restart the service
+
+### Docker image
+You can build a Docker image using the [Dockerfile](Dockerfile) in this repository.
+
+1. Build the WAR for the webapp: `mvn install`
+1. Build the Docker image: `docker build .`
+1. Run the container: `docker run -d -p 8080:8080 <imageId>`
+
+This will run a [Jetty](https://hub.docker.com/_/jetty) container with the order import webapp as the root, using the default configuration in the [import.properties](import.properties) file. This will work against the FOLIO [folio-snapshot](https://folio-snapshot.dev.folio.org) reference environment.
+
+To override the default configuration, mount your configuration to `/var/lib/jetty/order/import.properties` on the container e.g.:
+
+    docker run -d -v $(pwd)/order:/var/lib/jetty/order -p 8080:8080 <imageId>
 
 ### Mappings
 |MARC fields|Description|Target properties|Required|Default|Content (incoming)|
@@ -147,3 +212,4 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * (March/April 2021)
   - Optional import of an invoice, and an invoice line
   - Additional mappings of fields to order and order line.
+  - Dockerfile
