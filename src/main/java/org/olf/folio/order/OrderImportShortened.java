@@ -48,7 +48,7 @@ public class OrderImportShortened {
 	private ServletContext myContext;
 	private HashMap<String,String> lookupTable;
 	private String tenant;
-	private Boolean importInvoice;
+	private Boolean maybeImportInvoice;
 	private Boolean failIfNoInvoiceData;
 	private Boolean objectCodeRequired = true;
 	private static final String HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE =  "88914775-f677-4759-b57b-1a33b90b24e0";
@@ -72,10 +72,10 @@ public class OrderImportShortened {
 		// UC extensions to import.properties
 		// objectCode is required unless objectCodeRequired is explicitly set to false in import.properties
 		objectCodeRequired = ! ("false".equalsIgnoreCase((String) getMyContext().getAttribute("objectCodeRequired")));
-		importInvoice = "true".equalsIgnoreCase((String) getMyContext().getAttribute("importInvoice"));
+		maybeImportInvoice = "true".equalsIgnoreCase((String) getMyContext().getAttribute("importInvoice"));
 		failIfNoInvoiceData =  "true".equalsIgnoreCase((String) getMyContext().getAttribute("failIfNoInvoiceData"));
-		permLocationName = (String) (importInvoice ? getMyContext().getAttribute("permLocationWithInvoiceImport") : permLocationName);
-		permELocationName = (String) (importInvoice ? getMyContext().getAttribute("permELocationWithInvoiceImport") : permELocationName);
+		permLocationName = (String) (maybeImportInvoice ? getMyContext().getAttribute("permLocationWithInvoiceImport") : permLocationName);
+		permELocationName = (String) (maybeImportInvoice ? getMyContext().getAttribute("permELocationWithInvoiceImport") : permELocationName);
 
 		//GET THE FOLIO TOKEN
 		JSONObject jsonObject = new JSONObject();
@@ -444,7 +444,7 @@ public class OrderImportShortened {
 				//TODO: I'M NOT ENTIRELY SURE IF THIS IS NECESSARY?
 				//WHAT THE CONSEQUENCES OF THIS ARE?
 				//TO POST TO SOURCE RECORD STORAGE, A SNAPSHOT ID
-				//SEEMS TO BE REQUIRECD
+				//SEEMS TO BE REQUIRED
 				JSONObject jobExecution = new JSONObject();
 				jobExecution.put("jobExecutionId", snapshotId.toString());
 				jobExecution.put("status", "PARSING_IN_PROGRESS");
@@ -561,8 +561,8 @@ public class OrderImportShortened {
 					callApiPut(baseOkapEndpoint + "inventory/items/" + item.getString("id"), item, token);
 				}
 
-				if (importInvoice) {
-					createInvoice(baseOkapEndpoint, token,
+				if (maybeImportInvoice) {
+					maybeCreateInvoice(baseOkapEndpoint, token,
 							poNumberObj.getString("poNumber"), title, orderLineUUID, vendorId, currency, nineEighty);
 				}
 
@@ -611,64 +611,71 @@ public class OrderImportShortened {
 		return null;
 	}
 
-	private void createInvoice(String baseOkapiEndPoint,
-							   String token,
-							   String poNumber,
-							   String title,
-							   UUID orderLineUUID,
-							   String vendorId,
-							   String currency,
-							   DataField nineEighty) throws Exception {
-		// Hard-coded values
-		final String BATCH_GROUP_ID = "2a2cb998-1437-41d1-88ad-01930aaeadd5"; // ='FOLIO', System default
+	private void maybeCreateInvoice(String baseOkapiEndPoint,
+									String token,
+									String poNumber,
+									String title,
+									UUID orderLineUUID,
+									String vendorId,
+									String currency,
+									DataField nineEighty) throws Exception {
 
-		final String SOURCE = "API";
-		final int    INVOICE_LINE_QUANTITY = 1;
-
-		// Static config values:
-		final String PAYMENT_METHOD_PROPERTY = "paymentMethod";
-		final String PAYMENT_METHOD = (String) getMyContext().getAttribute(PAYMENT_METHOD_PROPERTY);
 
 		// MARC field values:
 		final String vendorInvoiceNo = nineEighty.getSubfieldsAsString("h");
 		final String invoiceDate = nineEighty.getSubfieldsAsString("i");
 		final String subTotal = nineEighty.getSubfieldsAsString("j");
-		// TODO ? final String quantity = nineEighty.getSubfieldsAsString("q");
 
-		// tbd
-		final String STATUS = "Open";
-		final String  INVOICE_LINE_STATUS   = "Open";
-		final boolean RELEASE_ENCUMBRANCE  = true;
+		if (vendorInvoiceNo != null && invoiceDate != null) {
+			// TODO ? final String quantity = nineEighty.getSubfieldsAsString("q");
 
-		//CREATE INVOICE OBJECTS
-		JSONObject invoice = new JSONObject();
-		UUID invoiceUUID = UUID.randomUUID();
+			// Hard-coded values
+			final String BATCH_GROUP_ID = "2a2cb998-1437-41d1-88ad-01930aaeadd5"; // ='FOLIO', System default
 
-		invoice.put("id", invoiceUUID);
-		invoice.put("poNumbers",(new JSONArray()).put(poNumber)); // optional
-		invoice.put("batchGroupId", BATCH_GROUP_ID); // required
-		invoice.put("currency",currency); // required
-		invoice.put("invoiceDate",invoiceDate); // required
-		invoice.put("paymentMethod", PAYMENT_METHOD); // required
-		invoice.put("status", STATUS); // required
-		invoice.put("source", SOURCE); // required
-		invoice.put("vendorInvoiceNo",vendorInvoiceNo); // required
-		invoice.put("vendorId", vendorId); // required
+			final String SOURCE = "API";
+			final int INVOICE_LINE_QUANTITY = 1;
 
-		JSONObject invoiceLine = new JSONObject();
-		invoiceLine.put("description", title);  // required
-		invoiceLine.put("invoiceId", invoiceUUID); // required
-		invoiceLine.put("invoiceLineStatus", INVOICE_LINE_STATUS); // required
-		invoiceLine.put("subTotal", subTotal);  // required
-		invoiceLine.put("quantity", INVOICE_LINE_QUANTITY); // required
-		invoiceLine.put("releaseEncumbrance", RELEASE_ENCUMBRANCE);  // required
-		invoiceLine.put("poLineId", orderLineUUID);
+			// Static config values:
+			final String PAYMENT_METHOD_PROPERTY = "paymentMethod";
+			final String PAYMENT_METHOD = (String) getMyContext().getAttribute(PAYMENT_METHOD_PROPERTY);
 
-		//POST INVOICE OBJECTS
-		String invoiceResponse = callApiPostWithUtf8(baseOkapiEndPoint + "invoice/invoices",invoice,token);
-		logger.info(invoiceResponse);
-		String invoiceLineResponse = callApiPostWithUtf8(baseOkapiEndPoint + "invoice/invoice-lines",invoiceLine,token);
-		logger.info(invoiceLineResponse);
+			// tbd
+			final String STATUS = "Open";
+			final String INVOICE_LINE_STATUS = "Open";
+			final boolean RELEASE_ENCUMBRANCE = true;
+
+			//CREATE INVOICE OBJECTS
+			JSONObject invoice = new JSONObject();
+			UUID invoiceUUID = UUID.randomUUID();
+
+			invoice.put("id", invoiceUUID);
+			invoice.put("poNumbers", (new JSONArray()).put(poNumber)); // optional
+			invoice.put("batchGroupId", BATCH_GROUP_ID); // required
+			invoice.put("currency", currency); // required
+			invoice.put("invoiceDate", invoiceDate); // required
+			invoice.put("paymentMethod", PAYMENT_METHOD); // required
+			invoice.put("status", STATUS); // required
+			invoice.put("source", SOURCE); // required
+			invoice.put("vendorInvoiceNo", vendorInvoiceNo); // required
+			invoice.put("vendorId", vendorId); // required
+
+			JSONObject invoiceLine = new JSONObject();
+			invoiceLine.put("description", title);  // required
+			invoiceLine.put("invoiceId", invoiceUUID); // required
+			invoiceLine.put("invoiceLineStatus", INVOICE_LINE_STATUS); // required
+			invoiceLine.put("subTotal", subTotal);  // required
+			invoiceLine.put("quantity", INVOICE_LINE_QUANTITY); // required
+			invoiceLine.put("releaseEncumbrance", RELEASE_ENCUMBRANCE);  // required
+			invoiceLine.put("poLineId", orderLineUUID);
+
+			//POST INVOICE OBJECTS
+			String invoiceResponse = callApiPostWithUtf8(baseOkapiEndPoint + "invoice/invoices", invoice, token);
+			logger.info(invoiceResponse);
+			String invoiceLineResponse = callApiPostWithUtf8(baseOkapiEndPoint + "invoice/invoice-lines", invoiceLine, token);
+			logger.info(invoiceLineResponse);
+		} else {
+			logger.info("MARC has no vendor invoice number and/or no invoice date; not attempting to import invoice");
+		}
 	}
 
 
@@ -775,7 +782,7 @@ public class OrderImportShortened {
 				JSONObject fundValidationResult = validateFund(fundCode, title, token, baseOkapEndpoint, price);
 				if (fundValidationResult != null) responseMessages.put(fundValidationResult);
 
-				if (importInvoice) {
+				if (maybeImportInvoice) {
 					JSONObject invoiceValidationResult = validateRequiredValuesForInvoice(title, record, token, baseOkapEndpoint);
 					if (invoiceValidationResult != null) responseMessages.put(invoiceValidationResult);
 				}
@@ -808,20 +815,20 @@ public class OrderImportShortened {
 			responseMessage.put("error", "Invoice data configured to be required and no Invoice data was found in MARC record");
 			responseMessage.put("PONumber", "~error~");
 			return responseMessage;
-		}
+		} else if (vendorInvoiceNo != null || invoiceDate != null) { // if one of these is present both should be
+			Map<String, String> requiredFields = new HashMap<String, String>();
+			requiredFields.put("Vendor invoice no", vendorInvoiceNo);
+			requiredFields.put("Invoice date", invoiceDate);
 
-		Map<String, String> requiredFields = new HashMap<String, String>();
-		requiredFields.put("Vendor invoice no", vendorInvoiceNo);
-		requiredFields.put("Invoice date", invoiceDate);
-
-		// MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
-		for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
-			if (entry.getValue()==null) {
-				JSONObject responseMessage = new JSONObject();
-				responseMessage.put("title", title);
-				responseMessage.put("error", entry.getKey() + " Missing");
-				responseMessage.put("PONumber", "~error~");
-				return responseMessage;
+			// MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
+			for (Map.Entry<String, String> entry : requiredFields.entrySet()) {
+				if (entry.getValue() == null) {
+					JSONObject responseMessage = new JSONObject();
+					responseMessage.put("title", title);
+					responseMessage.put("error", entry.getKey() + " Missing");
+					responseMessage.put("PONumber", "~error~");
+					return responseMessage;
+				}
 			}
 		}
 		return null;
