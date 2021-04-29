@@ -546,14 +546,13 @@ public class OrderImport {
 			    	logger.error(record.toString());
 			    	responseMessages.put(fundValidationResult);
 			    }
-			    return responseMessages;
-			    
 			}  catch(Exception e) {
 		    	logger.fatal(e.getMessage());
 		    	JSONObject responseMessage = new JSONObject();
 		    	responseMessage.put("error", e.getMessage());
 		    	responseMessage.put("PONumber", "~error~");
 		    	responseMessages.put(responseMessage);
+                        return responseMessages();
 		    }
 		}
 		return responseMessages;
