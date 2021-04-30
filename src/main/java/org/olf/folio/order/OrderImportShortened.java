@@ -1,6 +1,5 @@
 package org.olf.folio.order;
 
-
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -706,10 +705,6 @@ public class OrderImportShortened {
 
 		return (HashMap<String, String>) lookUpTable;
 	}
-
-
-
-
 
 	public JSONArray validateRequiredValues(MarcReader reader,String token, String baseOkapEndpoint ) {
 
