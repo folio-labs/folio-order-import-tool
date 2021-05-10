@@ -178,7 +178,7 @@ public class OrderImportShortened {
 				String expenseClassCode = nineEighty.getSubfieldsAsString("y");
 				DataField first856 = getFirst856(record);
 				String userLimit = first856 != null ? first856.getSubfieldsAsString("x") : null;
-				String accessProviderCode = first856 != null ? first856.getSubfieldsAsString("y") : null;
+				String accessProviderCode =  nineEighty.getSubfieldsAsString("l");
 				accessProviderCode = (accessProviderCode == null || accessProviderCode.isEmpty() ? vendorCode : accessProviderCode);
 				String billTo = nineEighty.getSubfieldsAsString("s");
 				permLocationName = (String) (importInvoice && hasInvoice(nineEighty) ? getMyContext().getAttribute("permLocationWithInvoiceImport") : permLocationName);
@@ -501,13 +501,15 @@ public class OrderImportShortened {
 					DataField dataField = (DataField) iterator.next();
 					if (dataField != null && dataField.getSubfield('u') != null) {
 						String url = dataField.getSubfield('u').getData();
-						if (dataField.getSubfield('z') != null) {
-							linkText = dataField.getSubfield('z').getData();
+						if (dataField.getSubfield('y') != null) {
+							linkText = dataField.getSubfield('y').getData();
 						}
+						String licenseNote = dataField.getSubfield('z').getData();
 						JSONObject eResource = new JSONObject();
 						eResource.put("uri", dataField.getSubfield('u').getData());
 						//TODO - DO WE WANT TO CHANGE THE LINK TEXT?
 						eResource.put("linkText", linkText);
+						if (licenseNote != null) eResource.put("publicNote", licenseNote);
 						//THIS RELATIONSHIP (UUID) IS BUILT INTO FOLIO
 						//TODO - MAKE IT DYNAMIC IN CASE IT IS CHANGED BY FOLIO
 						//IMPLEMENTER
