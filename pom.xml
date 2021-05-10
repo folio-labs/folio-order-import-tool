@@ -164,7 +164,29 @@
 			<url>https://repository.folio.org/repository/maven-folio</url>
 		</repository>
 	</repositories>
-
+    <profiles>
+        <profile>
+            <id>prod</id>
+            <properties>
+                <env.production>true</env.production>
+            </properties>
+            <activation>
+            <activeByDefault>true</activeByDefault>
+        	</activation>
+           <build>
+            <finalName>order</finalName>
+        </build>
+        </profile>
+        <profile>
+            <id>test</id>
+            <properties>
+                <env.production>false</env.production>
+            </properties>
+             <build>
+            <finalName>order-test</finalName>
+        </build>
+        </profile>
+    </profiles>
 
 	<build>
 		<finalName>order</finalName>
@@ -181,6 +203,14 @@
 					<httpConnector>
 						<port>8888</port>
 					</httpConnector>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-war-plugin</artifactId>
+				<version>2.5</version>
+				<configuration>
+					<filteringDeploymentDescriptors>true</filteringDeploymentDescriptors>
 				</configuration>
 			</plugin>
 		</plugins>

@@ -57,6 +57,11 @@
    <listener>
     <listener-class>org.olf.folio.order.listeners.ConfigurationListener</listener-class>
   </listener>
+  
+<context-param>
+    <param-name>environment-production</param-name>
+    <param-value>${env.production}</param-value>
+</context-param>
 
 
 </web-app>

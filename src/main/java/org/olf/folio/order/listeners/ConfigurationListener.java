@@ -15,13 +15,17 @@ public class ConfigurationListener implements ServletContextListener {
 		ServletContext context = sce.getServletContext();
 		String path = "";
 		try {
-			path = System.getProperty("user.home") + "/order/import.properties";
+			String propertyFileName = "import.properties";
+			String isProduction = sce.getServletContext().getInitParameter("environment-production");
+			if (isProduction.equalsIgnoreCase("false")) propertyFileName = "import-test.properties";
+			path = System.getProperty("user.home") + "/order/" +  propertyFileName;
 			CompositeConfiguration config = new CompositeConfiguration();
 			config.addConfiguration(new PropertiesConfiguration(path));
 			System.out.println("----------------------------");
-			System.out.println("initializing properties");
+			System.out.println("initializing properties for: " + propertyFileName);
 			System.out.println("----------------------------");
 			Iterator<String> keys = config.getKeys();
+			context.setAttribute("isProduction", isProduction);
 			while (keys.hasNext()) {
 				String key = keys.next();
 				System.out.println(key);

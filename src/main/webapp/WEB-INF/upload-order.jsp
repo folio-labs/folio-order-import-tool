@@ -67,6 +67,7 @@
 	</nav>
 	<div class="container">
 		<div class="field">
+		    <label class="label" style="color:red">${testMessage}</label>
 			<label class="label">Upload Order:</label>
 		</div>
 	</div>
@@ -173,10 +174,14 @@ function showOrderInfo(response) {
 	var context = response;
 	var output = template(context);
 	document.getElementById("logcontent").innerHTML = output;
+	$('#order-file').val(''); 
+	$('#file-name').text('...');
 }
 
 function updateFailed(response) {
 	$('#sendFile').removeClass('is-loading');
+	$('#order-file').val(''); 
+	$('#file-name').text('...');
 	alert(response.responseText);
 }
 </script>
