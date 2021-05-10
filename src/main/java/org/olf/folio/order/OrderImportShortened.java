@@ -312,7 +312,7 @@ public class OrderImportShortened {
 					vendorDetail.put("vendorAccount", (vendorAccount == null ? "" : vendorAccount));
 					JSONObject referenceNumber = new JSONObject();
 					referenceNumber.put("refNumber", vendorItemId);
-					referenceNumber.put("refNumberType", (refNumberType == null ? "Internal vendor number" : refNumberType));
+					referenceNumber.put("refNumberType", (refNumberType == null ? "Vendor internal number" : refNumberType));
 					referenceNumbers.put(referenceNumber);
 					vendorDetail.put("referenceNumbers", referenceNumbers);
 					orderLine.put("vendorDetail", vendorDetail);
@@ -663,7 +663,7 @@ public class OrderImportShortened {
 		invoice.put("vendorId", vendorId); // required
 
 		JSONObject invoiceLine = new JSONObject();
-		invoiceLine.put("description", description);  // required
+		invoiceLine.put("description", description != null ? description : title);  // required
 		invoiceLine.put("invoiceId", invoiceUUID); // required
 		invoiceLine.put("invoiceLineStatus", INVOICE_LINE_STATUS); // required
 		invoiceLine.put("subTotal", subTotal);  // required
