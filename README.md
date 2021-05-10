@@ -28,6 +28,11 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * It should start a jetty server and you should be able to point your browser to http://localhost:8888/import and try it
 * I've included example MARC files but you will have to update them with your vendor, fund, object codes
 * The first call is a bit slow because it initializes reference values/UUIDs
+* To build the war files you can use:
+ * mvn clean package -Ptest       
+ * or
+ * mvn clean package
+ * The -Ptest version will create a war file that will look for an import-test.properties file which can contain properties for your test server.  It will also reflect 'test' on the jsp.
 
 ### Lots of areas for improvement including:
 * Better way to get data out of the MARC record to include on the instance. 
@@ -36,6 +41,9 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * If duplicate PO number error - get the next PO number and try again
 
 ### What's new?
+* 05-10-2021
+  - build a 2nd war for testing (mvn clean package or mvn clean package -Ptest)
+
 * 11-16-2020
   - Removed reference to the 001 field.  Wasn't necessary and was causing an error when it was missing.
  
