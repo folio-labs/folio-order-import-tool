@@ -294,7 +294,7 @@ public class OrderImportShortened {
 					JSONObject vendorDetail = new JSONObject();
 					vendorDetail.put("instructions", "");
 					vendorDetail.put("refNumber", vendorItemId);
-					vendorDetail.put("refNumberType", "Internal vendor number");
+					vendorDetail.put("refNumberType", (refNumberType == null ? "Internal vendor number" : refNumberType));
 					vendorDetail.put("vendorAccount", (vendorAccount == null ? "" : vendorAccount));
 					orderLine.put("vendorDetail", vendorDetail);
 				}
@@ -312,7 +312,7 @@ public class OrderImportShortened {
 					vendorDetail.put("vendorAccount", (vendorAccount == null ? "" : vendorAccount));
 					JSONObject referenceNumber = new JSONObject();
 					referenceNumber.put("refNumber", vendorItemId);
-					referenceNumber.put("refNumberType", (refNumberType == null ? "Vendor internal number" : refNumberType));
+					referenceNumber.put("refNumberType", (refNumberType == null ? "Internal vendor number" : refNumberType));
 					referenceNumbers.put(referenceNumber);
 					vendorDetail.put("referenceNumbers", referenceNumbers);
 					orderLine.put("vendorDetail", vendorDetail);
@@ -628,6 +628,7 @@ public class OrderImportShortened {
 		final String vendorInvoiceNo = nineEighty.getSubfieldsAsString("h");
 		final String invoiceDate = nineEighty.getSubfieldsAsString("i");
 		final String subTotal = nineEighty.getSubfieldsAsString("j");
+		final String description = nineEighty.getSubfieldsAsString("e");
 
 		// TODO ? final String quantity = nineEighty.getSubfieldsAsString("q");
 
@@ -662,7 +663,7 @@ public class OrderImportShortened {
 		invoice.put("vendorId", vendorId); // required
 
 		JSONObject invoiceLine = new JSONObject();
-		invoiceLine.put("description", title);  // required
+		invoiceLine.put("description", description);  // required
 		invoiceLine.put("invoiceId", invoiceUUID); // required
 		invoiceLine.put("invoiceLineStatus", INVOICE_LINE_STATUS); // required
 		invoiceLine.put("subTotal", subTotal);  // required
