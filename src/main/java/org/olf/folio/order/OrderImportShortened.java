@@ -183,6 +183,7 @@ public class OrderImportShortened {
 				String billTo = nineEighty.getSubfieldsAsString("s");
 				permLocationName = (String) (importInvoice && hasInvoice(nineEighty) ? getMyContext().getAttribute("permLocationWithInvoiceImport") : permLocationName);
 				permELocationName = (String) (importInvoice && hasInvoice(nineEighty) ? getMyContext().getAttribute("permELocationWithInvoiceImport") : permELocationName);
+				String receivingNote = nineEighty.getSubfieldsAsString("x");
 
 				// GENERATE UUIDS FOR OBJECTS
 				UUID snapshotId = UUID.randomUUID();
@@ -286,6 +287,12 @@ public class OrderImportShortened {
 					location.put("quantityPhysical",1);
 					location.put("locationId",lookupTable.get(permLocationName + "-location"));
 					locations.put(location);
+				}
+
+				if (receivingNote != null) {
+					JSONObject orderLineDetails = new JSONObject();
+					orderLineDetails.put("receivingNote", receivingNote);
+					orderLine.put("details", orderLineDetails);
 				}
 
 				//VENDOR REFERENCE NUMBER IF INCLUDED IN THE MARC RECORD:
