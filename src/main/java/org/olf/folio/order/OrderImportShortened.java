@@ -245,7 +245,7 @@ public class OrderImportShortened {
 				order.put("poNumber", poNumberObj.get("poNumber"));
 				order.put("vendor", vendorId);
 				order.put("orderType", "One-Time");
-				order.put("reEncumber", false);
+				order.put("reEncumber", true); // Changed to true for UChicago
 				order.put("id", orderUUID.toString());
 				order.put("approved", true);
 				order.put("workflowStatus","Open");
