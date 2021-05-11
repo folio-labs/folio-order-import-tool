@@ -184,6 +184,7 @@ public class OrderImportShortened {
 				permLocationName = (String) (importInvoice && hasInvoice(nineEighty) ? getMyContext().getAttribute("permLocationWithInvoiceImport") : permLocationName);
 				permELocationName = (String) (importInvoice && hasInvoice(nineEighty) ? getMyContext().getAttribute("permELocationWithInvoiceImport") : permELocationName);
 				String receivingNote = nineEighty.getSubfieldsAsString("x");
+				String description = nineEighty.getSubfieldsAsString("e");
 
 				// GENERATE UUIDS FOR OBJECTS
 				UUID snapshotId = UUID.randomUUID();
@@ -352,6 +353,7 @@ public class OrderImportShortened {
 				orderLine.put("titleOrPackage",title);
 				orderLine.put("acquisitionMethod", acquisitionMethod);
 				orderLine.put("rush", "RUSH".equalsIgnoreCase(rush)); // UC extension
+				if (description != null) orderLine.put("description", description); // UC extension
 				JSONArray funds = new JSONArray();
 				JSONObject fundDist = new JSONObject();
 				fundDist.put("distributionType", "percentage");
@@ -637,8 +639,6 @@ public class OrderImportShortened {
 		final String vendorInvoiceNo = nineEighty.getSubfieldsAsString("h");
 		final String invoiceDate = nineEighty.getSubfieldsAsString("i");
 		final String subTotal = nineEighty.getSubfieldsAsString("j");
-		final String description = nineEighty.getSubfieldsAsString("e");
-
 		// TODO ? final String quantity = nineEighty.getSubfieldsAsString("q");
 
 		// Hard-coded values
@@ -672,7 +672,7 @@ public class OrderImportShortened {
 		invoice.put("vendorId", vendorId); // required
 
 		JSONObject invoiceLine = new JSONObject();
-		invoiceLine.put("description", description != null ? description : title);  // required
+		invoiceLine.put("description", title);  // required
 		invoiceLine.put("invoiceId", invoiceUUID); // required
 		invoiceLine.put("invoiceLineStatus", INVOICE_LINE_STATUS); // required
 		invoiceLine.put("subTotal", subTotal);  // required

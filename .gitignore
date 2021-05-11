@@ -1,0 +1,6 @@
+.idea/
+target/
+order-import-poc.iml
+c:\\tmp\\*
+marc-test-files/ignore/
+c:/logs
