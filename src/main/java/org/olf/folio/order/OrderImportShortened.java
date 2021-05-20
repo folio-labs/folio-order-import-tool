@@ -84,7 +84,6 @@ public class OrderImportShortened {
 		//TODO: REMOVE
 		logger.info("TOKEN: " + token); 
 
-
 		//GET THE UPLOADED FILE
 		String filePath = (String) myContext.getAttribute("uploadFilePath");
 		InputStream in = null;		
@@ -297,7 +296,7 @@ public class OrderImportShortened {
 				}
 
 				//VENDOR REFERENCE NUMBER IF INCLUDED IN THE MARC RECORD:
-				///* PRE-IRIS
+				/* PRE-IRIS
 				if (vendorItemId != null) {
 					JSONObject vendorDetail = new JSONObject();
 					vendorDetail.put("instructions", "");
@@ -306,9 +305,9 @@ public class OrderImportShortened {
 					vendorDetail.put("vendorAccount", (vendorAccount == null ? "" : vendorAccount));
 					orderLine.put("vendorDetail", vendorDetail);
 				}
-				//*/
+				*/
 
-				/* CHANGE FOR IRIS:
+				///* CHANGE FOR IRIS:
 				//VENDOR REF. NUMBER IS NOW A COLLECTION
 				//AND TYPE WAS CHANGED FROM 'Internal vendor number' to 'Vendor internal number'
 				//- REPLACE ABOVE WITH:
@@ -325,7 +324,7 @@ public class OrderImportShortened {
 					vendorDetail.put("referenceNumbers", referenceNumbers);
 					orderLine.put("vendorDetail", vendorDetail);
 				}
-                */
+                //*/
 				JSONObject tags = new JSONObject();
 				JSONArray tagList = new JSONArray();
 
