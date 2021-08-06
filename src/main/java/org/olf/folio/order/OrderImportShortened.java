@@ -404,91 +404,15 @@ public class OrderImportShortened {
 				JSONObject instanceAsJson = new JSONObject(instanceResponse);
 				String hrid = instanceAsJson.getString("hrid");
 
-				//PREPARING TO ADD THE MARC RECORD TO SOURCE RECORD STORAGE:
-				//CONSTRUCTING THE 999 OF THE MARC RECORD for FOLIO: 
-				DataField field = MarcFactory.newInstance().newDataField();
-				field.setTag("999");
-				field.setIndicator1('f');
-				field.setIndicator2('f');
-				Subfield one = MarcFactory.newInstance().newSubfield('i', instanceId);
-				Subfield two = MarcFactory.newInstance().newSubfield('s',recordTableId.toString());
-				field.addSubfield(one);
-				field.addSubfield(two);
-				record.addVariableField(field);
-				if (record.getControlNumberField() != null) {
-					record.getControlNumberField().setData(hrid);
-				}
-				else {
-					ControlField cf = MarcFactory.newInstance().newControlField("001");
-					cf.setData(hrid);
-					record.addVariableField(cf);
-				}
-
-
-				//TRANSFORM THE RECORD INTO JSON
-				logger.info("MARC RECORD: " + record.toString());
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				MarcJsonWriter jsonWriter =  new MarcJsonWriter(baos);
-				jsonWriter.setUnicodeNormalization(true);
-				jsonWriter.write(record);
-				jsonWriter.close();
-				String jsonString = baos.toString();
-				JSONObject mRecord = new JSONObject(jsonString);
-				JSONObject content = new JSONObject();
-				content.put("content",mRecord);
-				logger.info("MARC TO JSON: " + mRecord);
-
-
-				//GET THE RAW MARC READY TO POST TO THE API
-				ByteArrayOutputStream rawBaos = new ByteArrayOutputStream();
-				MarcWriter writer = new MarcStreamWriter(rawBaos);
-				writer.write(record);
-				JSONObject jsonWithRaw = new JSONObject();
-				jsonWithRaw.put("id", instanceId);
-				jsonWithRaw.put("content",byteArrayOutputStream);
-
-				//CREATING JOB EXECUTION?
-				//TODO: I'M NOT ENTIRELY SURE IF THIS IS NECESSARY?
-				//WHAT THE CONSEQUENCES OF THIS ARE?
-				//TO POST TO SOURCE RECORD STORAGE, A SNAPSHOT ID
-				//SEEMS TO BE REQUIRED
-				JSONObject jobExecution = new JSONObject();
-				jobExecution.put("jobExecutionId", snapshotId.toString());
-				jobExecution.put("status", "PARSING_IN_PROGRESS");
-				String snapShotResponse = callApiPostWithUtf8(baseOkapEndpoint + "source-storage/snapshots",  jobExecution,token);
-
-				//OBJECT FOR SOURCE RECORD STORAGE API CALL:
-				JSONObject sourceRecordStorageObject = new JSONObject();
-				sourceRecordStorageObject.put("recordType", "MARC");
-				sourceRecordStorageObject.put("snapshotId",snapshotId.toString());
-				sourceRecordStorageObject.put("matchedId", instanceId.toString());
-				//LINK THE INSTANCE TO SOURCE RECORD STORAGE
-				JSONObject externalId = new JSONObject();
-				externalId.put("instanceId",instanceId);
-				sourceRecordStorageObject.put("externalIdsHolder", externalId);
-				//RAW RECORD
-				JSONObject rawRecordObject = new JSONObject();
-				rawRecordObject.put("id",instanceId);
-				rawRecordObject.put("content",jsonWithRaw.toString());
-				//PARSED RECORD
-				JSONObject parsedRecord = new JSONObject();
-				parsedRecord.put("id", instanceId);
-				parsedRecord.put("content", mRecord);
-				sourceRecordStorageObject.put("rawRecord", rawRecordObject);
-				sourceRecordStorageObject.put("parsedRecord", parsedRecord);
-				sourceRecordStorageObject.put("id", instanceId);
-				//CALL SOURCE RECORD STORAGE POST
-				String storageResponse = callApiPostWithUtf8(baseOkapEndpoint + "source-storage/records", sourceRecordStorageObject,token);
-
+				// UChicago have asked that the MARC NOT be stored to SRS since this has implications for the ability to
+				// batch update the instance record with the full cataloging when UChicago receive the invoice.
+				// storeMarcToSRS( baseOkapEndpoint, token, record, byteArrayOutputStream, snapshotId, recordTableId, instanceId, hrid );
 
 				//ADD IDENTIFIERS AND CONTRIBUTORS TO THE INSTANCE
-				//*AND* CHANGE THE SOURCE TO 'MARC'
-				//SO THE OPTION TO VIEW THE MARC RECORD SHOWS UP 
-				//IN INVENTORY!
 				JSONArray identifiers = buildIdentifiers(record,lookupTable);
 				JSONArray contributors = buildContributors(record, lookupTable);
 				instanceAsJson.put("title", title);
-				instanceAsJson.put("source", "MARC");
+				instanceAsJson.put("source", "FOLIO");
 				instanceAsJson.put("instanceTypeId", lookupTable.get("text"));
 				instanceAsJson.put("identifiers", identifiers);
 				instanceAsJson.put("contributors", contributors);
@@ -593,6 +517,87 @@ public class OrderImportShortened {
 
 		return responseMessages;
 
+	}
+
+	private void storeMarcToSRS( String baseOkapEndpoint, String token, Record record, ByteArrayOutputStream byteArrayOutputStream, UUID snapshotId, UUID recordTableId, String instanceId, String hrid ) throws Exception
+	{
+		//PREPARING TO ADD THE MARC RECORD TO SOURCE RECORD STORAGE:
+		//CONSTRUCTING THE 999 OF THE MARC RECORD for FOLIO:
+		DataField field = MarcFactory.newInstance().newDataField();
+		field.setTag("999");
+		field.setIndicator1('f');
+		field.setIndicator2('f');
+		Subfield one = MarcFactory.newInstance().newSubfield('i', instanceId );
+		Subfield two = MarcFactory.newInstance().newSubfield('s', recordTableId.toString());
+		field.addSubfield(one);
+		field.addSubfield(two);
+		record.addVariableField(field);
+		if ( record.getControlNumberField() != null) {
+			record.getControlNumberField().setData( hrid );
+		}
+		else {
+			ControlField cf = MarcFactory.newInstance().newControlField("001");
+			cf.setData( hrid );
+			record.addVariableField(cf);
+		}
+
+
+		//TRANSFORM THE RECORD INTO JSON
+		logger.info("MARC RECORD: " + record.toString());
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		MarcJsonWriter jsonWriter =  new MarcJsonWriter(baos);
+		jsonWriter.setUnicodeNormalization(true);
+		jsonWriter.write( record );
+		jsonWriter.close();
+		String jsonString = baos.toString();
+		JSONObject mRecord = new JSONObject(jsonString);
+		JSONObject content = new JSONObject();
+		content.put("content",mRecord);
+		logger.info("MARC TO JSON: " + mRecord);
+
+
+		//GET THE RAW MARC READY TO POST TO THE API
+		ByteArrayOutputStream rawBaos = new ByteArrayOutputStream();
+		MarcWriter writer = new MarcStreamWriter(rawBaos);
+		writer.write( record );
+		JSONObject jsonWithRaw = new JSONObject();
+		jsonWithRaw.put("id", instanceId );
+		jsonWithRaw.put("content", byteArrayOutputStream );
+
+		//CREATING JOB EXECUTION?
+		//TODO: I'M NOT ENTIRELY SURE IF THIS IS NECESSARY?
+		//WHAT THE CONSEQUENCES OF THIS ARE?
+		//TO POST TO SOURCE RECORD STORAGE, A SNAPSHOT ID
+		//SEEMS TO BE REQUIRED
+		JSONObject jobExecution = new JSONObject();
+		jobExecution.put("jobExecutionId", snapshotId.toString());
+		jobExecution.put("status", "PARSING_IN_PROGRESS");
+		String snapShotResponse = callApiPostWithUtf8( baseOkapEndpoint + "source-storage/snapshots",  jobExecution,
+				token );
+
+		//OBJECT FOR SOURCE RECORD STORAGE API CALL:
+		JSONObject sourceRecordStorageObject = new JSONObject();
+		sourceRecordStorageObject.put("recordType", "MARC");
+		sourceRecordStorageObject.put("snapshotId", snapshotId.toString());
+		sourceRecordStorageObject.put("matchedId", instanceId.toString());
+		//LINK THE INSTANCE TO SOURCE RECORD STORAGE
+		JSONObject externalId = new JSONObject();
+		externalId.put("instanceId", instanceId );
+		sourceRecordStorageObject.put("externalIdsHolder", externalId);
+		//RAW RECORD
+		JSONObject rawRecordObject = new JSONObject();
+		rawRecordObject.put("id", instanceId );
+		rawRecordObject.put("content",jsonWithRaw.toString());
+		//PARSED RECORD
+		JSONObject parsedRecord = new JSONObject();
+		parsedRecord.put("id", instanceId );
+		parsedRecord.put("content", mRecord);
+		sourceRecordStorageObject.put("rawRecord", rawRecordObject);
+		sourceRecordStorageObject.put("parsedRecord", parsedRecord);
+		sourceRecordStorageObject.put("id", instanceId );
+		//CALL SOURCE RECORD STORAGE POST
+		String storageResponse = callApiPostWithUtf8( baseOkapEndpoint + "source-storage/records", sourceRecordStorageObject,
+				token );
 	}
 
 	private DataField getFirst856 (Record record) {
