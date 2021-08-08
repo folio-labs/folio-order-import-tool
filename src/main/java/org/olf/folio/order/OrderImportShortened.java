@@ -352,14 +352,14 @@ public class OrderImportShortened {
 				if (selector != null)  orderLine.put("selector", selector);
 				if (donor != null) orderLine.put("donor", donor);
 
+				orderLine.put("contributors", buildContributors(record, lookupTable, true));
+
 				JSONArray productIds = Identifier.createProductIdentifiersJson( record, false,
 						Constants.ISBN,
 						Constants.ISSN,
 						Constants.OTHER_STANDARD_IDENTIFIER,
 						Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER );
-
 				orderLineDetails.put("productIds", productIds);
-
 				orderLine.put("details", orderLineDetails);
 
 				//POST THE ORDER AND LINE:
@@ -411,12 +411,11 @@ public class OrderImportShortened {
 						Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER,
 						Constants.SYSTEM_CONTROL_NUMBER);
 
-				JSONArray contributors = buildContributors(record, lookupTable);
 				instanceAsJson.put("title", title);
 				instanceAsJson.put("source", "FOLIO");
 				instanceAsJson.put("instanceTypeId", lookupTable.get("text"));
 				instanceAsJson.put("identifiers", identifiers);
-				instanceAsJson.put("contributors", contributors);
+				instanceAsJson.put("contributors", buildContributors(record, lookupTable, false));
 				instanceAsJson.put("discoverySuppress", false);
 
 				//GET THE HOLDINGS RECORD FOLIO CREATED, SO WE CAN ADD URLs FROM THE 856 IN THE MARC RECORD
@@ -849,17 +848,34 @@ public class OrderImportShortened {
 	//THEY WERE HURRILY CODED
 	//JUST WANTED TO GET SOME DATA IN THE INSTANCE
 	//FROM THE MARC RECORD FOR THIS POC
-	public JSONArray buildContributors(Record record,HashMap<String,String> lookupTable) {
+	public JSONArray buildContributors(Record record,HashMap<String, String> lookupTable, boolean buildForOrderLine) {
 		JSONArray contributors = new JSONArray();
 		List fields = record.getDataFields();
 		Iterator fieldsIterator = fields.iterator();
 		while (fieldsIterator.hasNext()) {
 			DataField field = (DataField) fieldsIterator.next();
 			if (field.getTag().equalsIgnoreCase("100") || field.getTag().equalsIgnoreCase("700")) {
-				contributors.put(makeContributor(field,lookupTable,"Personal name", new String[]{"a","b","c","d","f","g","j","k","l","n","p","t","u"}));
+				if (buildForOrderLine) {
+					contributors.put( makeContributorForOrderLine(field, "Personal name"));
+				} else {
+					contributors.put( makeContributor(field, lookupTable, "Personal name",
+							new String[] {"a", "b", "c", "d", "f", "g", "j", "k", "l", "n", "p", "t", "u"}));
+				}
+			} else if ((field.getTag().equals("110") || field.getTag().equals( "710" )) && buildForOrderLine) {
+				contributors.put( makeContributorForOrderLine( field, "Corporate name"));
+			} else if ((field.getTag().equals("111") || field.getTag().equals( "711" )) && buildForOrderLine) {
+				contributors.put( makeContributorForOrderLine( field, "Meeting name"));
 			}
 		}
 		return contributors;
+	}
+
+	public JSONObject makeContributorForOrderLine( DataField field, String contributorNameType) {
+		Subfield subfield = field.getSubfield( 'a' );
+		JSONObject contributor = new JSONObject();
+		contributor.put("contributor", subfield.getData());
+		contributor.put("contributorNameTypeId", Constants.CONTRIBUTOR_NAME_TYPES_MAP.get(contributorNameType));
+		return contributor;
 	}
 
 	public JSONObject makeContributor( DataField field, HashMap<String,String> lookupTable, String name_type_id, String[] subfieldArray) {
