@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.servlet.ServletContext;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.marc4j.MarcJsonWriter;
@@ -259,6 +258,7 @@ public class OrderImportShortened {
 				JSONObject cost = new JSONObject();
 				JSONObject location = new JSONObject();
 				JSONArray locations = new JSONArray();
+				JSONObject orderLineDetails = new JSONObject();
 				JSONArray poLines = new JSONArray();
 				if (electronic) {
 					orderLine.put("orderFormat", "Electronic Resource");
@@ -290,27 +290,9 @@ public class OrderImportShortened {
 				}
 
 				if (receivingNote != null) {
-					JSONObject orderLineDetails = new JSONObject();
 					orderLineDetails.put("receivingNote", receivingNote);
-					orderLine.put("details", orderLineDetails);
 				}
 
-				//VENDOR REFERENCE NUMBER IF INCLUDED IN THE MARC RECORD:
-				/* PRE-IRIS
-				if (vendorItemId != null) {
-					JSONObject vendorDetail = new JSONObject();
-					vendorDetail.put("instructions", "");
-					vendorDetail.put("refNumber", vendorItemId);
-					vendorDetail.put("refNumberType", (refNumberType == null ? "Internal vendor number" : refNumberType));
-					vendorDetail.put("vendorAccount", (vendorAccount == null ? "" : vendorAccount));
-					orderLine.put("vendorDetail", vendorDetail);
-				}
-				*/
-
-				///* CHANGE FOR IRIS:
-				//VENDOR REF. NUMBER IS NOW A COLLECTION
-				//AND TYPE WAS CHANGED FROM 'Internal vendor number' to 'Vendor internal number'
-				//- REPLACE ABOVE WITH:
 				//VENDOR REFERENCE NUMBER IF INCLUDED IN THE MARC RECORD:
 				if (vendorItemId != null) {
 					JSONArray referenceNumbers = new JSONArray();
@@ -370,6 +352,16 @@ public class OrderImportShortened {
 				if (selector != null)  orderLine.put("selector", selector);
 				if (donor != null) orderLine.put("donor", donor);
 
+				JSONArray productIds = Identifier.createProductIdentifiersJson( record, false,
+						Constants.ISBN,
+						Constants.ISSN,
+						Constants.OTHER_STANDARD_IDENTIFIER,
+						Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER );
+
+				orderLineDetails.put("productIds", productIds);
+
+				orderLine.put("details", orderLineDetails);
+
 				//POST THE ORDER AND LINE:
 				String orderResponse = callApiPostWithUtf8(baseOkapEndpoint + "orders/composite-orders",order,token); 
 				JSONObject approvedOrder = new JSONObject(orderResponse);
@@ -409,7 +401,16 @@ public class OrderImportShortened {
 				// storeMarcToSRS( baseOkapEndpoint, token, record, byteArrayOutputStream, snapshotId, recordTableId, instanceId, hrid );
 
 				//ADD IDENTIFIERS AND CONTRIBUTORS TO THE INSTANCE
-				JSONArray identifiers = buildIdentifiers(record,lookupTable);
+				JSONArray identifiers = Identifier.createInstanceIdentifiersJson(record, true,
+						Constants.ISBN,
+						Constants.INVALID_ISBN,
+						Constants.ISSN,
+						Constants.INVALID_ISSN,
+						Constants.LINKING_ISSN,
+						Constants.OTHER_STANDARD_IDENTIFIER,
+						Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER,
+						Constants.SYSTEM_CONTROL_NUMBER);
+
 				JSONArray contributors = buildContributors(record, lookupTable);
 				instanceAsJson.put("title", title);
 				instanceAsJson.put("source", "FOLIO");
@@ -418,12 +419,10 @@ public class OrderImportShortened {
 				instanceAsJson.put("contributors", contributors);
 				instanceAsJson.put("discoverySuppress", false);
 
-
 				//GET THE HOLDINGS RECORD FOLIO CREATED, SO WE CAN ADD URLs FROM THE 856 IN THE MARC RECORD
 				String holdingResponse = callApiGet(baseOkapEndpoint + "holdings-storage/holdings?query=(instanceId==" + instanceId + ")", token);
 				JSONObject holdingsAsJson = new JSONObject(holdingResponse);
 				JSONObject holdingsRecord = holdingsAsJson.getJSONArray("holdingsRecords").getJSONObject(0);
-
 
 				JSONArray eResources = new JSONArray();
 				String linkText = (String) getMyContext().getAttribute("textForElectronicResources");
@@ -982,8 +981,6 @@ public class OrderImportShortened {
 
 	}
 
-
-
 	public String callApiGet(String url, String token) throws Exception, IOException, InterruptedException {
 		CloseableHttpClient client = HttpClients.custom().build();
 		HttpUriRequest request = RequestBuilder.get().setUri(url)
@@ -1249,7 +1246,6 @@ public class OrderImportShortened {
 
 	private static boolean isUUID(String str)
 	{
-		return (str == null ? false : Constants.UUID_PATTERN.matcher(str).matches());
+		return ( str != null && Constants.UUID_PATTERN.matcher( str ).matches() );
 	}
-
 }
