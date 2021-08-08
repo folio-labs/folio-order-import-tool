@@ -362,6 +362,29 @@ public class OrderImportShortened {
 				orderLineDetails.put("productIds", productIds);
 				orderLine.put("details", orderLineDetails);
 
+				DataField editionField = (DataField) record.getVariableField( "250" );
+				if (editionField != null) {
+					String edition = editionField.getSubfieldsAsString( "a" );
+					if (edition != null && ! edition.isEmpty()) {
+						orderLine.put("edition", edition);
+					}
+				}
+
+				for (String tag : new String[] {"260", "264"} ) {
+					if (record.getVariableField( tag ) != null) {
+						DataField publishingField = (DataField) record.getVariableField( tag );
+						String publisher = publishingField.getSubfieldsAsString( "b" );
+						String publicationDate = publishingField.getSubfieldsAsString( "c" );
+						if (publisher != null && ! publisher.isEmpty()) {
+							orderLine.put("publisher", publisher);
+						}
+						if (publicationDate != null && !publicationDate.isEmpty()) {
+							orderLine.put("publicationDate", publicationDate);
+						}
+						break;
+					}
+				}
+
 				//POST THE ORDER AND LINE:
 				String orderResponse = callApiPostWithUtf8(baseOkapEndpoint + "orders/composite-orders",order,token); 
 				JSONObject approvedOrder = new JSONObject(orderResponse);
@@ -1190,25 +1213,6 @@ public class OrderImportShortened {
 			responseMessage.put("PONumber", "~error~");
 			return responseMessage;
 		}
-		//REMOVED ON 8-28 - NOW THAT THE BUDGETS CAN BE OVERSPENT
-		/*Iterator budgetsIterator = fundBalanceObject.getJSONArray("budgets").iterator();
-		boolean foundAGoodBudget = false;
-		while (budgetsIterator.hasNext()) {
-			JSONObject budget = (JSONObject) budgetsIterator.next();
-			if (budget.getString("budgetStatus") == null || !budget.getString("budgetStatus").equalsIgnoreCase("active")) continue;
-			BigDecimal availableMoney = budget.getBigDecimal("available");
-			BigDecimal wantedToSpend = new BigDecimal(price);
-			if (availableMoney.compareTo(wantedToSpend) > 0)  foundAGoodBudget = true;
-		}
-
-		if (!foundAGoodBudget) {
-			responseMessage.put("error", "Fund code in file (" + fundCode + ") does not an active budget with enough money to open a purchase order which will encumber funds.  Using fund code: " + fundCode);
-			responseMessage.put("title", title);
-			responseMessage.put("theOne", id);
-			responseMessage.put("PONumber", "~error~");
-			return responseMessage;
-		}*/
-		//END REMOVED 8-28 BECAUSE BUDGETS CAN BE OVERSPENT
 		return null;
 	}
 
