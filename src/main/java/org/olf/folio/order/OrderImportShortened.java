@@ -48,6 +48,7 @@ public class OrderImportShortened {
 	private String tenant;
 	private Boolean importInvoice;
 	private Boolean failIfNoInvoiceData;
+	private Boolean importSRS;
 	private Boolean objectCodeRequired = true;
 	private static final String HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE =  "88914775-f677-4759-b57b-1a33b90b24e0";
 	private static final String ITEM_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE = "f3ae3823-d096-4c65-8734-0c1efd2ffea8";
@@ -72,6 +73,7 @@ public class OrderImportShortened {
 		objectCodeRequired = ! ("false".equalsIgnoreCase((String) getMyContext().getAttribute("objectCodeRequired")));
 		importInvoice = "true".equalsIgnoreCase((String) getMyContext().getAttribute("importInvoice"));
 		failIfNoInvoiceData =  "true".equalsIgnoreCase((String) getMyContext().getAttribute("failIfNoInvoiceData"));
+		importSRS = "true".equalsIgnoreCase( (String) getMyContext().getAttribute("importSRS") );
 
 		//GET THE FOLIO TOKEN
 		JSONObject jsonObject = new JSONObject();
@@ -421,7 +423,17 @@ public class OrderImportShortened {
 
 				// UChicago have asked that the MARC NOT be stored to SRS since this has implications for the ability to
 				// batch update the instance record with the full cataloging when UChicago receive the invoice.
-				// storeMarcToSRS( baseOkapEndpoint, token, record, byteArrayOutputStream, snapshotId, recordTableId, instanceId, hrid );
+				if (importSRS)
+				{
+					storeMarcToSRS( baseOkapEndpoint,
+							token,
+							record,
+							byteArrayOutputStream,
+							snapshotId,
+							recordTableId,
+							instanceId,
+							hrid );
+				}
 
 				//ADD IDENTIFIERS AND CONTRIBUTORS TO THE INSTANCE
 				JSONArray identifiers = Identifier.createInstanceIdentifiersJson(record, true,
@@ -435,7 +447,7 @@ public class OrderImportShortened {
 						Constants.SYSTEM_CONTROL_NUMBER);
 
 				instanceAsJson.put("title", title);
-				instanceAsJson.put("source", "FOLIO");
+				instanceAsJson.put("source", importSRS ? "MARC" : "FOLIO");
 				instanceAsJson.put("instanceTypeId", lookupTable.get("text"));
 				instanceAsJson.put("identifiers", identifiers);
 				instanceAsJson.put("contributors", buildContributors(record, lookupTable, false));
@@ -542,6 +554,7 @@ public class OrderImportShortened {
 
 	private void storeMarcToSRS( String baseOkapEndpoint, String token, Record record, ByteArrayOutputStream byteArrayOutputStream, UUID snapshotId, UUID recordTableId, String instanceId, String hrid ) throws Exception
 	{
+		logger.info("Storing MARC to SRS");
 		//PREPARING TO ADD THE MARC RECORD TO SOURCE RECORD STORAGE:
 		//CONSTRUCTING THE 999 OF THE MARC RECORD for FOLIO:
 		DataField field = MarcFactory.newInstance().newDataField();

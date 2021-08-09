@@ -17,6 +17,12 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
   - Importing an invoice is mandatory: Set `importInvoice = true` and `failIfNoInvoiceData = true`
 * Will import one invoice and one invoice line
 
+#### Optional SRS import
+* By default, the script will not attempt to import the MARC record to SRS.
+* Importing the MARC record to SRS can be turned on by setting the optional config parameter `importSRS` to `true` in import.properties:
+  - `importSRS = true`. However, currently SRS will probably reject the script's attempt to subsequently update the Instance as certain Instance properties handled by this script are blocked when an SRS record exists.
+* Leaving `importSRS` out or setting it to something else than `true` will make the script skip the SRS import.
+
 ### API Calls
 * Several get calls to initialize reference values (like instance types, material types, note types)
 * Get next PO number (GET orders/po-number)
@@ -112,7 +118,7 @@ To override the default configuration, mount your configuration to `/var/lib/jet
 |020 $z ($c $q)|Identifiers|instance.identifiers[].value /w type 'Invalid ISBN'|No| |
 |022 $a ($c $q)|Identifiers|instance.identifiers[].value /w type 'ISSN'|No| |
 |022 $l ($c $q)|Identifiers|instance.identifiers[].value /w type 'Linking ISSN'|No| |
-|022 ($z $y $n)|Idenfifiers|instance.identifiers[].value /w type 'Invalid ISSN'|No| |
+|022 ($z $y $n)|Identifiers|instance.identifiers[].value /w type 'Invalid ISSN'|No| |
 |100, 700|Contributors|instance.contributors.name /w contributor name type 'Personal name" and contributor type from $4 or 'bkp'|No| |
 |245 $a ($b $c)|Instance title|instance.title, orderline.titleOrPackage|Yes|
 |856 $u |URI|instance. electronicAccess[]. uri, holdingsRecord.electronicAccess[].uri|No|
