@@ -19,8 +19,7 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONArray;
 import org.olf.folio.order.Constants;
-import org.olf.folio.order.OrderImportShortened;
-
+import org.olf.folio.order.OrderImport;
 
 
 @Path ("/upload")
@@ -35,19 +34,19 @@ public class OrderService {
 	@Produces("application/json")
 	public Response uploadFile(
 			@FormDataParam("order-file") InputStream uploadedInputStream,
-			@FormDataParam("order-file") FormDataContentDisposition fileDetails) throws IOException, InterruptedException, Exception {
+			@FormDataParam("order-file") FormDataContentDisposition fileDetails) throws Exception {
 
 		System.out.println(fileDetails.getFileName());
 		String filePath = (String) servletRequest.getServletContext().getAttribute("uploadFilePath");
 		UUID fileName = UUID.randomUUID();
-		String uploadedFileLocation = filePath + fileName.toString() + ".mrc";
+		String uploadedFileLocation = filePath + fileName + ".mrc";
 		// SAVE FILE TO DISK
 		writeFile(uploadedInputStream, uploadedFileLocation);
-		// PASS FILE INFO TO 'OrderImportShortened' WHICH MAKES THE FOLIO API CALLS
-		OrderImportShortened orderImportShortened = new OrderImportShortened();
+		// PASS FILE INFO TO 'OrderImport' WHICH MAKES THE FOLIO API CALLS
+		OrderImport orderImportShortened = new OrderImport();
 		orderImportShortened.setMyContext(servletRequest.getServletContext());
 		try {
-			JSONArray message = orderImportShortened.upload(fileName.toString() + ".mrc");
+			JSONArray message = orderImportShortened.upload(fileName + ".mrc");
 			return Response.status(Response.Status.OK).entity(message.toString()).build();		
 		}
 		catch(Exception e) {
@@ -57,7 +56,7 @@ public class OrderService {
 	}
 
 	@GET
-	public Response justACheck() throws IOException, InterruptedException, Exception {
+	public Response justACheck()  {
 
 		//RESET REFERENCE VALUES 
 		String filePath = (String) servletRequest.getServletContext().getAttribute("baseOkapEndpoint");
@@ -70,12 +69,9 @@ public class OrderService {
 	private void writeFile(InputStream uploadedInputStream,
 			String uploadedFileLocation) {
 		try {
-			OutputStream out = new FileOutputStream(new File(
-					uploadedFileLocation));
-			int read = 0;
+			int read;
 			byte[] bytes = new byte[1024];
-
-			out = new FileOutputStream(new File(uploadedFileLocation));
+			OutputStream out = new FileOutputStream(uploadedFileLocation);
 			while ((read = uploadedInputStream.read(bytes)) != -1) {
 				out.write(bytes, 0, read);
 			}

@@ -13,8 +13,8 @@ import java.util.List;
 public class Identifier
 {
 
-    private String identifierTypeId;
-    private String identifierValue;
+    private final String identifierTypeId;
+    private final String identifierValue;
 
     private static final Logger logger = Logger.getLogger(Identifier.class);
 
