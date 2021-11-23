@@ -58,7 +58,12 @@ public class OrderImportShortened {
 		logger.info("...starting...");
 		JSONArray responseMessages = new JSONArray();
 		//COLLECT VALUES FROM THE CONFIGURATION FILE
-		String baseOkapEndpoint = (String) getMyContext().getAttribute("baseOkapEndpoint");
+		String baseOkapiEndpoint = (String) getMyContext().getAttribute("baseOkapiEndpoint");
+		if (baseOkapiEndpoint == null || baseOkapiEndpoint.isEmpty())
+		{
+			// old spelling, to support old config files
+			baseOkapiEndpoint = (String) getMyContext().getAttribute("baseOkapEndpoint");
+		}
 		String apiUsername = (String) getMyContext().getAttribute("okapi_username");
 		String apiPassword = (String) getMyContext().getAttribute("okapi_password");
 		tenant = (String) getMyContext().getAttribute("tenant");
@@ -80,7 +85,7 @@ public class OrderImportShortened {
 		jsonObject.put("username", apiUsername);
 		jsonObject.put("password", apiPassword);
 		jsonObject.put("tenant",tenant);
-		String token = callApiAuth( baseOkapEndpoint + "authn/login",  jsonObject);
+		String token = callApiAuth( baseOkapiEndpoint + "authn/login",  jsonObject);
 
 		//TODO: REMOVE
 		logger.info("TOKEN: " + token); 
@@ -106,23 +111,23 @@ public class OrderImportShortened {
 		MarcReader reader = new MarcStreamReader(in);
 		Record record = null;
 
-		JSONArray validateRequiredResult = validateRequiredValues(reader, token, baseOkapEndpoint);
+		JSONArray validateRequiredResult = validateRequiredValues(reader, token, baseOkapiEndpoint);
 		if (!validateRequiredResult.isEmpty()) return validateRequiredResult;
 
 		//LOOKUP REFERENCE TABLES 
 		//TODO
 		//IMPROVE THIS - 'text' is repeated (it is a 'name' in more than one reference table)
 		List<String> referenceTables = new ArrayList<String>(); 
-		referenceTables.add(baseOkapEndpoint + "identifier-types?limit=1000");
-		referenceTables.add(baseOkapEndpoint + "classification-types?limit=1000");
-		referenceTables.add(baseOkapEndpoint + "contributor-types?limit=1000");
-		referenceTables.add(baseOkapEndpoint + "contributor-name-types?limit=1000");
-		referenceTables.add(baseOkapEndpoint + "locations?limit=10000");
-		referenceTables.add(baseOkapEndpoint + "loan-types?limit=1000");
-		referenceTables.add(baseOkapEndpoint + "note-types?limit=1000");
-		referenceTables.add(baseOkapEndpoint + "material-types?limit=1000");
-		referenceTables.add(baseOkapEndpoint + "instance-types?limit=1000");
-		referenceTables.add(baseOkapEndpoint + "holdings-types?limit=1000");
+		referenceTables.add(baseOkapiEndpoint + "identifier-types?limit=1000");
+		referenceTables.add(baseOkapiEndpoint + "classification-types?limit=1000");
+		referenceTables.add(baseOkapiEndpoint + "contributor-types?limit=1000");
+		referenceTables.add(baseOkapiEndpoint + "contributor-name-types?limit=1000");
+		referenceTables.add(baseOkapiEndpoint + "locations?limit=10000");
+		referenceTables.add(baseOkapiEndpoint + "loan-types?limit=1000");
+		referenceTables.add(baseOkapiEndpoint + "note-types?limit=1000");
+		referenceTables.add(baseOkapiEndpoint + "material-types?limit=1000");
+		referenceTables.add(baseOkapiEndpoint + "instance-types?limit=1000");
+		referenceTables.add(baseOkapiEndpoint + "holdings-types?limit=1000");
 
 		//SAVE REFERENCE TABLE VALUES (JUST LOOKUP THEM UP ONCE)
 		if (myContext.getAttribute(Constants.LOOKUP_TABLE) == null) {
@@ -203,18 +208,18 @@ public class OrderImportShortened {
 				responseMessage.put("title", title);
 
 				//LOOK UP VENDOR 
-				String organizationEndpoint = baseOkapEndpoint + "organizations-storage/organizations?limit=30&offset=0&query=((code='" + vendorCode + "'))";
+				String organizationEndpoint = baseOkapiEndpoint + "organizations-storage/organizations?limit=30&offset=0&query=((code='" + vendorCode + "'))";
 				String orgLookupResponse = callApiGet(organizationEndpoint,  token);
 				JSONObject orgObject = new JSONObject(orgLookupResponse);
 				String vendorId = (String) orgObject.getJSONArray("organizations").getJSONObject(0).get("id");
 				//LOOK UP THE FUND
-				String fundEndpoint = baseOkapEndpoint + "finance/funds?limit=30&offset=0&query=((code='" + fundCode + "'))";
+				String fundEndpoint = baseOkapiEndpoint + "finance/funds?limit=30&offset=0&query=((code='" + fundCode + "'))";
 				String fundResponse = callApiGet(fundEndpoint, token);
 				JSONObject fundsObject = new JSONObject(fundResponse);
 				String fundId = (String) fundsObject.getJSONArray("funds").getJSONObject(0).get("id");
 
 				// UC - LOOK UP ACCESS PROVIDER, FALL BACK to VENDOR
-				organizationEndpoint = baseOkapEndpoint + "organizations-storage/organizations?limit=30&offset=0&query=((code='" + accessProviderCode + "'))";
+				organizationEndpoint = baseOkapiEndpoint + "organizations-storage/organizations?limit=30&offset=0&query=((code='" + accessProviderCode + "'))";
 				orgLookupResponse = callApiGet(organizationEndpoint,  token);
 				orgObject = new JSONObject(orgLookupResponse);
 				String accessProviderId;
@@ -226,7 +231,7 @@ public class OrderImportShortened {
 				// UC - LOOK UP EXPENSE CLASS
 				String expenseClassId = null;
 				if (expenseClassCode != null && !expenseClassCode.isEmpty()) {
-					String expenseClassEndpoint = baseOkapEndpoint + "finance/expense-classes?limit=30&query=code='" + expenseClassCode + "'";
+					String expenseClassEndpoint = baseOkapiEndpoint + "finance/expense-classes?limit=30&query=code='" + expenseClassCode + "'";
 					String expenseClassResponse = callApiGet(expenseClassEndpoint, token);
 					JSONObject expenseClassesObject = new JSONObject(expenseClassResponse);
 					JSONArray expenseClasses = expenseClassesObject.getJSONArray("expenseClasses");
@@ -236,7 +241,7 @@ public class OrderImportShortened {
 				}
 
 				//GET THE NEXT PO NUMBER
-				String poNumber = callApiGet(baseOkapEndpoint + "orders/po-number", token);
+				String poNumber = callApiGet(baseOkapiEndpoint + "orders/po-number", token);
 				JSONObject poNumberObj = new JSONObject(poNumber);
 				logger.info("NEXT PO NUMBER: " + poNumberObj.get("poNumber"));
 
@@ -251,7 +256,7 @@ public class OrderImportShortened {
 				order.put("workflowStatus","Open");
 
 				// UC extension
-				String addressId = (billTo != null ? findAddressId(baseOkapEndpoint, token, billTo) : null);
+				String addressId = (billTo != null ? findAddressId(baseOkapiEndpoint, token, billTo) : null);
 				if (addressId != null) order.put("billTo", addressId);
 
 				// POST ORDER LINE
@@ -388,7 +393,7 @@ public class OrderImportShortened {
 				}
 
 				//POST THE ORDER AND LINE:
-				String orderResponse = callApiPostWithUtf8(baseOkapEndpoint + "orders/composite-orders",order,token); 
+				String orderResponse = callApiPostWithUtf8(baseOkapiEndpoint + "orders/composite-orders",order,token);
 				JSONObject approvedOrder = new JSONObject(orderResponse);
 				logger.info(orderResponse);
 
@@ -407,17 +412,17 @@ public class OrderImportShortened {
 					noteAsJson.put("domain", "orders");
 					noteAsJson.put("content", notes);
 					noteAsJson.put("title", notes);
-					String noteResponse = callApiPostWithUtf8(baseOkapEndpoint + "/notes",noteAsJson,token); 
+					String noteResponse = callApiPostWithUtf8(baseOkapiEndpoint + "/notes",noteAsJson,token);
 					logger.info(noteResponse);
 				}
 
 				//GET THE UPDATED PURCHASE ORDER FROM THE API AND PULL OUT THE ID FOR THE INSTANCE FOLIO CREATED:
-				String updatedPurchaseOrder = callApiGet(baseOkapEndpoint + "orders/composite-orders/" +orderUUID.toString() ,token); 
+				String updatedPurchaseOrder = callApiGet(baseOkapiEndpoint + "orders/composite-orders/" +orderUUID.toString() ,token);
 				JSONObject updatedPurchaseOrderJson = new JSONObject(updatedPurchaseOrder);
 				String instanceId = updatedPurchaseOrderJson.getJSONArray("compositePoLines").getJSONObject(0).getString("instanceId");
 
 				//GET THE INSTANCE RECORD FOLIO CREATED, SO WE CAN ADD BIB INFO TO IT:
-				String instanceResponse = callApiGet(baseOkapEndpoint + "inventory/instances/" + instanceId, token);
+				String instanceResponse = callApiGet(baseOkapiEndpoint + "inventory/instances/" + instanceId, token);
 				JSONObject instanceAsJson = new JSONObject(instanceResponse);
 				String hrid = instanceAsJson.getString("hrid");
 
@@ -425,7 +430,7 @@ public class OrderImportShortened {
 				// batch update the instance record with the full cataloging when UChicago receive the invoice.
 				if (importSRS)
 				{
-					storeMarcToSRS( baseOkapEndpoint,
+					storeMarcToSRS( baseOkapiEndpoint,
 							token,
 							record,
 							byteArrayOutputStream,
@@ -454,7 +459,7 @@ public class OrderImportShortened {
 				instanceAsJson.put("discoverySuppress", false);
 
 				//GET THE HOLDINGS RECORD FOLIO CREATED, SO WE CAN ADD URLs FROM THE 856 IN THE MARC RECORD
-				String holdingResponse = callApiGet(baseOkapEndpoint + "holdings-storage/holdings?query=(instanceId==" + instanceId + ")", token);
+				String holdingResponse = callApiGet(baseOkapiEndpoint + "holdings-storage/holdings?query=(instanceId==" + instanceId + ")", token);
 				JSONObject holdingsAsJson = new JSONObject(holdingResponse);
 				JSONObject holdingsRecord = holdingsAsJson.getJSONArray("holdingsRecords").getJSONObject(0);
 
@@ -489,7 +494,7 @@ public class OrderImportShortened {
 				instanceAsJson.put("natureOfContentTermIds", new JSONArray());
 				instanceAsJson.put("precedingTitles", new JSONArray());
 				instanceAsJson.put("succeedingTitles", new JSONArray());
-				String instanceUpdateResponse = callApiPut(baseOkapEndpoint + "inventory/instances/" + instanceId,  instanceAsJson,token);
+				String instanceUpdateResponse = callApiPut(baseOkapiEndpoint + "inventory/instances/" + instanceId,  instanceAsJson,token);
 
 				//UPDATE THE HOLDINGS RECORD
 				holdingsRecord.put("electronicAccess", eResources);
@@ -508,12 +513,12 @@ public class OrderImportShortened {
 						holdingsRecord.put("notes", holdingsNotes);
 					}
 				}
-				String createHoldingsResponse = callApiPut(baseOkapEndpoint + "holdings-storage/holdings/" + holdingsRecord.getString("id"), holdingsRecord,token);
+				String createHoldingsResponse = callApiPut(baseOkapiEndpoint + "holdings-storage/holdings/" + holdingsRecord.getString("id"), holdingsRecord,token);
 
 				// UC
 				if (!electronic && donor != null) {
 					//IF PHYSICAL RESOURCE WITH DONOR INFO, GET THE ITEM FOLIO CREATED, SO WE CAN ADD NOTE ABOUT DONOR
-					String itemsResponse = callApiGet(baseOkapEndpoint + "inventory/items?query=(holdingsRecordId==" + holdingsRecord.get("id") + ")", token);
+					String itemsResponse = callApiGet(baseOkapiEndpoint + "inventory/items?query=(holdingsRecordId==" + holdingsRecord.get("id") + ")", token);
 					JSONObject itemsAsJson = new JSONObject(itemsResponse);
 					JSONObject item = itemsAsJson.getJSONArray("items").getJSONObject(0);
 					JSONObject bookplateNote = new JSONObject();
@@ -524,11 +529,11 @@ public class OrderImportShortened {
 					itemNotes.put(bookplateNote);
 					item.put("notes", itemNotes);
 					//UPDATE THE ITEM
-					callApiPut(baseOkapEndpoint + "inventory/items/" + item.getString("id"), item, token);
+					callApiPut(baseOkapiEndpoint + "inventory/items/" + item.getString("id"), item, token);
 				}
 
 				if (importInvoice && hasInvoice(nineEighty)) {
-					importInvoice(baseOkapEndpoint, token,
+					importInvoice(baseOkapiEndpoint, token,
 							poNumberObj.getString("poNumber"), title, orderLineUUID, vendorId, currency, nineEighty);
 				}
 

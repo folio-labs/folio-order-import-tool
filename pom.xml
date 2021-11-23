@@ -181,6 +181,13 @@
 					<httpConnector>
 						<port>8888</port>
 					</httpConnector>
+					<systemProperties>
+						<systemProperty>
+							<name>configFile</name>
+							<!--suppress UnresolvedMavenProperty -->
+							<value>${configFile}</value>
+						</systemProperty>
+					</systemProperties>
 				</configuration>
 			</plugin>
 		</plugins>

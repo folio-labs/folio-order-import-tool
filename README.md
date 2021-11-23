@@ -1,117 +1,143 @@
 # order-import-poc
+
 Proof of concept workaround needed until FOLIO supports importing MARC records to create orders.
 
 ### What does it do?
-* It takes an uploaded file that contains MARC records and creates orders, instances, holdings, items and MARC records for each.
+
+* It takes an uploaded file that contains MARC records and creates orders, instances, holdings, items and MARC records
+  for each.
 * It uses the 980 field to get the fund code, vendor code, price, tag, quantity, notes and electronic/print indicator
-* It only creates items if the material is print (which should be indicated in the 980$z field) - It looks for the values ELECTRONIC or PRINT
+* It only creates items if the material is print (which should be indicated in the 980$z field) - It looks for the
+  values ELECTRONIC or PRINT
 * It lets FOLIO create the instance, holdings and item records using the "createInventory" value in the order line
 * It optionally creates an invoice
 * It does all of this using the FOLIO API
-* It uses a property file to determine location, fiscal year, loan type, note type and material type and default text for electronic resources (in case subfield z is missing)
+* It uses a property file to determine location, fiscal year, loan type, note type and material type and default text
+  for electronic resources (in case subfield z is missing)
 
 #### Optional Invoice import
+
 * The script supports three modes of invoice imports, as configured in import.properties:
-  - Never import an invoice: This is default behavior so either leave out any invoice properties or set `importInvoice = false`
-  - Import an invoice if invoice data are found in the MARC: Set `importInvoice = true`  and `failIfNoInvoiceData = 'false'`
-  - Importing an invoice is mandatory: Set `importInvoice = true` and `failIfNoInvoiceData = true`
+    - Never import an invoice: This is default behavior so either leave out any invoice properties or
+      set `importInvoice = false`
+    - Import an invoice if invoice data are found in the MARC: Set `importInvoice = true`
+      and `failIfNoInvoiceData = 'false'`
+    - Importing an invoice is mandatory: Set `importInvoice = true` and `failIfNoInvoiceData = true`
 * Will import one invoice and one invoice line
 
 #### Optional SRS import
+
 * By default, the script will not attempt to import the MARC record to SRS.
-* Importing the MARC record to SRS can be turned on by setting the optional config parameter `importSRS` to `true` in import.properties:
-  - `importSRS = true`. However, currently SRS will probably reject the script's attempt to subsequently update the Instance as certain Instance properties handled by this script are blocked when an SRS record exists.
+* Importing the MARC record to SRS can be turned on by setting the optional config parameter `importSRS` to `true` in
+  import.properties:
+    - `importSRS = true`. However, currently SRS will probably reject the script's attempt to subsequently update the
+      Instance as certain Instance properties handled by this script are blocked when an SRS record exists.
 * Leaving `importSRS` out or setting it to something else than `true` will make the script skip the SRS import.
 
 ### API Calls
+
 * Several get calls to initialize reference values (like instance types, material types, note types)
-* Get next PO number (GET orders/po-number)
-* Posts a purchase order (approved and open) and one line item for each MARC record in a file (POST orders/composite-orders)
-* Retreives the puchase order (to get the ID of the instance FOLIO automatically created) (GET orders/composite-orders/theOrderUuid)
-* Retreive the new instance (GET inventory/instances/theinstanceid)
+* Get next PO number (GET /orders/po-number)
+* Posts a purchase order (approved and open) and one line item for each MARC record in a file (POST
+  /orders/composite-orders)
+* Retrieves the purchase order (to get the ID of the instance FOLIO automatically created) (GET
+  /orders/composite-orders/theOrderUuid)
+* Retrieve the new instance (GET /inventory/instances/theInstanceId)
 * Posts to snapshots (POST source-storage/snapshots)
-* Posts to source record storage (source-storage/records)
-* Retreives holdings record FOLIO created (GET holdings-storage/holdings?query=(instanceId==theinstanceid))
-* PUT to instances (to update the instance with source 'MARC' and add data)  (PUT inventory/instances/theinstancid)
-* PUT to holdings (to add 856s to holdings) (PUT holdings-storage/holdings/...)
-* Optionally POST an invoice (POST invoice/invoices)
-* Optionally POST an invoice line (POST invoice/invoice-lines)
+* Posts to source record storage (/source-storage/records)
+* Retrieves holdings record FOLIO created (GET /holdings-storage/holdings?query=(instanceId==theinstanceid))
+* PUT to /instances (to update the instance with source 'MARC' and add data)  (PUT /inventory/instances/theinstancid)
+* PUT to holdings (to add 856s to holdings) (PUT /holdings-storage/holdings/...)
+* Optionally POST an invoice (POST /invoice/invoices)
+* Optionally POST an invoice line (POST /invoice/invoice-lines)
 
 ### User permissions
+
 To access the APIs, the FOLIO user defined in the `import.properties` file needs the following permissions:
 
 ```json
-    "permissions": [
-        "configuration.entries.collection.get",
-        "finance.budgets.collection.get",
-        "finance.expense-classes.collection.get",
-        "finance.fiscal-years.collection.get",
-        "finance.funds.collection.get",
-        "finance-storage.budget-expense-classes.collection.get",
-        "inventory.instances.collection.get",
-        "inventory.instances.item.get",
-        "inventory.instances.item.post",
-        "inventory.instances.item.put",
-        "inventory.items.collection.get",
-        "inventory.items.item.post",
-        "inventory.items.item.put",
-        "inventory-storage.classification-types.collection.get",
-        "inventory-storage.contributor-name-types.collection.get",
-        "inventory-storage.contributor-types.collection.get",
-        "inventory-storage.identifier-types.collection.get",
-        "inventory-storage.holdings.collection.get",
-        "inventory-storage.holdings.item.get",
-        "inventory-storage.holdings.item.post",
-        "inventory-storage.holdings.item.put",
-        "inventory-storage.holdings-types.collection.get",
-        "inventory-storage.instance-types.collection.get",
-        "inventory-storage.items.item.get",
-        "inventory-storage.locations.collection.get",
-        "inventory-storage.loan-types.collection.get",
-        "inventory-storage.material-types.collection.get",
-        "invoice.invoices.collection.get",
-        "invoice.invoices.item.get",
-        "invoice.invoices.item.post",
-        "invoice.invoice-lines.item.post",
-        "invoice.invoice-lines.collection.get",
-        "invoice.invoice-lines.item.get",
-        "note.types.collection.get",
-        "notes.domain.all",
-        "notes.item.post",
-        "orders.collection.get",
-        "orders.item.get",
-        "orders.item.post",
-        "orders.po-number.item.get",
-        "organizations-storage.organizations.collection.get",
-        "source-storage.records.post",
-        "source-storage.snapshots.post",
-        "tags.collection.get"
-    ]
+{
+  "permissions": [
+    "configuration.entries.collection.get",
+    "finance.budgets.collection.get",
+    "finance.expense-classes.collection.get",
+    "finance.fiscal-years.collection.get",
+    "finance.funds.collection.get",
+    "finance-storage.budget-expense-classes.collection.get",
+    "inventory.instances.collection.get",
+    "inventory.instances.item.get",
+    "inventory.instances.item.post",
+    "inventory.instances.item.put",
+    "inventory.items.collection.get",
+    "inventory.items.item.post",
+    "inventory.items.item.put",
+    "inventory-storage.classification-types.collection.get",
+    "inventory-storage.contributor-name-types.collection.get",
+    "inventory-storage.contributor-types.collection.get",
+    "inventory-storage.identifier-types.collection.get",
+    "inventory-storage.holdings.collection.get",
+    "inventory-storage.holdings.item.get",
+    "inventory-storage.holdings.item.post",
+    "inventory-storage.holdings.item.put",
+    "inventory-storage.holdings-types.collection.get",
+    "inventory-storage.instance-types.collection.get",
+    "inventory-storage.items.item.get",
+    "inventory-storage.locations.collection.get",
+    "inventory-storage.loan-types.collection.get",
+    "inventory-storage.material-types.collection.get",
+    "invoice.invoices.collection.get",
+    "invoice.invoices.item.get",
+    "invoice.invoices.item.post",
+    "invoice.invoice-lines.item.post",
+    "invoice.invoice-lines.collection.get",
+    "invoice.invoice-lines.item.get",
+    "note.types.collection.get",
+    "notes.domain.all",
+    "notes.item.post",
+    "orders.collection.get",
+    "orders.item.get",
+    "orders.item.post",
+    "orders.po-number.item.get",
+    "organizations-storage.organizations.collection.get",
+    "source-storage.records.post",
+    "source-storage.snapshots.post",
+    "tags.collection.get"
+  ]
+}
 ```
 
-### If you want to try it 
-* It expects the properties file to be here: /yourhomefolder/order/import.properties  -- you will have to add the okapi userid/password and you may have to adjust the file upload path (where it will save the uploaded file)
+### If you want to try it
+
+* It expects the properties file to be here: `/yourhomefolder/order/import.properties` unless you specify an alternative
+  config file as an environment property on the command line: `-DconfigFile=/path/to/your.properties`
+* You will have to add the Okapi userid/password, and you may have to adjust the file upload path (where it will save
+  the uploaded file)
 * clone the repo
-* call: mvn jetty:run
+* call: `mvn jetty:run [-DconfigFile=path-to-properties-file]`
 * It should start a jetty server and you should be able to point your browser to http://localhost:8888/import and try it
 * I've included example MARC files but you will have to update them with your vendor, fund, object codes
 * The first call is a bit slow because it initializes reference values/UUIDs
 * To effectuate changes of import properties, restart the service
 
 ### Docker image
+
 You can build a Docker image using the [Dockerfile](Dockerfile) in this repository.
 
 1. Build the WAR for the webapp: `mvn install`
 1. Build the Docker image: `docker build .`
 1. Run the container: `docker run -d -p 8080:8080 <imageId>`
 
-This will run a [Jetty](https://hub.docker.com/_/jetty) container with the order import webapp as the root, using the default configuration in the [import.properties](import.properties) file. This will work against the FOLIO [folio-snapshot](https://folio-snapshot.dev.folio.org) reference environment.
+This will run a [Jetty](https://hub.docker.com/_/jetty) container with the order import webapp as the root, using the
+default configuration in the [import.properties](import.properties) file. This will work against the
+FOLIO [folio-snapshot](https://folio-snapshot.dev.folio.org) reference environment.
 
-To override the default configuration, mount your configuration to `/var/lib/jetty/order/import.properties` on the container e.g.:
+To override the default configuration, mount your configuration to `/var/lib/jetty/order/import.properties` on the
+container e.g.:
 
     docker run -d -v $(pwd)/order:/var/lib/jetty/order -p 8080:8080 <imageId>
 
 ### Mappings
+
 |MARC fields|Description|Target properties|Required|Default|Content (incoming)|
 |-----------|-----------|-----------------|--------|-------|--------|
 |020 $a ($c $q)|Identifiers|instance.identifiers[].value /w type 'ISBN'|No| |
@@ -154,6 +180,7 @@ To override the default configuration, mount your configuration to `/var/lib/jet
 `*` if importing invoices
 
 #### Static values, configured in import.properties
+
 |Property name|Description|Examples|Target properties|Required|Content|
 |-------------|-------|--------|----------------|--------|-------|
 |permLocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if physical resource and not uploading invoice|The location must exist in FOLIO|
@@ -166,8 +193,8 @@ To override the default configuration, mount your configuration to `/var/lib/jet
 |permLocationWithInvoiceImport|The name of a FOLIO location|Annex|orderLine.locations[].id (name resolved ot id|Yes, if physical resource and uploading invoice|The location must exist in FOLIO|
 |permELocationWithInvoiceImport|The name of a FOLIO location|Online|orderLine.locations[].id (name resolved ot id|Yes, if electronic resource and uploading invoice|The location must exist in FOLIO|
 
-
 #### Hard-coded values
+
 |Target properties|Value|
 |-----------------|-----|
 |orderLine.cost.currency|"USD" (but see 980$k for UC)|
@@ -198,25 +225,27 @@ To override the default configuration, mount your configuration to `/var/lib/jet
 |invoiceLine.releaseEncumbrance|true|
 
 ### Lots of areas for improvement including:
-* Better way to get data out of the MARC record to include on the instance. 
+
+* Better way to get data out of the MARC record to include on the instance.
 * Better way to store reference values needed for lookup
 * Current version contains some hard-coded values (e.g. currency: USD)
 * If duplicate PO number error - get the next PO number and try again
 
 ### What's new?
+
 * 11-16-2020
-  - Removed reference to the 001 field.  Wasn't necessary and was causing an error when it was missing.
- 
+    - Removed reference to the 001 field. Wasn't necessary and was causing an error when it was missing.
+
 * 9-23-2020
-  - Removed the check for enough money in the budget
-  - Fixed where the electronic indicator is initialized (needed to be per record)
-  
+    - Removed the check for enough money in the budget
+    - Fixed where the electronic indicator is initialized (needed to be per record)
+
 * 7-31-2020
-  - Better handling of special characters
-  - Handles multiple records in a file
-  - Validates each record in the file
+    - Better handling of special characters
+    - Handles multiple records in a file
+    - Validates each record in the file
 
 * (March/April 2021)
-  - Optional import of an invoice, and an invoice line
-  - Additional mappings of fields to order and order line.
-  - Dockerfile
+    - Optional import of an invoice, and an invoice line
+    - Additional mappings of fields to order and order line.
+    - Dockerfile
