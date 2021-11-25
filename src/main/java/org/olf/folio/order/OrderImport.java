@@ -2,12 +2,7 @@ package org.olf.folio.order;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -23,7 +18,6 @@ import org.marc4j.MarcWriter;
 import org.marc4j.converter.impl.AnselToUnicode;
 import org.marc4j.marc.DataField;
 import org.marc4j.marc.Record;
-import org.marc4j.marc.Subfield;
 import org.apache.log4j.Logger;
 import org.marc4j.marc.VariableField;
 
@@ -42,14 +36,9 @@ public class OrderImport {
 		Folio.initialize(config, logger);
 		JSONArray responseMessages = new JSONArray();
 
-		//GET THE UPLOADED FILE
+		//GET THE UPLOADED FILE, EXIT IF NONE PROVIDED
 		String filePath = (String) myContext.getAttribute("uploadFilePath");
-		InputStream in;
-		//MAKE SURE A FILE WAS UPLOADED
-		if (fileName != null) {
-			in = new FileInputStream(filePath + fileName);			
-		}
-		else {
+		if (fileName == null) {
 			JSONObject responseMessage = new JSONObject();
 			responseMessage.put("error", "no input file provided");
 			responseMessage.put("PONumber", "~error~");
@@ -57,15 +46,19 @@ public class OrderImport {
 			return responseMessages;
 		}
 
-		//READ THE MARC RECORD FROM THE FILE AND VALIDATE IT
-		//VALIDATES THE FUND CODE, TAG (OBJECT CODE
+		//READ THE MARC RECORD FROM THE FILE AND CHECK REQUIRED VALUES
+		//EXIT IF ANY RECORD MISSES VALUES
+		InputStream in = new FileInputStream(filePath + fileName);
 		MarcReader reader = new MarcStreamReader(in);
-		Record record;
+		// Util for mapping certain codes to UUIDs
+		UuidMapping uuidMappings = new UuidMapping();
 
-		JSONArray validateRequiredResult = validateRequiredValues(reader);
-		if (!validateRequiredResult.isEmpty()) return validateRequiredResult;
+		JSONArray validateRequiredResult = validateRequiredValues(reader, uuidMappings);
+		if (!validateRequiredResult.isEmpty()) {
+			return validateRequiredResult;
+		}
 
-		//READ THE MARC RECORD FROM THE FILE
+		//AGAIN, READ THE MARC RECORD FROM THE FILE
 		in = new FileInputStream(filePath + fileName);
 		reader = new MarcStreamReader(in);
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -74,70 +67,39 @@ public class OrderImport {
 		AnselToUnicode conv = new AnselToUnicode();
 		w.setConverter(conv);
 
+		ProcessCounters counters = new ProcessCounters();
 		while (reader.hasNext()) {
 			try {
-				record = reader.next();
-				MarcRecord marc = new MarcRecord(record);
+				Record record = reader.next();
+				counters.recordsProcessed++;
+				MarcRecordMapping mappedMarc = new MarcRecordMapping(record, uuidMappings);
 
-				config.permLocationName = (config.importInvoice && marc.hasInvoice() ? config.permLocationWithInvoiceImport : config.permLocationName);
-				config.permELocationName = (config.importInvoice && marc.hasInvoice() ? config.permELocationWithInvoiceImport : config.permELocationName);
+				config.permLocationName = (config.importInvoice && mappedMarc.hasInvoice()
+								? config.permLocationWithInvoiceImport : config.permLocationName);
+				config.permELocationName = (config.importInvoice && mappedMarc.hasInvoice()
+								? config.permELocationWithInvoiceImport : config.permELocationName);
 
 				//NOW WE CAN START CREATING THE PO!
 				JSONObject responseMessage = new JSONObject();
-				responseMessage.put("title", marc.title());
-
-				// LOOK UP VENDOR
-				String organizationEndpoint = "organizations-storage/organizations?limit=30&offset=0&query=((code='" + marc.vendorCode() + "'))";
-				String orgLookupResponse = Folio.callApiGet(organizationEndpoint);
-				JSONObject orgObject = new JSONObject(orgLookupResponse);
-				String vendorId = (String) orgObject.getJSONArray("organizations").getJSONObject(0).get("id");
-				// LOOK UP THE FUND
-				String fundEndpoint =  "finance/funds?limit=30&offset=0&query=((code='" + marc.fundCode() + "'))";
-				String fundResponse = Folio.callApiGet(fundEndpoint);
-				JSONObject fundsObject = new JSONObject(fundResponse);
-				String fundId = (String) fundsObject.getJSONArray("funds").getJSONObject(0).get("id");
-				// LOOK UP ACCESS PROVIDER, FALL BACK to VENDOR
-				organizationEndpoint = "organizations-storage/organizations?limit=30&offset=0&query=((code='" + marc.accessProviderCode() + "'))";
-				orgLookupResponse = Folio.callApiGet(organizationEndpoint);
-				orgObject = new JSONObject(orgLookupResponse);
-				String accessProviderId;
-				if (orgObject.getJSONArray("organizations") != null && !orgObject.getJSONArray("organizations").isEmpty()) {
-					accessProviderId = (String) orgObject.getJSONArray("organizations").getJSONObject(0).get("id");
-				} else {
-					accessProviderId = vendorId;
-				}
-				String expenseClassId = null;
-				if (marc.hasExpenseClassCode()) {
-					String expenseClassEndpoint = "finance/expense-classes?limit=30&query=code='" + marc.expenseClassCode() + "'";
-					String expenseClassResponse = Folio.callApiGet(expenseClassEndpoint);
-					JSONObject expenseClassesObject = new JSONObject(expenseClassResponse);
-					JSONArray expenseClasses = expenseClassesObject.getJSONArray("expenseClasses");
-					if (expenseClasses != null && !expenseClasses.isEmpty()) {
-						expenseClassId = (String) expenseClasses.getJSONObject(0).get("id");
-					}
-				}
+				responseMessage.put("title", mappedMarc.title());
+	  		responseMessage.put("ISBN", mappedMarc.hasISBN() ? mappedMarc.getISBN() : "No ISBN in this record");
 
 				//GET THE NEXT PO NUMBER
-				String poNumber = Folio.callApiGet("orders/po-number");
-				JSONObject poNumberObj = new JSONObject(poNumber);
-				logger.info("NEXT PO NUMBER: " + poNumberObj.get("poNumber"));
+				String poNumber = Folio.getNextPoNumberFromOrders();
+				logger.info("NEXT PO NUMBER: " + poNumber);
 
 				// CREATING THE PURCHASE ORDER
-				// GENERATE UUIDS FOR OBJECTS
 				UUID orderUUID = UUID.randomUUID();
 				JSONObject order = new JSONObject();
-				order.put("poNumber", poNumberObj.get("poNumber"));
-				order.put("vendor", vendorId);
+				order.put("poNumber", poNumber);
+				order.put("vendor", mappedMarc.vendorUuid());
 				order.put("orderType", "One-Time");
-				order.put("reEncumber", true); // Changed to true for UChicago
+				order.put("reEncumber", true);
 				order.put("id", orderUUID.toString());
 				order.put("approved", true);
 				order.put("workflowStatus","Open");
 
-				// UC extension
-				String addressId = (marc.hasBillTo() ? Folio.findAddressId(marc.billTo()) : null);
-				if (addressId != null) order.put("billTo", addressId);
-
+				if (mappedMarc.billToUuid() != null) order.put("billTo", mappedMarc.billToUuid());
 				// POST ORDER LINE
 				//FOLIO WILL CREATE THE INSTANCE, HOLDINGS, ITEM (IF PHYSICAL ITEM)
 				JSONObject orderLine = new JSONObject();
@@ -146,48 +108,49 @@ public class OrderImport {
 				JSONArray locations = new JSONArray();
 				JSONObject orderLineDetails = new JSONObject();
 				JSONArray poLines = new JSONArray();
-				if (marc.electronic()) {
+				if (mappedMarc.electronic()) {
 					orderLine.put("orderFormat", "Electronic Resource");
 					orderLine.put("receiptStatus", "Receipt Not Required");
 					JSONObject eResource = new JSONObject();
 					eResource.put("activated", false);
 					eResource.put("createInventory", "Instance, Holding");
-					if (marc.hasUserLimit())
-						eResource.put("userLimit", marc.userLimit());
+					if (mappedMarc.hasUserLimit()) {
+						eResource.put("userLimit", mappedMarc.userLimit());
+					}
 					eResource.put("trial", false);
-					eResource.put("accessProvider", accessProviderId);
+					eResource.put("accessProvider", mappedMarc.accessProviderUUID());
 					orderLine.put("eresource",eResource);
 					cost.put("quantityElectronic", 1);
-					cost.put("listUnitPriceElectronic", marc.price());
+					cost.put("listUnitPriceElectronic", mappedMarc.price());
 					location.put("quantityElectronic",1);
-					location.put("locationId", Folio.referenceDataByName.get(config.permELocationName + "-location"));
+					location.put("locationId", uuidMappings.getRefUuidByName(config.permELocationName + "-location"));
 				}	else {
 					JSONObject physical = new JSONObject();
 					physical.put("createInventory", "Instance, Holding, Item");
 					physical.put("materialType", getMaterialTypeId(config.materialType));
 					orderLine.put("physical", physical);
 					orderLine.put("orderFormat", "Physical Resource");
-					cost.put("listUnitPrice", marc.price());
+					cost.put("listUnitPrice", mappedMarc.price());
 					cost.put("quantityPhysical", 1);
 					location.put("quantityPhysical",1);
-					location.put("locationId", Folio.referenceDataByName.get(config.permLocationName + "-location"));
+					location.put("locationId", uuidMappings.getRefUuidByName(config.permLocationName + "-location"));
 				}
 				locations.put(location);
 
-				if (marc.hasReceivingNote()) {
-					orderLineDetails.put("receivingNote", marc.receivingNote());
+				if (mappedMarc.hasReceivingNote()) {
+					orderLineDetails.put("receivingNote", mappedMarc.receivingNote());
 				}
 
 				//VENDOR REFERENCE NUMBER IF INCLUDED IN THE MARC RECORD:
-				if (marc.hasVendorItemId()) {
+				if (mappedMarc.hasVendorItemId()) {
 					JSONArray referenceNumbers = new JSONArray();
 					JSONObject vendorDetail = new JSONObject();
 					vendorDetail.put("instructions", "");
-					vendorDetail.put("vendorAccount", (marc.hasVendorAccount() ? marc.vendorAccount() : ""));
+					vendorDetail.put("vendorAccount", (mappedMarc.hasVendorAccount() ? mappedMarc.vendorAccount() : ""));
 					JSONObject referenceNumber = new JSONObject();
-					referenceNumber.put("refNumber", marc.vendorItemId());
+					referenceNumber.put("refNumber", mappedMarc.vendorItemId());
 					referenceNumber.put("refNumberType",
-									(marc.hasRefNumberType() ? marc.refNumberType() : "Vendor internal number"));
+									(mappedMarc.hasRefNumberType() ? mappedMarc.refNumberType() : "Vendor internal number"));
 					referenceNumbers.put(referenceNumber);
 					vendorDetail.put("referenceNumbers", referenceNumbers);
 					orderLine.put("vendorDetail", vendorDetail);
@@ -195,11 +158,11 @@ public class OrderImport {
         // Tags
 				JSONObject tags = new JSONObject();
 				JSONArray tagList = new JSONArray();
-				if (marc.hasObjectCode()) {
-					tagList.put(marc.objectCode());
+				if (mappedMarc.hasObjectCode()) {
+					tagList.put(mappedMarc.objectCode());
 				}
-				if (marc.hasProjectCode()) {
-					tagList.put(marc.projectCode());
+				if (mappedMarc.hasProjectCode()) {
+					tagList.put(mappedMarc.projectCode());
 				}
 				if (!tagList.isEmpty()) {
 					tags.put("tagList", tagList);
@@ -209,64 +172,54 @@ public class OrderImport {
 				UUID orderLineUUID = UUID.randomUUID();
 				orderLine.put("id", orderLineUUID);
 				orderLine.put("source", "User");
-				cost.put("currency", marc.currency());
+				cost.put("currency", mappedMarc.currency());
 				orderLine.put("cost", cost);
 				orderLine.put("locations", locations);
-				orderLine.put("titleOrPackage",marc.title());
-				orderLine.put("acquisitionMethod", marc.acquisitionMethod());
-				orderLine.put("rush", "RUSH".equalsIgnoreCase(marc.rush())); // UC extension
-				if (marc.hasDescription())
-					orderLine.put("description", marc.description()); // UC extension
+				orderLine.put("titleOrPackage",mappedMarc.title());
+				orderLine.put("acquisitionMethod", mappedMarc.acquisitionMethod());
+				orderLine.put("rush", "RUSH".equalsIgnoreCase(mappedMarc.rush()));
+				if (mappedMarc.hasDescription())
+					orderLine.put("description", mappedMarc.description());
 				JSONArray funds = new JSONArray();
 				JSONObject fundDist = new JSONObject();
 				fundDist.put("distributionType", "percentage");
 				fundDist.put("value", 100);
-				fundDist.put("fundId", fundId);
-				fundDist.put("code", marc.fundCode());
-				if (expenseClassId != null)
-					fundDist.put("expenseClassId", expenseClassId);
+				fundDist.put("fundId", mappedMarc.fundUUID());
+				fundDist.put("code", mappedMarc.fundCode());
+				if (mappedMarc.hasExpenseClassCode())
+					fundDist.put("expenseClassId", mappedMarc.getExpenseClassUUID());
 				funds.put(fundDist);
 				orderLine.put("fundDistribution", funds);
 				orderLine.put("purchaseOrderId", orderUUID.toString());
 				poLines.put(orderLine);
 				order.put("compositePoLines", poLines);
+				if (mappedMarc.hasSelector())
+					orderLine.put("selector", mappedMarc.selector());
+				if (mappedMarc.hasDonor())
+					orderLine.put("donor", mappedMarc.donor());
 
-				if (marc.hasSelector())
-					orderLine.put("selector", marc.selector());
-				if (marc.hasDonor())
-					orderLine.put("donor", marc.donor());
+				orderLine.put("contributors", mappedMarc.getContributorsForOrderLine());
+				if (!mappedMarc.getProductIdentifiers().isEmpty()) {
+					orderLineDetails.put("productIds", mappedMarc.getProductIdentifiers());
+					logger.debug("Put product identifiers: " + mappedMarc.getProductIdentifiers());
+				}
+				if (!orderLineDetails.isEmpty())
+					orderLine.put("details", orderLineDetails);
 
-				orderLine.put("contributors", buildContributors(record, Folio.referenceDataByName, true));
-
-				JSONArray productIds = Identifier.createProductIdentifiersJson( record, false,
-						Constants.ISBN,
-						Constants.ISSN,
-						Constants.OTHER_STANDARD_IDENTIFIER,
-						Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER );
-				orderLineDetails.put("productIds", productIds);
-				orderLine.put("details", orderLineDetails);
-
-				DataField editionField = (DataField) record.getVariableField( "250" );
-				if (editionField != null) {
-					String edition = editionField.getSubfieldsAsString( "a" );
-					if (edition != null && ! edition.isEmpty()) {
-						orderLine.put("edition", edition);
-					}
+				if (mappedMarc.hasEdition()) {
+					orderLine.put("edition", mappedMarc.edition());
 				}
 
-				for (String tag : new String[] {"260", "264"} ) {
-					if (record.getVariableField( tag ) != null) {
-						DataField publishingField = (DataField) record.getVariableField( tag );
-						String publisher = publishingField.getSubfieldsAsString( "b" );
-						String publicationDate = publishingField.getSubfieldsAsString( "c" );
-						if (publisher != null && ! publisher.isEmpty()) {
-							orderLine.put("publisher", publisher);
-						}
-						if (publicationDate != null && !publicationDate.isEmpty()) {
-							orderLine.put("publicationDate", publicationDate);
-						}
-						break;
-					}
+				if (mappedMarc.has260()) {
+					if (mappedMarc.publisher("260") != null)
+						orderLine.put("publisher", mappedMarc.publisher("260"));
+					if (mappedMarc.publisher("260") != null)
+						orderLine.put("publicationDate", mappedMarc.publicationDate("260"));
+				} else if (mappedMarc.has264()) {
+					if (mappedMarc.publisher("264") != null)
+						orderLine.put("publisher", mappedMarc.publisher("264"));
+					if (mappedMarc.publisher("264") != null)
+						orderLine.put("publicationDate", mappedMarc.publicationDate("264"));
 				}
 
 				//POST THE ORDER AND LINE:
@@ -275,9 +228,8 @@ public class OrderImport {
 				logger.info(orderResponse);
 
 				//INSERT THE NOTE IF THERE IS A NOTE IN THE MARC RECORD
-				if (marc.hasNotes()) {
+				if (mappedMarc.hasNotes()) {
 					logger.info("NOTE TYPE NAME: " + config.noteTypeName);
-					//logger.info(Folio.lookupTable);
 					JSONObject noteAsJson = new JSONObject();
 					JSONArray links = new JSONArray();
 					JSONObject link = new JSONObject();
@@ -285,10 +237,10 @@ public class OrderImport {
 					link.put("id", orderLineUUID);
 					links.put(link);
 					noteAsJson.put("links", links);
-					noteAsJson.put("typeId", Folio.referenceDataByName.get(config.noteTypeName));
+					noteAsJson.put("typeId", uuidMappings.getRefUuidByName(config.noteTypeName));
 					noteAsJson.put("domain", "orders");
-					noteAsJson.put("content", marc.notes());
-					noteAsJson.put("title", marc.notes());
+					noteAsJson.put("content", mappedMarc.notes());
+					noteAsJson.put("title", mappedMarc.notes());
 					String noteResponse = Folio.callApiPostWithUtf8("/notes",noteAsJson);
 					logger.info(noteResponse);
 				}
@@ -296,7 +248,9 @@ public class OrderImport {
 				//GET THE UPDATED PURCHASE ORDER FROM THE API AND PULL OUT THE ID FOR THE INSTANCE FOLIO CREATED:
 				String updatedPurchaseOrder = Folio.callApiGet("orders/composite-orders/" +orderUUID);
 				JSONObject updatedPurchaseOrderJson = new JSONObject(updatedPurchaseOrder);
-				String instanceId = updatedPurchaseOrderJson.getJSONArray("compositePoLines").getJSONObject(0).getString("instanceId");
+				String instanceId =
+								updatedPurchaseOrderJson.getJSONArray("compositePoLines")
+												.getJSONObject(0).getString("instanceId");
 
 				//GET THE INSTANCE RECORD FOLIO CREATED, SO WE CAN ADD BIB INFO TO IT:
 				String instanceResponse = Folio.callApiGet("inventory/instances/" + instanceId);
@@ -316,22 +270,11 @@ public class OrderImport {
 							hrid );
 				}
 
-				//ADD IDENTIFIERS AND CONTRIBUTORS TO THE INSTANCE
-				JSONArray identifiers = Identifier.createInstanceIdentifiersJson(record, true,
-						Constants.ISBN,
-						Constants.INVALID_ISBN,
-						Constants.ISSN,
-						Constants.INVALID_ISSN,
-						Constants.LINKING_ISSN,
-						Constants.OTHER_STANDARD_IDENTIFIER,
-						Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER,
-						Constants.SYSTEM_CONTROL_NUMBER);
-
-				instanceAsJson.put("title", marc.title());
+				instanceAsJson.put("title", mappedMarc.title());
 				instanceAsJson.put("source", config.importSRS ? "MARC" : "FOLIO");
-				instanceAsJson.put("instanceTypeId", Folio.referenceDataByName.get("text"));
-				instanceAsJson.put("identifiers", identifiers);
-				instanceAsJson.put("contributors", buildContributors(record, Folio.referenceDataByName, false));
+				instanceAsJson.put("instanceTypeId", uuidMappings.getRefUuidByName("text"));
+				instanceAsJson.put("identifiers", mappedMarc.getInstanceIdentifiers());
+				instanceAsJson.put("contributors", mappedMarc.getContributorsForInstance());
 				instanceAsJson.put("discoverySuppress", false);
 
 				//GET THE HOLDINGS RECORD FOLIO CREATED, SO WE CAN ADD URLs FROM THE 856 IN THE MARC RECORD
@@ -346,7 +289,6 @@ public class OrderImport {
 				while (iterator.hasNext()) {
 					DataField dataField = (DataField) iterator.next();
 					if (dataField != null && dataField.getSubfield('u') != null) {
-						String url = dataField.getSubfield('u').getData();
 						if (dataField.getSubfield('y') != null) {
 							linkText = dataField.getSubfield('y').getData();
 						}
@@ -358,11 +300,10 @@ public class OrderImport {
 						if (licenseNote != null) eResource.put("publicNote", licenseNote);
 						//THIS RELATIONSHIP (UUID) IS BUILT INTO FOLIO
 						//IMPLEMENTER
-						eResource.put("relationshipId", "f5d0068e-6272-458e-8a81-b85e7b9a14aa");
+						eResource.put("relationshipId", Constants.ELECTRONIC_ACCESS_RELATIONSHIP_TYPE_RESOURCE);
 						eResources.put(eResource);
 					}
 				}
-
 
 				//UPDATE THE INSTANCE RECORD
 				instanceAsJson.put("electronicAccess", eResources);
@@ -373,14 +314,14 @@ public class OrderImport {
 
 				//UPDATE THE HOLDINGS RECORD
 				holdingsRecord.put("electronicAccess", eResources);
-				//IF THIS WAS AN ELECTRONIC RECORD, MARK THE HOLDING AS EHOLDING
-				if (marc.electronic()) {
-					holdingsRecord.put("holdingsTypeId", Folio.referenceDataByName.get("Electronic"));
+				//IF THIS WAS AN ELECTRONIC RECORD, MARK THE HOLDING AS E-HOLDING
+				if (mappedMarc.electronic()) {
+					holdingsRecord.put("holdingsTypeId", uuidMappings.getRefUuidByName("Electronic"));
 
-					if (marc.hasDonor()) {
+					if (mappedMarc.hasDonor()) {
 						JSONObject bookplateNote = new JSONObject();
 						bookplateNote.put("holdingsNoteTypeId", Constants.HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE);
-						bookplateNote.put("note", marc.donor());
+						bookplateNote.put("note", mappedMarc.donor());
 						bookplateNote.put("staffOnly", false);
 						JSONArray holdingsNotes = (holdingsRecord.has("notes") ? holdingsRecord.getJSONArray("notes") : new JSONArray());
 						holdingsNotes.put(bookplateNote);
@@ -389,14 +330,14 @@ public class OrderImport {
 				}
 				Folio.callApiPut("holdings-storage/holdings/" + holdingsRecord.getString("id"), holdingsRecord);
 
-				if (!marc.electronic() && marc.hasDonor()) {
+				if (!mappedMarc.electronic() && mappedMarc.hasDonor()) {
 					//IF PHYSICAL RESOURCE WITH DONOR INFO, GET THE ITEM FOLIO CREATED, SO WE CAN ADD NOTE ABOUT DONOR
 					String itemsResponse = Folio.callApiGet("inventory/items?query=(holdingsRecordId==" + holdingsRecord.get("id") + ")");
 					JSONObject itemsAsJson = new JSONObject(itemsResponse);
 					JSONObject item = itemsAsJson.getJSONArray("items").getJSONObject(0);
 					JSONObject bookplateNote = new JSONObject();
 					bookplateNote.put("itemNoteTypeId", Constants.ITEM_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE);
-					bookplateNote.put("note", marc.donor());
+					bookplateNote.put("note", mappedMarc.donor());
 					bookplateNote.put("staffOnly", false);
 					JSONArray itemNotes = (item.has("notes") ? item.getJSONArray("notes") : new JSONArray());
 					itemNotes.put(bookplateNote);
@@ -405,13 +346,13 @@ public class OrderImport {
 					Folio.callApiPut("inventory/items/" + item.getString("id"), item);
 				}
 
-				if (config.importInvoice && marc.hasInvoice()) {
+				if (config.importInvoice && mappedMarc.hasInvoice()) {
 					importInvoice(
-							poNumberObj.getString("poNumber"), orderLineUUID, vendorId, marc);
+							poNumber, orderLineUUID, mappedMarc.vendorUuid(), mappedMarc);
 				}
 
 				//SAVE THE PO NUMBER FOR THE RESPONSE
-				responseMessage.put("PONumber", poNumberObj.get("poNumber"));
+				responseMessage.put("PONumber", poNumber);
 				responseMessage.put("theOne", hrid);
 
 				responseMessages.put(responseMessage);
@@ -434,7 +375,7 @@ public class OrderImport {
 							   String poNumber,
 							   UUID orderLineUUID,
 							   String vendorId,
-							   MarcRecord marc) throws Exception {
+							   MarcRecordMapping marc) throws Exception {
 
 
 		// Hard-coded values
@@ -483,7 +424,7 @@ public class OrderImport {
 		logger.info(invoiceLineResponse);
 	}
 
-	public JSONArray validateRequiredValues(MarcReader reader) {
+	public JSONArray validateRequiredValues(MarcReader reader, UuidMapping uuidMapping) {
 
 		Record record;
 		JSONArray responseMessages = new JSONArray();
@@ -491,75 +432,64 @@ public class OrderImport {
 			try {
 				record = reader.next();    					    
 				//GET THE 980s FROM THE MARC RECORD
-				DataField nineEighty = (DataField) record.getVariableField("980");
+				MarcRecordMapping marc = new MarcRecordMapping(record, uuidMapping);
 
-				DataField twoFourFive = (DataField) record.getVariableField("245");
-				String title = twoFourFive.getSubfieldsAsString("a");
-				//REMOVED - NOT NEEDED String theOne = ((ControlField) record.getVariableField("001")).getData();
-
-				if (nineEighty == null) {
+				if (!marc.has980()) {
 					JSONObject responseMessage = new JSONObject();
 					responseMessage.put("error", "Record is missing the 980 field");
 					responseMessage.put("PONumber", "~error~");
-					responseMessage.put("title", title);
+					responseMessage.put("title", marc.title());
 					responseMessages.put(responseMessage);
 					continue;
 				}
 
-				String objectCode = nineEighty.getSubfieldsAsString("o");
-				String projectCode = nineEighty.getSubfieldsAsString("r");
-				String fundCode = nineEighty.getSubfieldsAsString("b");
-				String vendorCode =  nineEighty.getSubfieldsAsString("v");
-				String price = nineEighty.getSubfieldsAsString("m");
-
 				Map<String, String> requiredFields = new HashMap<>();
-				if (config.objectCodeRequired)  requiredFields.put("Object code",objectCode);
-				requiredFields.put("Fund code",fundCode);
-				requiredFields.put("Vendor Code",vendorCode);
-				requiredFields.put("Price" , price);
+				if (config.objectCodeRequired) {
+					requiredFields.put("Object code", marc.objectCode());
+				}
+				requiredFields.put("Fund code", marc.fundCode());
+				requiredFields.put("Vendor Code", marc.vendorCode());
+				requiredFields.put("Price" , marc.price());
 
 				// MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
 				for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
 					if (entry.getValue()==null || entry.getValue().isEmpty()) {
 						JSONObject responseMessage = new JSONObject();
-						responseMessage.put("title", title);
+						responseMessage.put("title", marc.title());
 						responseMessage.put("error", entry.getKey() + " Missing");
 						responseMessage.put("PONumber", "~error~");
 						responseMessages.put(responseMessage);
 					}
 				}
 
-				if (!responseMessages.isEmpty()) return responseMessages;
+				if (!responseMessages.isEmpty()) {
+					continue;
+				}
 
 				//VALIDATE THE ORGANIZATION, OBJECT CODE AND FUND
-				//STOP THE PROCESS IF AN ERRORS WERE FOUND
-				JSONObject orgValidationResult = Folio.validateOrganization(vendorCode, title);
+				//STOP THE PROCESS IF ANY ERRORS WERE FOUND
+				JSONObject orgValidationResult = Folio.validateOrganization(marc.vendorCode(), marc.title(),
+								uuidMapping);
 				if (orgValidationResult != null) responseMessages.put(orgValidationResult);
 
-				if (objectCode != null && !objectCode.isEmpty()) {
-					JSONObject objectValidationResult = Folio.validateObjectCode(objectCode, title);
+				if (marc.hasObjectCode()) {
+					JSONObject objectValidationResult = Folio.validateObjectCode(marc.objectCode(), marc.title());
 					if (objectValidationResult != null) responseMessages.put(objectValidationResult);
 				}
-				//NEW FOR PROJECT CODE
-				//PROJECT CODE IS NOT REQUIRED - BUT IF IT IS THERE, MAKE SURE IT'S A VALID CODE
-				if (projectCode != null && !projectCode.isEmpty()) {
-					JSONObject projectValidationResult = Folio.validateObjectCode(projectCode, title);
+				if (marc.hasProjectCode()) {
+					// TODO: Check this
+					JSONObject projectValidationResult = Folio.validateObjectCode(marc.projectCode(), marc.title());
 					if (projectValidationResult != null) responseMessages.put(projectValidationResult);
 				}
-
-				//END NEW
-				JSONObject fundValidationResult = Folio.validateFund(fundCode, title, price);
+				JSONObject fundValidationResult = Folio.validateFund(marc.fundCode(), marc.title(), marc.price());
 				if (fundValidationResult != null) responseMessages.put(fundValidationResult);
 
 				if (config.importInvoice) {
-					JSONObject invoiceValidationResult = Folio.validateRequiredValuesForInvoice(title, record);
+					JSONObject invoiceValidationResult = Folio.validateRequiredValuesForInvoice(marc.title(), record);
 					if (invoiceValidationResult != null) responseMessages.put(invoiceValidationResult);
 				}
 
-				if (!responseMessages.isEmpty()) return responseMessages; //?
-			}
-
-			catch(Exception e) {
+			}	catch(Exception e) {
 				logger.fatal(e.getMessage());
 				JSONObject responseMessage = new JSONObject();
 				responseMessage.put("error", e.getMessage());
@@ -568,72 +498,6 @@ public class OrderImport {
 			}
 		}
 		return responseMessages;
-
-	}
-
-	public JSONArray buildContributors(Record record, Map<String, String> lookupTable, boolean buildForOrderLine) {
-		JSONArray contributors = new JSONArray();
-		List<DataField> fields = record.getDataFields();
-		Iterator fieldsIterator = fields.iterator();
-		while (fieldsIterator.hasNext()) {
-			DataField field = (DataField) fieldsIterator.next();
-			if (field.getTag().equalsIgnoreCase("100") || field.getTag().equalsIgnoreCase("700")) {
-				if (buildForOrderLine) {
-					contributors.put( makeContributorForOrderLine(field, "Personal name"));
-				} else {
-					contributors.put( makeContributor(field, lookupTable, "Personal name",
-							new String[] {"a", "b", "c", "d", "f", "g", "j", "k", "l", "n", "p", "t", "u"}));
-				}
-			} else if ((field.getTag().equals("110") || field.getTag().equals( "710" )) && buildForOrderLine) {
-				contributors.put( makeContributorForOrderLine( field, "Corporate name"));
-			} else if ((field.getTag().equals("111") || field.getTag().equals( "711" )) && buildForOrderLine) {
-				contributors.put( makeContributorForOrderLine( field, "Meeting name"));
-			}
-		}
-		return contributors;
-	}
-
-	public JSONObject makeContributorForOrderLine( DataField field, String contributorNameType) {
-		Subfield subfield = field.getSubfield( 'a' );
-		JSONObject contributor = new JSONObject();
-		contributor.put("contributor", subfield.getData());
-		contributor.put("contributorNameTypeId", Constants.CONTRIBUTOR_NAME_TYPES_MAP.get(contributorNameType));
-		return contributor;
-	}
-
-	public JSONObject makeContributor( DataField field, Map<String,String> lookupTable, String name_type_id, String[] subfieldArray) {
-		List<String> list = Arrays.asList(subfieldArray);
-		JSONObject contributor = new JSONObject();
-		contributor.put("name", "");
-		contributor.put("contributorNameTypeId", lookupTable.get(name_type_id));
-		List<Subfield> subfields =  field.getSubfields();
-		Iterator subfieldIterator = subfields.iterator();
-		String contributorName = "";
-		while (subfieldIterator.hasNext()) {
-			Subfield subfield = (Subfield) subfieldIterator.next();
-			String subfieldAsString = String.valueOf(subfield.getCode());  
-			if (subfield.getCode() == '4') {
-				if (lookupTable.get(subfield.getData()) != null) {
-					contributor.put("contributorTypeId", lookupTable.get(subfield.getData()));
-				}
-				else {
-					contributor.put("contributorTypeId", lookupTable.get("bkp"));
-				}
-			}
-			else if (subfield.getCode() == 'e') {
-				contributor.put("contributorTypeText", subfield.getData());
-			}
-			else if (list.contains(subfieldAsString)) {
-				if (!contributorName.isEmpty()) {
-					contributorName += ", " + subfield.getData();
-				}
-				else {
-					contributorName +=  subfield.getData();
-				}
-			}
-		}
-		contributor.put("name", contributorName);
-		return contributor;
 	}
 
 	public ServletContext getMyContext() {
@@ -642,11 +506,6 @@ public class OrderImport {
 
 	public void setMyContext(ServletContext myContext) {
 		this.myContext = myContext;
-	}
-
-	static String readFile(String path, Charset encoding)  throws IOException  {
-		byte[] encoded = Files.readAllBytes(Paths.get(path));
-		return new String(encoded, encoding);
 	}
 
 	private static String getMaterialTypeId (String materialType) {

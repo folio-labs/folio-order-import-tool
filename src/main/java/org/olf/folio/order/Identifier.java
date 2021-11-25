@@ -85,7 +85,7 @@ public class Identifier
      * @param inMarcRecord The MARC record to look for identifiers in
      * @return List of identifier fields matching the applicable criteria for the given identifier type
      */
-    private static List<DataField> getDataFieldsForIdentifierType( String requestedIdentifierType, Record inMarcRecord) {
+    static List<DataField> getDataFieldsForIdentifierType( String requestedIdentifierType, Record inMarcRecord) {
         List<DataField> identifierFields = new ArrayList<>();
         switch(requestedIdentifierType)
         {
@@ -128,7 +128,7 @@ public class Identifier
      * @param withAnyOfTheseSubFields One or more subfield codes, of which at least one must be present for the field to be included
      * @return A list of Identifier fields matching the given tag and subfield code criteria
      */
-    private static List<DataField> findIdentifierFieldsByTagAndSubFields( Record inMarcRecord, String tagToFind, char ...withAnyOfTheseSubFields) {
+    static List<DataField> findIdentifierFieldsByTagAndSubFields( Record inMarcRecord, String tagToFind, char ...withAnyOfTheseSubFields) {
         List<DataField> fieldsFound = new ArrayList<>();
         List<VariableField> fieldsFoundForTag = inMarcRecord.getVariableFields(tagToFind);
         for (VariableField field : fieldsFoundForTag) {
@@ -150,7 +150,7 @@ public class Identifier
      * @param includeQualifiers Indication whether to add additional subfield(s) to the identifier value
      * @return The resulting identifier value
      */
-    private static String getIdentifierValue ( String identifierType, DataField identifierField, boolean includeQualifiers) {
+    static String getIdentifierValue ( String identifierType, DataField identifierField, boolean includeQualifiers) {
         String identifierValue;
         switch ( identifierType ) {
             case Constants.ISBN:                           // 020 using $a, extend with c,q

@@ -36,7 +36,6 @@ public class Folio {
   private static Config config;
   private static String token;
   private static Logger logger;
-  public static Map<String, String> referenceDataByName;
 
 
   /**
@@ -50,7 +49,6 @@ public class Folio {
     Folio.config = config;
     Folio.logger = logger;
     token = authenticate();
-    createReferenceDataMap();
   }
 
   private static String authenticate()
@@ -149,6 +147,11 @@ public class Folio {
     return "ok";
   }
 
+  public static String getNextPoNumberFromOrders() throws Exception {
+    String jsonResponse = callApiGet("orders/po-number");
+    return new JSONObject(jsonResponse).getString("poNumber");
+  }
+
   //POST TO PO SEEMS TO WANT UTF8 (FOR SPECIAL CHARS)
   //IF UTF8 IS USED TO POST TO SOURCE RECORD STORAGE
   //SPECIAL CHARS DON'T LOOK CORRECT
@@ -182,25 +185,6 @@ public class Folio {
     return responseString;
   }
 
-  public static void createReferenceDataMap() throws Exception {
-    //IMPROVE THIS - 'text' is repeated (it is a 'name' in more than one reference table)
-    List<String> referenceTables = new ArrayList<>();
-    referenceTables.add("identifier-types?limit=1000");
-    referenceTables.add("classification-types?limit=1000");
-    referenceTables.add("contributor-types?limit=1000");
-    referenceTables.add("contributor-name-types?limit=1000");
-    referenceTables.add("locations?limit=10000");
-    referenceTables.add("loan-types?limit=1000");
-    referenceTables.add("note-types?limit=1000");
-    referenceTables.add("material-types?limit=1000");
-    referenceTables.add("instance-types?limit=1000");
-    referenceTables.add("holdings-types?limit=1000");
-
-    //SAVE REFERENCE TABLE VALUES (JUST LOOKUP THEM UP ONCE)
-    if ( referenceDataByName == null) {
-      referenceDataByName = Folio.lookupReferenceValuesInFolio(referenceTables);
-    }
-  }
 
   public static Map<String,String> lookupReferenceValuesInFolio(List<String> lookupTables) throws Exception  {
     Map<String, String> lookUpTable = new HashMap<>();
@@ -286,14 +270,9 @@ public class Folio {
     return null;
   }
 
-  public static JSONObject validateOrganization(String orgCode, String title ) throws Exception {
+  public static JSONObject validateOrganization(String orgCode, String title, UuidMapping uuidMapping) throws Exception {
     JSONObject responseMessage = new JSONObject();
-    //LOOK UP THE ORGANIZATION
-    String organizationEndpoint = "organizations-storage/organizations?limit=30&offset=0&query=((code='" + orgCode + "'))";
-    String orgLookupResponse = callApiGet(organizationEndpoint);
-    JSONObject orgObject = new JSONObject(orgLookupResponse);
-    //---------->VALIDATION: MAKE SURE THE ORGANIZATION CODE EXISTS
-    if (orgObject.getJSONArray("organizations").length() < 1) {
+    if (uuidMapping.getOrganizationId(orgCode) == null) {
       responseMessage.put("error", "Organization code in file (" + orgCode + ") does not exist in FOLIO");
       responseMessage.put("title", title);
       responseMessage.put("PONumber", "~error~");
@@ -302,11 +281,10 @@ public class Folio {
     return null;
   }
 
-  // UC extension, for potentially validating name of billTo address (980$s)
-  public static JSONObject validateAddress (String name, String title) throws Exception {
+  // Use this?
+  public static JSONObject validateAddress (String name, String title, UuidMapping uuidMapping) throws Exception {
     JSONObject responseMessage = new JSONObject();
-    String address = findAddressId(name);
-    if (address == null) {
+    if (uuidMapping.getAddressIdByName(name) == null) {
       responseMessage.put("error", "Address with the (" + name + ") does not exist in FOLIO");
       responseMessage.put("title", title);
       responseMessage.put("PONumber", "~error~");
@@ -345,23 +323,6 @@ public class Folio {
     }
     return null;
   }
-
-  public static String findAddressId (String name) throws Exception {
-    String configsEndpoint = "configurations/entries?limit=1000&query=%28module%3DTENANT%20and%20configName%3Dtenant.addresses%29";
-    String configsResponse = callApiGet(configsEndpoint);
-    JSONObject configsObject = new JSONObject(configsResponse);
-    if (configsObject.has("configs")) {
-      JSONArray addresses = configsObject.getJSONArray("configs");
-      for (int i=0; i<addresses.length(); i++) {
-        JSONObject address = addresses.getJSONObject(i);
-        if (new JSONObject(address.getString("value")).getString("name").equals(name)) {
-          return address.getString("id");
-        }
-      }
-    }
-    return null;
-  }
-
 
   public static void storeMarcToSRS(Record record, ByteArrayOutputStream byteArrayOutputStream, UUID snapshotId, UUID recordTableId, String instanceId, String hrid ) throws Exception
   {
