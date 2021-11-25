@@ -1,5 +1,6 @@
 package org.olf.folio.order;
 
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -22,7 +23,7 @@ public class UuidMapping {
   private final Map<String,String> expenseClassCodeToUuid = new HashMap<>();
   private final Map<String,String> addressNameToUuid = new HashMap<>();
   public static Map<String, String> referenceDataByName = new HashMap<>();
-
+  private static final Logger logger = Logger.getLogger(UuidMapping.class);
 
   /**
    * Finds FOLIO's UUID for the provided organization code
@@ -34,12 +35,14 @@ public class UuidMapping {
     if (organizationCode == null) {
       return null;
     } else {
-      if ( !organizationCodeToUuid.containsKey(organizationCode) )
-      {
-        String organizationEndpoint = "organizations-storage/organizations?query=((code='" + organizationCode + "'))";
-        String orgLookupResponse = Folio.callApiGet(organizationEndpoint);
+      if (organizationCodeToUuid.isEmpty()) {
+        String organizationsEndpoint = "organizations-storage/organizations?limit=20000";
+        String orgLookupResponse = Folio.callApiGet(organizationsEndpoint);
         JSONArray organizations = new JSONObject(orgLookupResponse).getJSONArray(ORGANIZATIONS);
-        organizationCodeToUuid.put(organizationCode, getIdOfFirstRecordIfAny(organizations));
+        for ( Object o : organizations) {
+          JSONObject org = (JSONObject) o;
+          organizationCodeToUuid.put(org.getString("code"), org.getString("id"));
+        }
       }
       return organizationCodeToUuid.get(organizationCode);
     }
@@ -128,7 +131,7 @@ public class UuidMapping {
     referenceTables.add("holdings-types?limit=1000");
 
     //SAVE REFERENCE TABLE VALUES (JUST LOOKUP THEM UP ONCE)
-    if ( referenceDataByName == null) {
+    if ( referenceDataByName == null || referenceDataByName.isEmpty()) {
       referenceDataByName = Folio.lookupReferenceValuesInFolio(referenceTables);
     }
   }

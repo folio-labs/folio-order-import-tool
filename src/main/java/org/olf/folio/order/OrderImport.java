@@ -20,6 +20,8 @@ import org.marc4j.marc.DataField;
 import org.marc4j.marc.Record;
 import org.apache.log4j.Logger;
 import org.marc4j.marc.VariableField;
+import org.olf.folio.order.dataobjects.CompositePurchaseOrder;
+import org.olf.folio.order.dataobjects.Location;
 
 public class OrderImport {
 
@@ -74,10 +76,22 @@ public class OrderImport {
 				counters.recordsProcessed++;
 				MarcRecordMapping mappedMarc = new MarcRecordMapping(record, uuidMappings);
 
+				CompositePurchaseOrder newOrder = CompositePurchaseOrder.createCompositePurchaseOrder(mappedMarc);
 				config.permLocationName = (config.importInvoice && mappedMarc.hasInvoice()
 								? config.permLocationWithInvoiceImport : config.permLocationName);
 				config.permELocationName = (config.importInvoice && mappedMarc.hasInvoice()
 								? config.permELocationWithInvoiceImport : config.permELocationName);
+
+				if (!newOrder.getCompositePoLines().isEmpty()
+								&& !newOrder.getCompositePoLines().get(0).getLocations().isEmpty()) {
+					Location location = newOrder.getCompositePoLines().get(0).getLocations().get(0);
+					if (mappedMarc.electronic()) {
+						location.putLocationId(uuidMappings.getRefUuidByName(config.permELocationName + "-location"));
+					} else {
+						location.putLocationId(uuidMappings.getRefUuidByName(config.permLocationName+ "-location"));
+					}
+				}
+				logger.info("Created CompositePurchaseOrder: " + newOrder.asJson().toString());
 
 				//NOW WE CAN START CREATING THE PO!
 				JSONObject responseMessage = new JSONObject();
@@ -177,7 +191,7 @@ public class OrderImport {
 				orderLine.put("locations", locations);
 				orderLine.put("titleOrPackage",mappedMarc.title());
 				orderLine.put("acquisitionMethod", mappedMarc.acquisitionMethod());
-				orderLine.put("rush", "RUSH".equalsIgnoreCase(mappedMarc.rush()));
+				orderLine.put("rush", mappedMarc.rush());
 				if (mappedMarc.hasDescription())
 					orderLine.put("description", mappedMarc.description());
 				JSONArray funds = new JSONArray();
@@ -201,7 +215,6 @@ public class OrderImport {
 				orderLine.put("contributors", mappedMarc.getContributorsForOrderLine());
 				if (!mappedMarc.getProductIdentifiers().isEmpty()) {
 					orderLineDetails.put("productIds", mappedMarc.getProductIdentifiers());
-					logger.debug("Put product identifiers: " + mappedMarc.getProductIdentifiers());
 				}
 				if (!orderLineDetails.isEmpty())
 					orderLine.put("details", orderLineDetails);
@@ -366,9 +379,7 @@ public class OrderImport {
 				return responseMessages;
 			}
 		}
-
 		return responseMessages;
-
 	}
 
 	private void importInvoice(

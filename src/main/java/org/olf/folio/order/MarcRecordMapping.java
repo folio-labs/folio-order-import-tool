@@ -324,8 +324,8 @@ public class MarcRecordMapping {
   /**
    * @return 980$w
    */
-  public String rush() {
-    return d980.getSubfieldsAsString(RUSH);
+  public boolean rush() {
+    return "RUSH".equalsIgnoreCase(d980.getSubfieldsAsString(RUSH));
   }
 
   /**

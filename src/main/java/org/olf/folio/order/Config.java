@@ -36,9 +36,6 @@ public class Config {
     fiscalYearCode = (String) context.getAttribute("fiscalYearCode");
     noteTypeName = (String) context.getAttribute("noteType");
     materialType = (String) context.getAttribute("materialType");
-    //String fiscalYearCode =  (String) context.getAttribute("fiscalYearCode");
-
-    // UC extensions to import.properties
     // objectCode is required unless objectCodeRequired is explicitly set to false in import.properties
     objectCodeRequired = ! ("false".equalsIgnoreCase((String) context.getAttribute("objectCodeRequired")));
     importInvoice = "true".equalsIgnoreCase((String) context.getAttribute("importInvoice"));
