@@ -1,5 +1,7 @@
 package org.olf.folio.order;
 
+import org.apache.log4j.Logger;
+
 import javax.servlet.ServletContext;
 
 public class Config {
@@ -20,13 +22,12 @@ public class Config {
   public String permLocationWithInvoiceImport;
   public String permELocationWithInvoiceImport;
 
+  private static final Logger logger = Logger.getLogger(Config.class);
+
   public Config(ServletContext context) {
-    //COLLECT VALUES FROM THE CONFIGURATION FILE
     baseOkapiEndpoint = (String) context.getAttribute("baseOkapiEndpoint");
-    if (baseOkapiEndpoint == null || baseOkapiEndpoint.isEmpty())
-    {
-      // old spelling, to support old config files
-      baseOkapiEndpoint = (String) context.getAttribute("baseOkapEndpoint");
+    if (baseOkapiEndpoint == null || baseOkapiEndpoint.isEmpty()) {
+      baseOkapiEndpoint = (String) context.getAttribute("baseOkapEndpoint"); //previous spelling
     }
     apiUsername = (String) context.getAttribute("okapi_username");
     apiPassword = (String) context.getAttribute("okapi_password");
@@ -45,4 +46,6 @@ public class Config {
     permLocationWithInvoiceImport = (String) context.getAttribute("permLocationWithInvoiceImport");
     permELocationWithInvoiceImport = (String) context.getAttribute("permELocationWithInvoiceImport");
   }
+
+
 }

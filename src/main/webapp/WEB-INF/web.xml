@@ -6,7 +6,7 @@
    metadata-complete="false"
    version="3.1">
    
-   <servlet-mapping>
+  <servlet-mapping>
     <servlet-name>default</servlet-name>
     <url-pattern>*.js</url-pattern>
     <url-pattern>*.css</url-pattern>
@@ -15,31 +15,26 @@
     <url-pattern>*.jpg</url-pattern>
     <url-pattern>*.htc</url-pattern>
     <url-pattern>*.gif</url-pattern>
-</servlet-mapping> 
+  </servlet-mapping>
 
   <servlet>
     <servlet-name>JerseyTest</servlet-name>
-    <servlet-class>
-                org.glassfish.jersey.servlet.ServletContainer
-            </servlet-class>
+    <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
     <init-param>
       <param-name>jersey.config.server.provider.packages</param-name>
       <param-value>org.olf.folio.order.services</param-value>
     </init-param>
-        <init-param>
-    <param-name>jersey.config.server.provider.classnames</param-name>
-    <param-value>org.glassfish.jersey.filter.LoggingFilter;org.glassfish.jersey.media.multipart.MultiPartFeature</param-value>
-</init-param>
+    <init-param>
+      <param-name>jersey.config.server.provider.classnames</param-name>
+      <param-value>org.glassfish.jersey.filter.LoggingFilter;org.glassfish.jersey.media.multipart.MultiPartFeature</param-value>
+    </init-param>
     <load-on-startup>1</load-on-startup>
   </servlet>
   <servlet-mapping>
     <servlet-name>JerseyTest</servlet-name>
     <url-pattern>/import/service/*</url-pattern>
   </servlet-mapping>
-  
-  
-  
-    
+
   <servlet>
     <display-name>OrderController</display-name>
     <servlet-name>OrderController</servlet-name>
@@ -49,14 +44,9 @@
      <servlet-name>OrderController</servlet-name>
      <url-pattern>/import</url-pattern>
   </servlet-mapping>
-    
-    
 
-
-
-   <listener>
+  <listener>
     <listener-class>org.olf.folio.order.listeners.ConfigurationListener</listener-class>
   </listener>
-
 
 </web-app>
