@@ -77,6 +77,7 @@ public class OrderImport {
 				MarcRecordMapping mappedMarc = new MarcRecordMapping(record, uuidMappings);
 
 				CompositePurchaseOrder newOrder = CompositePurchaseOrder.createCompositePurchaseOrder(mappedMarc);
+
 				config.permLocationName = (config.importInvoice && mappedMarc.hasInvoice()
 								? config.permLocationWithInvoiceImport : config.permLocationName);
 				config.permELocationName = (config.importInvoice && mappedMarc.hasInvoice()
@@ -98,142 +99,9 @@ public class OrderImport {
 				responseMessage.put("title", mappedMarc.title());
 	  		responseMessage.put("ISBN", mappedMarc.hasISBN() ? mappedMarc.getISBN() : "No ISBN in this record");
 
-				//GET THE NEXT PO NUMBER
-				String poNumber = Folio.getNextPoNumberFromOrders();
-				logger.info("NEXT PO NUMBER: " + poNumber);
 
 				// CREATING THE PURCHASE ORDER
-				UUID orderUUID = UUID.randomUUID();
-				JSONObject order = new JSONObject();
-				order.put("poNumber", poNumber);
-				order.put("vendor", mappedMarc.vendorUuid());
-				order.put("orderType", "One-Time");
-				order.put("reEncumber", true);
-				order.put("id", orderUUID.toString());
-				order.put("approved", true);
-				order.put("workflowStatus","Open");
-
-				if (mappedMarc.billToUuid() != null) order.put("billTo", mappedMarc.billToUuid());
-				// POST ORDER LINE
-				//FOLIO WILL CREATE THE INSTANCE, HOLDINGS, ITEM (IF PHYSICAL ITEM)
-				JSONObject orderLine = new JSONObject();
-				JSONObject cost = new JSONObject();
-				JSONObject location = new JSONObject();
-				JSONArray locations = new JSONArray();
-				JSONObject orderLineDetails = new JSONObject();
-				JSONArray poLines = new JSONArray();
-				if (mappedMarc.electronic()) {
-					orderLine.put("orderFormat", "Electronic Resource");
-					orderLine.put("receiptStatus", "Receipt Not Required");
-					JSONObject eResource = new JSONObject();
-					eResource.put("activated", false);
-					eResource.put("createInventory", "Instance, Holding");
-					if (mappedMarc.hasUserLimit()) {
-						eResource.put("userLimit", mappedMarc.userLimit());
-					}
-					eResource.put("trial", false);
-					eResource.put("accessProvider", mappedMarc.accessProviderUUID());
-					orderLine.put("eresource",eResource);
-					cost.put("quantityElectronic", 1);
-					cost.put("listUnitPriceElectronic", mappedMarc.price());
-					location.put("quantityElectronic",1);
-					location.put("locationId", uuidMappings.getRefUuidByName(config.permELocationName + "-location"));
-				}	else {
-					JSONObject physical = new JSONObject();
-					physical.put("createInventory", "Instance, Holding, Item");
-					physical.put("materialType", getMaterialTypeId(config.materialType));
-					orderLine.put("physical", physical);
-					orderLine.put("orderFormat", "Physical Resource");
-					cost.put("listUnitPrice", mappedMarc.price());
-					cost.put("quantityPhysical", 1);
-					location.put("quantityPhysical",1);
-					location.put("locationId", uuidMappings.getRefUuidByName(config.permLocationName + "-location"));
-				}
-				locations.put(location);
-
-				if (mappedMarc.hasReceivingNote()) {
-					orderLineDetails.put("receivingNote", mappedMarc.receivingNote());
-				}
-
-				//VENDOR REFERENCE NUMBER IF INCLUDED IN THE MARC RECORD:
-				if (mappedMarc.hasVendorItemId()) {
-					JSONArray referenceNumbers = new JSONArray();
-					JSONObject vendorDetail = new JSONObject();
-					vendorDetail.put("instructions", "");
-					vendorDetail.put("vendorAccount", (mappedMarc.hasVendorAccount() ? mappedMarc.vendorAccount() : ""));
-					JSONObject referenceNumber = new JSONObject();
-					referenceNumber.put("refNumber", mappedMarc.vendorItemId());
-					referenceNumber.put("refNumberType",
-									(mappedMarc.hasRefNumberType() ? mappedMarc.refNumberType() : "Vendor internal number"));
-					referenceNumbers.put(referenceNumber);
-					vendorDetail.put("referenceNumbers", referenceNumbers);
-					orderLine.put("vendorDetail", vendorDetail);
-				}
-        // Tags
-				JSONObject tags = new JSONObject();
-				JSONArray tagList = new JSONArray();
-				if (mappedMarc.hasObjectCode()) {
-					tagList.put(mappedMarc.objectCode());
-				}
-				if (mappedMarc.hasProjectCode()) {
-					tagList.put(mappedMarc.projectCode());
-				}
-				if (!tagList.isEmpty()) {
-					tags.put("tagList", tagList);
-					orderLine.put("tags", tags);
-				}
-        // Order line
-				UUID orderLineUUID = UUID.randomUUID();
-				orderLine.put("id", orderLineUUID);
-				orderLine.put("source", "User");
-				cost.put("currency", mappedMarc.currency());
-				orderLine.put("cost", cost);
-				orderLine.put("locations", locations);
-				orderLine.put("titleOrPackage",mappedMarc.title());
-				orderLine.put("acquisitionMethod", mappedMarc.acquisitionMethod());
-				orderLine.put("rush", mappedMarc.rush());
-				if (mappedMarc.hasDescription())
-					orderLine.put("description", mappedMarc.description());
-				JSONArray funds = new JSONArray();
-				JSONObject fundDist = new JSONObject();
-				fundDist.put("distributionType", "percentage");
-				fundDist.put("value", 100);
-				fundDist.put("fundId", mappedMarc.fundUUID());
-				fundDist.put("code", mappedMarc.fundCode());
-				if (mappedMarc.hasExpenseClassCode())
-					fundDist.put("expenseClassId", mappedMarc.getExpenseClassUUID());
-				funds.put(fundDist);
-				orderLine.put("fundDistribution", funds);
-				orderLine.put("purchaseOrderId", orderUUID.toString());
-				poLines.put(orderLine);
-				order.put("compositePoLines", poLines);
-				if (mappedMarc.hasSelector())
-					orderLine.put("selector", mappedMarc.selector());
-				if (mappedMarc.hasDonor())
-					orderLine.put("donor", mappedMarc.donor());
-
-				orderLine.put("contributors", mappedMarc.getContributorsForOrderLine());
-				if (!mappedMarc.getProductIdentifiers().isEmpty()) {
-					orderLineDetails.put("productIds", mappedMarc.getProductIdentifiers());
-				}
-				if (!orderLineDetails.isEmpty())
-					orderLine.put("details", orderLineDetails);
-
-				if (mappedMarc.hasEdition()) {
-					orderLine.put("edition", mappedMarc.edition());
-				}
-
-				if (mappedMarc.has260()) {
-					if (mappedMarc.publisher("260") != null)
-						orderLine.put("publisher", mappedMarc.publisher("260"));
-					if (mappedMarc.publisher("260") != null)
-						orderLine.put("publicationDate", mappedMarc.publicationDate("260"));
-				} else if (mappedMarc.has264()) {
-					if (mappedMarc.publisher("264") != null)
-						orderLine.put("publisher", mappedMarc.publisher("264"));
-					if (mappedMarc.publisher("264") != null)
-						orderLine.put("publicationDate", mappedMarc.publicationDate("264"));
-				}
+				JSONObject order = createCompositePo(mappedMarc, uuidMappings);
 
 				//POST THE ORDER AND LINE:
 				String orderResponse = Folio.callApiPostWithUtf8("orders/composite-orders",order);
@@ -247,7 +115,7 @@ public class OrderImport {
 					JSONArray links = new JSONArray();
 					JSONObject link = new JSONObject();
 					link.put("type","poLine");
-					link.put("id", orderLineUUID);
+					link.put("id", ((JSONObject) (order.getJSONArray("compositePoLines").get(0))).getString("id"));
 					links.put(link);
 					noteAsJson.put("links", links);
 					noteAsJson.put("typeId", uuidMappings.getRefUuidByName(config.noteTypeName));
@@ -259,7 +127,7 @@ public class OrderImport {
 				}
 
 				//GET THE UPDATED PURCHASE ORDER FROM THE API AND PULL OUT THE ID FOR THE INSTANCE FOLIO CREATED:
-				String updatedPurchaseOrder = Folio.callApiGet("orders/composite-orders/" +orderUUID);
+				String updatedPurchaseOrder = Folio.callApiGet("orders/composite-orders/" +order.getString("id"));
 				JSONObject updatedPurchaseOrderJson = new JSONObject(updatedPurchaseOrder);
 				String instanceId =
 								updatedPurchaseOrderJson.getJSONArray("compositePoLines")
@@ -361,11 +229,14 @@ public class OrderImport {
 
 				if (config.importInvoice && mappedMarc.hasInvoice()) {
 					importInvoice(
-							poNumber, orderLineUUID, mappedMarc.vendorUuid(), mappedMarc);
+									order.getString("poNumber"),
+									UUID.fromString(((JSONObject)(order.getJSONArray("compositePoLines").get(0))).getString("id")),
+									mappedMarc.vendorUuid(),
+									mappedMarc);
 				}
 
 				//SAVE THE PO NUMBER FOR THE RESPONSE
-				responseMessage.put("PONumber", poNumber);
+				responseMessage.put("PONumber", order.getString("poNumber"));
 				responseMessage.put("theOne", hrid);
 
 				responseMessages.put(responseMessage);
@@ -380,6 +251,140 @@ public class OrderImport {
 			}
 		}
 		return responseMessages;
+	}
+
+	private JSONObject createCompositePo(MarcRecordMapping mappedMarc, UuidMapping uuidMappings) throws Exception {
+		JSONObject order = new JSONObject();
+		order.put("poNumber", Folio.getNextPoNumberFromOrders());
+		logger.info("NEXT PO NUMBER: " + order.getString("poNumber"));
+		order.put("vendor", mappedMarc.vendorUuid());
+		order.put("orderType", "One-Time");
+		order.put("reEncumber", true);
+		order.put("id", UUID.randomUUID().toString());
+		order.put("approved", true);
+		order.put("workflowStatus","Open");
+
+		if (mappedMarc.billToUuid() != null) order.put("billTo", mappedMarc.billToUuid());
+		// POST ORDER LINE
+		//FOLIO WILL CREATE THE INSTANCE, HOLDINGS, ITEM (IF PHYSICAL ITEM)
+		JSONObject orderLine = new JSONObject();
+		JSONObject cost = new JSONObject();
+		JSONObject location = new JSONObject();
+		JSONArray locations = new JSONArray();
+		JSONObject orderLineDetails = new JSONObject();
+		JSONArray poLines = new JSONArray();
+		if (mappedMarc.electronic()) {
+			orderLine.put("orderFormat", "Electronic Resource");
+			orderLine.put("receiptStatus", "Receipt Not Required");
+			JSONObject eResource = new JSONObject();
+			eResource.put("activated", false);
+			eResource.put("createInventory", "Instance, Holding");
+			if (mappedMarc.hasUserLimit()) {
+				eResource.put("userLimit", mappedMarc.userLimit());
+			}
+			eResource.put("trial", false);
+			eResource.put("accessProvider", mappedMarc.accessProviderUUID());
+			orderLine.put("eresource",eResource);
+			cost.put("quantityElectronic", 1);
+			cost.put("listUnitPriceElectronic", mappedMarc.price());
+			location.put("quantityElectronic",1);
+			location.put("locationId", uuidMappings.getRefUuidByName(config.permELocationName + "-location"));
+		}	else {
+			JSONObject physical = new JSONObject();
+			physical.put("createInventory", "Instance, Holding, Item");
+			physical.put("materialType", getMaterialTypeId(config.materialType));
+			orderLine.put("physical", physical);
+			orderLine.put("orderFormat", "Physical Resource");
+			cost.put("listUnitPrice", mappedMarc.price());
+			cost.put("quantityPhysical", 1);
+			location.put("quantityPhysical",1);
+			location.put("locationId", uuidMappings.getRefUuidByName(config.permLocationName + "-location"));
+		}
+		locations.put(location);
+
+		if (mappedMarc.hasReceivingNote()) {
+			orderLineDetails.put("receivingNote", mappedMarc.receivingNote());
+		}
+
+		//VENDOR REFERENCE NUMBER IF INCLUDED IN THE MARC RECORD:
+		if (mappedMarc.hasVendorItemId()) {
+			JSONArray referenceNumbers = new JSONArray();
+			JSONObject vendorDetail = new JSONObject();
+			vendorDetail.put("instructions", "");
+			vendorDetail.put("vendorAccount", ( mappedMarc.hasVendorAccount() ? mappedMarc.vendorAccount() : ""));
+			JSONObject referenceNumber = new JSONObject();
+			referenceNumber.put("refNumber", mappedMarc.vendorItemId());
+			referenceNumber.put("refNumberType",
+							( mappedMarc.hasRefNumberType() ? mappedMarc.refNumberType() : "Vendor internal number"));
+			referenceNumbers.put(referenceNumber);
+			vendorDetail.put("referenceNumbers", referenceNumbers);
+			orderLine.put("vendorDetail", vendorDetail);
+		}
+		// Tags
+		JSONObject tags = new JSONObject();
+		JSONArray tagList = new JSONArray();
+		if (mappedMarc.hasObjectCode()) {
+			tagList.put(mappedMarc.objectCode());
+		}
+		if (mappedMarc.hasProjectCode()) {
+			tagList.put(mappedMarc.projectCode());
+		}
+		if (!tagList.isEmpty()) {
+			tags.put("tagList", tagList);
+			orderLine.put("tags", tags);
+		}
+		// Order line
+		orderLine.put("id", UUID.randomUUID());
+		orderLine.put("source", "User");
+		cost.put("currency", mappedMarc.currency());
+		orderLine.put("cost", cost);
+		orderLine.put("locations", locations);
+		orderLine.put("titleOrPackage", mappedMarc.title());
+		orderLine.put("acquisitionMethod", mappedMarc.acquisitionMethod());
+		orderLine.put("rush", mappedMarc.rush());
+		if (mappedMarc.hasDescription())
+			orderLine.put("description", mappedMarc.description());
+		JSONArray funds = new JSONArray();
+		JSONObject fundDist = new JSONObject();
+		fundDist.put("distributionType", "percentage");
+		fundDist.put("value", 100);
+		fundDist.put("fundId", mappedMarc.fundUUID());
+		fundDist.put("code", mappedMarc.fundCode());
+		if (mappedMarc.hasExpenseClassCode())
+			fundDist.put("expenseClassId", mappedMarc.getExpenseClassUUID());
+		funds.put(fundDist);
+		orderLine.put("fundDistribution", funds);
+		orderLine.put("purchaseOrderId", order.getString("id"));
+		poLines.put(orderLine);
+		order.put("compositePoLines", poLines);
+		if (mappedMarc.hasSelector())
+			orderLine.put("selector", mappedMarc.selector());
+		if (mappedMarc.hasDonor())
+			orderLine.put("donor", mappedMarc.donor());
+
+		orderLine.put("contributors", mappedMarc.getContributorsForOrderLine());
+		if (!mappedMarc.getProductIdentifiers().isEmpty()) {
+			orderLineDetails.put("productIds", mappedMarc.getProductIdentifiers());
+		}
+		if (!orderLineDetails.isEmpty())
+			orderLine.put("details", orderLineDetails);
+
+		if (mappedMarc.hasEdition()) {
+			orderLine.put("edition", mappedMarc.edition());
+		}
+
+		if (mappedMarc.has260()) {
+			if (mappedMarc.publisher("260") != null)
+				orderLine.put("publisher", mappedMarc.publisher("260"));
+			if (mappedMarc.publisher("260") != null)
+				orderLine.put("publicationDate", mappedMarc.publicationDate("260"));
+		} else if (mappedMarc.has264()) {
+			if (mappedMarc.publisher("264") != null)
+				orderLine.put("publisher", mappedMarc.publisher("264"));
+			if (mappedMarc.publisher("264") != null)
+				orderLine.put("publicationDate", mappedMarc.publicationDate("264"));
+		}
+		return order;
 	}
 
 	private void importInvoice(
