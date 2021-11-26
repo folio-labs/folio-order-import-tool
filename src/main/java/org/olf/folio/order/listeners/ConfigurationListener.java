@@ -51,7 +51,7 @@ public class ConfigurationListener implements ServletContextListener {
 				}
 			}
 			if (!check.resolvedCodesAndNames()) {
-				if ("true".equalsIgnoreCase(config.getString("exitOnMissedReferences"))) {
+				if ("true".equalsIgnoreCase(config.getString("exitOnFailedIdLookups"))) {
 					throw new ConfigurationException(
 									"ONE OR MORE CODES/NAMES WHERE NOT FOUND"
 					);
