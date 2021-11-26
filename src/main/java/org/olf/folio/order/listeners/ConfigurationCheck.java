@@ -3,6 +3,7 @@ package org.olf.folio.order.listeners;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.log4j.Logger;
 import org.olf.folio.order.Config;
+import org.olf.folio.order.Constants;
 import org.olf.folio.order.storage.FolioAccess;
 import org.olf.folio.order.storage.FolioData;
 
@@ -23,7 +24,6 @@ public class ConfigurationCheck {
   private static final String P_OKAPI_USERNAME = "okapi_username";
   private static final String P_OKAPI_PASSWORD = "okapi_password";
   private static final String P_FISCAL_YEAR_CODE = "fiscalYearCode";
-  private static final String P_LOAN_TYPE = "loanType";
   private static final String P_NOTE_TYPE = "noteType";
   private static final String P_MATERIAL_TYPE = "materialType";
   private static final String P_PERM_LOCATION = "permLocation";
@@ -190,6 +190,26 @@ public class ConfigurationCheck {
           allCodesAndNamesResolved = false;
         } else {
           logger.info("Found ID [" + permELocationId + "] for location name [" + permLocation + "]");
+        }
+      }
+      String noteType = config.getString(P_NOTE_TYPE);
+      if (noteType != null && !noteType.isEmpty()) {
+        String noteTypeId = FolioData.getNoteTypeIdByName(noteType);
+        if (noteTypeId == null) {
+          addPropertyError(P_NOTE_TYPE, "Could not find note type by the name [" + noteType + "]");
+          allCodesAndNamesResolved = false;
+        } else {
+          logger.info("Found ID [" + noteTypeId + "] for note type name [" + noteType + "]");
+        }
+      }
+      String materialType = config.getString(P_MATERIAL_TYPE);
+      if (materialType != null && !materialType.isEmpty() && !materialType.equalsIgnoreCase("NA")) {
+        String materialTypeId = Constants.MATERIAL_TYPES_MAP.get(materialType);
+        if (materialTypeId == null) {
+          addPropertyError(P_MATERIAL_TYPE, "Could not find material type by the name [" + materialType + "]");
+          allCodesAndNamesResolved = false;
+        } else {
+          logger.info("Found ID [" + materialTypeId + "] for material type name [" + materialType + "]");
         }
       }
     } catch (Exception e) {

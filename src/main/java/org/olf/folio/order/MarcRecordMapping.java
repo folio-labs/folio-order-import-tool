@@ -12,6 +12,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.olf.folio.order.Constants.CONTRIBUTOR_NAME_TYPES_MAP;
+
 public class MarcRecordMapping {
 
   Record marcRecord;
@@ -461,20 +463,20 @@ public class MarcRecordMapping {
   private JSONArray getContributors(boolean buildForOrderLine) throws Exception {
     JSONArray contributors = new JSONArray();
     List<DataField> fields = marcRecord.getDataFields();
-    Iterator fieldsIterator = fields.iterator();
-    while (fieldsIterator.hasNext()) {
-      DataField field = (DataField) fieldsIterator.next();
+    for (DataField field : fields) {
       if (field.getTag().equalsIgnoreCase("100") || field.getTag().equalsIgnoreCase("700")) {
         if (buildForOrderLine) {
-          contributors.put( makeContributorForOrderLine(field, "Personal name"));
+          contributors.put(makeContributorForOrderLine(field, "Personal name"));
         } else {
-          contributors.put( makeContributor(field, "Personal name",
+          contributors.put(makeContributor(field, "Personal name",
                   new String[] {"a", "b", "c", "d", "f", "g", "j", "k", "l", "n", "p", "t", "u"}));
         }
-      } else if ((field.getTag().equals("110") || field.getTag().equals( "710" )) && buildForOrderLine) {
-        contributors.put( makeContributorForOrderLine( field, "Corporate name"));
-      } else if ((field.getTag().equals("111") || field.getTag().equals( "711" )) && buildForOrderLine) {
-        contributors.put( makeContributorForOrderLine( field, "Meeting name"));
+      } else if (( field.getTag().equals("110") || field.getTag().equals(
+              "710") ) && buildForOrderLine) {
+        contributors.put(makeContributorForOrderLine(field, "Corporate name"));
+      } else if (( field.getTag().equals("111") || field.getTag().equals(
+              "711") ) && buildForOrderLine) {
+        contributors.put(makeContributorForOrderLine(field, "Meeting name"));
       }
     }
     return contributors;
@@ -484,27 +486,26 @@ public class MarcRecordMapping {
     Subfield subfield = field.getSubfield( 'a' );
     JSONObject contributor = new JSONObject();
     contributor.put("contributor", subfield.getData());
-    contributor.put("contributorNameTypeId", Constants.CONTRIBUTOR_NAME_TYPES_MAP.get(contributorNameType));
+    contributor.put("contributorNameTypeId", CONTRIBUTOR_NAME_TYPES_MAP.get(contributorNameType));
     return contributor;
   }
 
-  private JSONObject makeContributor( DataField field, String name_type_id, String[] subfieldArray) throws Exception {
+  private JSONObject makeContributor( DataField field, String name_type, String[] subfieldArray) throws Exception {
     List<String> list = Arrays.asList(subfieldArray);
     JSONObject contributor = new JSONObject();
     contributor.put("name", "");
-    contributor.put("contributorNameTypeId", FolioData.getRefUuidByName(name_type_id));
+    contributor.put("contributorNameTypeId", CONTRIBUTOR_NAME_TYPES_MAP.get(name_type));
     List<Subfield> subfields =  field.getSubfields();
-    Iterator subfieldIterator = subfields.iterator();
+    Iterator<Subfield> subfieldIterator = subfields.iterator();
     String contributorName = "";
     while (subfieldIterator.hasNext()) {
-      Subfield subfield = (Subfield) subfieldIterator.next();
+      Subfield subfield = subfieldIterator.next();
       String subfieldAsString = String.valueOf(subfield.getCode());
       if (subfield.getCode() == '4') {
-        if (FolioData.getRefUuidByName(subfield.getData()) != null) {
-          contributor.put("contributorTypeId", FolioData.getRefUuidByName(subfield.getData()));
-        }
-        else {
-          contributor.put("contributorTypeId", FolioData.getRefUuidByName("bkp"));
+        if (FolioData.getContributorTypeIdByName(subfield.getData()) != null) {
+          contributor.put("contributorTypeId", FolioData.getContributorTypeIdByName(subfield.getData()));
+        } else {
+          contributor.put("contributorTypeId", FolioData.getContributorTypeIdByCode("bkp"));
         }
       }
       else if (subfield.getCode() == 'e') {

@@ -112,7 +112,6 @@ public class OrderImport {
 
 				//INSERT THE NOTE IF THERE IS A NOTE IN THE MARC RECORD
 				if (mappedMarc.hasNotes()) {
-					logger.info("NOTE TYPE NAME: " + config.noteTypeName);
 					JSONObject noteAsJson = new JSONObject();
 					JSONArray links = new JSONArray();
 					JSONObject link = new JSONObject();
@@ -120,7 +119,7 @@ public class OrderImport {
 					link.put("id", ((JSONObject) (order.getJSONArray("compositePoLines").get(0))).getString("id"));
 					links.put(link);
 					noteAsJson.put("links", links);
-					noteAsJson.put("typeId", FolioData.getRefUuidByName(config.noteTypeName));
+					noteAsJson.put("typeId", FolioData.getNoteTypeIdByName(config.noteTypeName));
 					noteAsJson.put("domain", "orders");
 					noteAsJson.put("content", mappedMarc.notes());
 					noteAsJson.put("title", mappedMarc.notes());
@@ -153,7 +152,7 @@ public class OrderImport {
 
 				instanceAsJson.put("title", mappedMarc.title());
 				instanceAsJson.put("source", config.importSRS ? "MARC" : "FOLIO");
-				instanceAsJson.put("instanceTypeId", FolioData.getRefUuidByName("text"));
+				instanceAsJson.put("instanceTypeId", FolioData.getInstanceTypeId("text"));
 				instanceAsJson.put("identifiers", mappedMarc.getInstanceIdentifiers());
 				instanceAsJson.put("contributors", mappedMarc.getContributorsForInstance());
 				instanceAsJson.put("discoverySuppress", false);
@@ -165,9 +164,8 @@ public class OrderImport {
 				JSONArray eResources = new JSONArray();
 				String linkText = (String) getMyContext().getAttribute("textForElectronicResources");
 				List<VariableField> urls =  record.getVariableFields("856");
-				Iterator<VariableField> iterator = urls.iterator();
-				while (iterator.hasNext()) {
-					DataField dataField = (DataField) iterator.next();
+				for (VariableField url : urls) {
+					DataField dataField = (DataField) url;
 					if (dataField != null && dataField.getSubfield('u') != null) {
 						if (dataField.getSubfield('y') != null) {
 							linkText = dataField.getSubfield('y').getData();
@@ -196,7 +194,7 @@ public class OrderImport {
 				holdingsRecord.put("electronicAccess", eResources);
 				//IF THIS WAS AN ELECTRONIC RECORD, MARK THE HOLDING AS E-HOLDING
 				if (mappedMarc.electronic()) {
-					holdingsRecord.put("holdingsTypeId", FolioData.getRefUuidByName("Electronic"));
+					holdingsRecord.put("holdingsTypeId", FolioData.getHoldingsTypeIdByName("Electronic"));
 
 					if (mappedMarc.hasDonor()) {
 						JSONObject bookplateNote = new JSONObject();
@@ -286,7 +284,7 @@ public class OrderImport {
 			cost.put("quantityElectronic", 1);
 			cost.put("listUnitPriceElectronic", mappedMarc.price());
 			location.put("quantityElectronic",1);
-			location.put("locationId", FolioData.getRefUuidByName(config.permELocationName + "-location"));
+			location.put("locationId", FolioData.getLocationIdByName(config.permELocationName));
 		}	else {
 			JSONObject physical = new JSONObject();
 			physical.put("createInventory", "Instance, Holding, Item");
@@ -296,7 +294,7 @@ public class OrderImport {
 			cost.put("listUnitPrice", mappedMarc.price());
 			cost.put("quantityPhysical", 1);
 			location.put("quantityPhysical",1);
-			location.put("locationId", FolioData.getRefUuidByName(config.permLocationName + "-location"));
+			location.put("locationId", FolioData.getLocationIdByName(config.permLocationName));
 		}
 		locations.put(location);
 
@@ -332,7 +330,7 @@ public class OrderImport {
 			orderLine.put("tags", tags);
 		}
 		// Order line
-		orderLine.put("id", UUID.randomUUID());
+		orderLine.put("id", UUID.randomUUID().toString());
 		orderLine.put("source", "User");
 		cost.put("currency", mappedMarc.currency());
 		orderLine.put("cost", cost);
