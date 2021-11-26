@@ -22,10 +22,13 @@ import org.apache.log4j.Logger;
 import org.marc4j.marc.VariableField;
 import org.olf.folio.order.dataobjects.CompositePurchaseOrder;
 import org.olf.folio.order.dataobjects.PoLineLocation;
+import org.olf.folio.order.storage.FolioAccess;
+import org.olf.folio.order.storage.FolioData;
+import org.olf.folio.order.storage.SRSStorage;
 
 public class OrderImport {
 
-	private static final Logger logger = Logger.getLogger(OrderImport.class);
+	private static final Logger logger = Logger.getLogger("OrderImport");
 	private ServletContext myContext;
 	private static Config config;
 
@@ -35,7 +38,7 @@ public class OrderImport {
 		if (config == null) {
 			config = new Config(myContext);
 		}
-		Folio.initialize(config, logger);
+		FolioAccess.initialize(config, logger);
 		JSONArray responseMessages = new JSONArray();
 
 		//GET THE UPLOADED FILE, EXIT IF NONE PROVIDED
@@ -52,10 +55,8 @@ public class OrderImport {
 		//EXIT IF ANY RECORD MISSES VALUES
 		InputStream in = new FileInputStream(filePath + fileName);
 		MarcReader reader = new MarcStreamReader(in);
-		// Util for mapping certain codes to UUIDs
-		UuidMapping uuidMappings = new UuidMapping();
 
-		JSONArray validateRequiredResult = validateRequiredValues(reader, uuidMappings);
+		JSONArray validateRequiredResult = validateRequiredValues(reader);
 		if (!validateRequiredResult.isEmpty()) {
 			return validateRequiredResult;
 		}
@@ -74,7 +75,7 @@ public class OrderImport {
 			try {
 				Record record = reader.next();
 				counters.recordsProcessed++;
-				MarcRecordMapping mappedMarc = new MarcRecordMapping(record, uuidMappings);
+				MarcRecordMapping mappedMarc = new MarcRecordMapping(record);
 
 				CompositePurchaseOrder newOrder = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
 
@@ -87,11 +88,12 @@ public class OrderImport {
 								&& !newOrder.getCompositePoLines().get(0).getLocations().isEmpty()) {
 					PoLineLocation poLineLocation = newOrder.getCompositePoLines().get(0).getLocations().get(0);
 					if (mappedMarc.electronic()) {
-						poLineLocation.putLocationId(uuidMappings.getRefUuidByName(config.permELocationName + "-poLineLocation"));
+						poLineLocation.putLocationId(FolioData.getLocationIdByName(config.permELocationName));
 					} else {
-						poLineLocation.putLocationId(uuidMappings.getRefUuidByName(config.permLocationName+ "-poLineLocation"));
+						poLineLocation.putLocationId(FolioData.getLocationIdByName(config.permLocationName));
 					}
 				}
+
 				logger.info("Created CompositePurchaseOrder: " + newOrder.asJson().toString());
 
 				//NOW WE CAN START CREATING THE PO!
@@ -101,10 +103,10 @@ public class OrderImport {
 
 
 				// CREATING THE PURCHASE ORDER
-				JSONObject order = createCompositePo(mappedMarc, uuidMappings);
+				JSONObject order = createCompositePo(mappedMarc);
 
 				//POST THE ORDER AND LINE:
-				String orderResponse = Folio.callApiPostWithUtf8("orders/composite-orders",order);
+				String orderResponse = FolioAccess.callApiPostWithUtf8("orders/composite-orders",order);
 				JSONObject approvedOrder = new JSONObject(orderResponse);
 				logger.info(orderResponse);
 
@@ -118,31 +120,29 @@ public class OrderImport {
 					link.put("id", ((JSONObject) (order.getJSONArray("compositePoLines").get(0))).getString("id"));
 					links.put(link);
 					noteAsJson.put("links", links);
-					noteAsJson.put("typeId", uuidMappings.getRefUuidByName(config.noteTypeName));
+					noteAsJson.put("typeId", FolioData.getRefUuidByName(config.noteTypeName));
 					noteAsJson.put("domain", "orders");
 					noteAsJson.put("content", mappedMarc.notes());
 					noteAsJson.put("title", mappedMarc.notes());
-					String noteResponse = Folio.callApiPostWithUtf8("/notes",noteAsJson);
+					String noteResponse = FolioAccess.callApiPostWithUtf8("/notes",noteAsJson);
 					logger.info(noteResponse);
 				}
 
 				//GET THE UPDATED PURCHASE ORDER FROM THE API AND PULL OUT THE ID FOR THE INSTANCE FOLIO CREATED:
-				String updatedPurchaseOrder = Folio.callApiGet("orders/composite-orders/" +order.getString("id"));
-				JSONObject updatedPurchaseOrderJson = new JSONObject(updatedPurchaseOrder);
+				JSONObject updatedPurchaseOrderJson = FolioAccess.callApiGet("orders/composite-orders/" +order.getString("id"));
 				String instanceId =
 								updatedPurchaseOrderJson.getJSONArray("compositePoLines")
 												.getJSONObject(0).getString("instanceId");
 
 				//GET THE INSTANCE RECORD FOLIO CREATED, SO WE CAN ADD BIB INFO TO IT:
-				String instanceResponse = Folio.callApiGet("inventory/instances/" + instanceId);
-				JSONObject instanceAsJson = new JSONObject(instanceResponse);
+				JSONObject instanceAsJson = FolioAccess.callApiGet("inventory/instances/" + instanceId);
 				String hrid = instanceAsJson.getString("hrid");
 
 				// UChicago have asked that the MARC NOT be stored to SRS since this has implications for the ability to
 				// batch update the instance record with the full cataloging when UChicago receive the invoice.
 				if ( config.importSRS )
 				{
-					Folio.storeMarcToSRS(
+					SRSStorage.storeMarcToSRS(
 							record,
 							byteArrayOutputStream,
 							UUID.randomUUID(), // snapshotId
@@ -153,14 +153,13 @@ public class OrderImport {
 
 				instanceAsJson.put("title", mappedMarc.title());
 				instanceAsJson.put("source", config.importSRS ? "MARC" : "FOLIO");
-				instanceAsJson.put("instanceTypeId", uuidMappings.getRefUuidByName("text"));
+				instanceAsJson.put("instanceTypeId", FolioData.getRefUuidByName("text"));
 				instanceAsJson.put("identifiers", mappedMarc.getInstanceIdentifiers());
 				instanceAsJson.put("contributors", mappedMarc.getContributorsForInstance());
 				instanceAsJson.put("discoverySuppress", false);
 
 				//GET THE HOLDINGS RECORD FOLIO CREATED, SO WE CAN ADD URLs FROM THE 856 IN THE MARC RECORD
-				String holdingResponse = Folio.callApiGet("holdings-storage/holdings?query=(instanceId==" + instanceId + ")");
-				JSONObject holdingsAsJson = new JSONObject(holdingResponse);
+				JSONObject holdingsAsJson = FolioAccess.callApiGet("holdings-storage/holdings?query=(instanceId==" + instanceId + ")");
 				JSONObject holdingsRecord = holdingsAsJson.getJSONArray("holdingsRecords").getJSONObject(0);
 
 				JSONArray eResources = new JSONArray();
@@ -191,13 +190,13 @@ public class OrderImport {
 				instanceAsJson.put("natureOfContentTermIds", new JSONArray());
 				instanceAsJson.put("precedingTitles", new JSONArray());
 				instanceAsJson.put("succeedingTitles", new JSONArray());
-				String instanceUpdateResponse = Folio.callApiPut( "inventory/instances/" + instanceId,  instanceAsJson);
+				String instanceUpdateResponse = FolioAccess.callApiPut( "inventory/instances/" + instanceId,  instanceAsJson);
 
 				//UPDATE THE HOLDINGS RECORD
 				holdingsRecord.put("electronicAccess", eResources);
 				//IF THIS WAS AN ELECTRONIC RECORD, MARK THE HOLDING AS E-HOLDING
 				if (mappedMarc.electronic()) {
-					holdingsRecord.put("holdingsTypeId", uuidMappings.getRefUuidByName("Electronic"));
+					holdingsRecord.put("holdingsTypeId", FolioData.getRefUuidByName("Electronic"));
 
 					if (mappedMarc.hasDonor()) {
 						JSONObject bookplateNote = new JSONObject();
@@ -209,12 +208,11 @@ public class OrderImport {
 						holdingsRecord.put("notes", holdingsNotes);
 					}
 				}
-				Folio.callApiPut("holdings-storage/holdings/" + holdingsRecord.getString("id"), holdingsRecord);
+				FolioAccess.callApiPut("holdings-storage/holdings/" + holdingsRecord.getString("id"), holdingsRecord);
 
 				if (!mappedMarc.electronic() && mappedMarc.hasDonor()) {
 					//IF PHYSICAL RESOURCE WITH DONOR INFO, GET THE ITEM FOLIO CREATED, SO WE CAN ADD NOTE ABOUT DONOR
-					String itemsResponse = Folio.callApiGet("inventory/items?query=(holdingsRecordId==" + holdingsRecord.get("id") + ")");
-					JSONObject itemsAsJson = new JSONObject(itemsResponse);
+					JSONObject itemsAsJson = FolioAccess.callApiGet("inventory/items?query=(holdingsRecordId==" + holdingsRecord.get("id") + ")");
 					JSONObject item = itemsAsJson.getJSONArray("items").getJSONObject(0);
 					JSONObject bookplateNote = new JSONObject();
 					bookplateNote.put("itemNoteTypeId", Constants.ITEM_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE);
@@ -224,7 +222,7 @@ public class OrderImport {
 					itemNotes.put(bookplateNote);
 					item.put("notes", itemNotes);
 					//UPDATE THE ITEM
-					Folio.callApiPut("inventory/items/" + item.getString("id"), item);
+					FolioAccess.callApiPut("inventory/items/" + item.getString("id"), item);
 				}
 
 				if (config.importInvoice && mappedMarc.hasInvoice()) {
@@ -253,9 +251,9 @@ public class OrderImport {
 		return responseMessages;
 	}
 
-	private JSONObject createCompositePo(MarcRecordMapping mappedMarc, UuidMapping uuidMappings) throws Exception {
+	private JSONObject createCompositePo(MarcRecordMapping mappedMarc) throws Exception {
 		JSONObject order = new JSONObject();
-		order.put("poNumber", Folio.getNextPoNumberFromOrders());
+		order.put("poNumber", FolioData.getNextPoNumberFromOrders());
 		logger.info("NEXT PO NUMBER: " + order.getString("poNumber"));
 		order.put("vendor", mappedMarc.vendorUuid());
 		order.put("orderType", "One-Time");
@@ -288,7 +286,7 @@ public class OrderImport {
 			cost.put("quantityElectronic", 1);
 			cost.put("listUnitPriceElectronic", mappedMarc.price());
 			location.put("quantityElectronic",1);
-			location.put("locationId", uuidMappings.getRefUuidByName(config.permELocationName + "-location"));
+			location.put("locationId", FolioData.getRefUuidByName(config.permELocationName + "-location"));
 		}	else {
 			JSONObject physical = new JSONObject();
 			physical.put("createInventory", "Instance, Holding, Item");
@@ -298,7 +296,7 @@ public class OrderImport {
 			cost.put("listUnitPrice", mappedMarc.price());
 			cost.put("quantityPhysical", 1);
 			location.put("quantityPhysical",1);
-			location.put("locationId", uuidMappings.getRefUuidByName(config.permLocationName + "-location"));
+			location.put("locationId", FolioData.getRefUuidByName(config.permLocationName + "-location"));
 		}
 		locations.put(location);
 
@@ -434,13 +432,13 @@ public class OrderImport {
 		invoiceLine.put("poLineId", orderLineUUID);
 
 		//POST INVOICE OBJECTS
-		String invoiceResponse = Folio.callApiPostWithUtf8("invoice/invoices", invoice);
+		String invoiceResponse = FolioAccess.callApiPostWithUtf8("invoice/invoices", invoice);
 		logger.info(invoiceResponse);
-		String invoiceLineResponse = Folio.callApiPostWithUtf8("invoice/invoice-lines", invoiceLine);
+		String invoiceLineResponse = FolioAccess.callApiPostWithUtf8("invoice/invoice-lines", invoiceLine);
 		logger.info(invoiceLineResponse);
 	}
 
-	public JSONArray validateRequiredValues(MarcReader reader, UuidMapping uuidMapping) {
+	public JSONArray validateRequiredValues(MarcReader reader) {
 
 		Record record;
 		JSONArray responseMessages = new JSONArray();
@@ -448,7 +446,7 @@ public class OrderImport {
 			try {
 				record = reader.next();    					    
 				//GET THE 980s FROM THE MARC RECORD
-				MarcRecordMapping marc = new MarcRecordMapping(record, uuidMapping);
+				MarcRecordMapping marc = new MarcRecordMapping(record);
 
 				if (!marc.has980()) {
 					JSONObject responseMessage = new JSONObject();
@@ -484,24 +482,23 @@ public class OrderImport {
 
 				//VALIDATE THE ORGANIZATION, OBJECT CODE AND FUND
 				//STOP THE PROCESS IF ANY ERRORS WERE FOUND
-				JSONObject orgValidationResult = Folio.validateOrganization(marc.vendorCode(), marc.title(),
-								uuidMapping);
+				JSONObject orgValidationResult = FolioData.validateOrganization(marc.vendorCode(), marc.title());
 				if (orgValidationResult != null) responseMessages.put(orgValidationResult);
 
 				if (marc.hasObjectCode()) {
-					JSONObject objectValidationResult = Folio.validateObjectCode(marc.objectCode(), marc.title());
+					JSONObject objectValidationResult = FolioData.validateObjectCode(marc.objectCode(), marc.title());
 					if (objectValidationResult != null) responseMessages.put(objectValidationResult);
 				}
 				if (marc.hasProjectCode()) {
 					// TODO: Check this
-					JSONObject projectValidationResult = Folio.validateObjectCode(marc.projectCode(), marc.title());
+					JSONObject projectValidationResult = FolioData.validateObjectCode(marc.projectCode(), marc.title());
 					if (projectValidationResult != null) responseMessages.put(projectValidationResult);
 				}
-				JSONObject fundValidationResult = Folio.validateFund(marc.fundCode(), marc.title(), marc.price());
+				JSONObject fundValidationResult = FolioData.validateFund(marc.fundCode(), marc.title(), marc.price());
 				if (fundValidationResult != null) responseMessages.put(fundValidationResult);
 
 				if (config.importInvoice) {
-					JSONObject invoiceValidationResult = Folio.validateRequiredValuesForInvoice(marc.title(), record);
+					JSONObject invoiceValidationResult = FolioData.validateRequiredValuesForInvoice(marc.title(), record);
 					if (invoiceValidationResult != null) responseMessages.put(invoiceValidationResult);
 				}
 

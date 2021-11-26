@@ -6,16 +6,15 @@ import org.marc4j.marc.DataField;
 import org.marc4j.marc.Record;
 import org.marc4j.marc.Subfield;
 import org.marc4j.marc.VariableField;
+import org.olf.folio.order.storage.FolioData;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 public class MarcRecordMapping {
 
   Record marcRecord;
-  UuidMapping uuidMappings;
   DataField d245;
   DataField d250;
   DataField d260;
@@ -64,9 +63,8 @@ public class MarcRecordMapping {
   // Mappings 856
   private static final String USER_LIMIT           = "x";
 
-  public MarcRecordMapping(Record marcRecord, UuidMapping uuidMappings) {
+  public MarcRecordMapping(Record marcRecord) {
     this.marcRecord = marcRecord;
-    this.uuidMappings = uuidMappings;
     d245 = (DataField) marcRecord.getVariableField("245");
     d250 = (DataField) marcRecord.getVariableField("250");
     d260 = (DataField) marcRecord.getVariableField("260");
@@ -213,7 +211,7 @@ public class MarcRecordMapping {
   }
 
   public String fundUUID() throws Exception {
-    return uuidMappings.getFundId(fundCode());
+    return FolioData.getFundId(fundCode());
   }
 
   /**
@@ -224,7 +222,7 @@ public class MarcRecordMapping {
   }
 
   public String vendorUuid() throws Exception {
-    return uuidMappings.getOrganizationId(vendorCode());
+    return FolioData.getOrganizationId(vendorCode());
   }
 
   /**
@@ -340,7 +338,7 @@ public class MarcRecordMapping {
   }
 
   public String getExpenseClassUUID() throws Exception {
-    return uuidMappings.getExpenseClassId(expenseClassCode());
+    return FolioData.getExpenseClassId(expenseClassCode());
   }
 
   /**
@@ -360,7 +358,7 @@ public class MarcRecordMapping {
   }
 
   public String accessProviderUUID() throws Exception {
-    return uuidMappings.getOrganizationId(accessProviderCode());
+    return FolioData.getOrganizationId(accessProviderCode());
   }
 
   /**
@@ -375,7 +373,7 @@ public class MarcRecordMapping {
   }
 
   public String billToUuid() throws Exception {
-    return uuidMappings.getAddressIdByName(billTo());
+    return FolioData.getAddressIdByName(billTo());
   }
 
   /**
@@ -470,7 +468,7 @@ public class MarcRecordMapping {
         if (buildForOrderLine) {
           contributors.put( makeContributorForOrderLine(field, "Personal name"));
         } else {
-          contributors.put( makeContributor(field, uuidMappings, "Personal name",
+          contributors.put( makeContributor(field, "Personal name",
                   new String[] {"a", "b", "c", "d", "f", "g", "j", "k", "l", "n", "p", "t", "u"}));
         }
       } else if ((field.getTag().equals("110") || field.getTag().equals( "710" )) && buildForOrderLine) {
@@ -490,11 +488,11 @@ public class MarcRecordMapping {
     return contributor;
   }
 
-  private JSONObject makeContributor( DataField field, UuidMapping uuidMappings, String name_type_id, String[] subfieldArray) throws Exception {
+  private JSONObject makeContributor( DataField field, String name_type_id, String[] subfieldArray) throws Exception {
     List<String> list = Arrays.asList(subfieldArray);
     JSONObject contributor = new JSONObject();
     contributor.put("name", "");
-    contributor.put("contributorNameTypeId", uuidMappings.getRefUuidByName(name_type_id));
+    contributor.put("contributorNameTypeId", FolioData.getRefUuidByName(name_type_id));
     List<Subfield> subfields =  field.getSubfields();
     Iterator subfieldIterator = subfields.iterator();
     String contributorName = "";
@@ -502,11 +500,11 @@ public class MarcRecordMapping {
       Subfield subfield = (Subfield) subfieldIterator.next();
       String subfieldAsString = String.valueOf(subfield.getCode());
       if (subfield.getCode() == '4') {
-        if (uuidMappings.getRefUuidByName(subfield.getData()) != null) {
-          contributor.put("contributorTypeId", uuidMappings.getRefUuidByName(subfield.getData()));
+        if (FolioData.getRefUuidByName(subfield.getData()) != null) {
+          contributor.put("contributorTypeId", FolioData.getRefUuidByName(subfield.getData()));
         }
         else {
-          contributor.put("contributorTypeId", uuidMappings.getRefUuidByName("bkp"));
+          contributor.put("contributorTypeId", FolioData.getRefUuidByName("bkp"));
         }
       }
       else if (subfield.getCode() == 'e') {

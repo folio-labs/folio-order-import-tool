@@ -3,8 +3,8 @@ package org.olf.folio.order.dataobjects;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.olf.folio.order.Folio;
 import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.storage.FolioData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,7 @@ public class CompositePurchaseOrder extends JsonDataObject {
 
     CompositePurchaseOrder order = new CompositePurchaseOrder();
 
-    order.putPoNumber(Folio.getNextPoNumberFromOrders())
+    order.putPoNumber(FolioData.getNextPoNumberFromOrders())
             .putVendor(mappedMarc.vendorUuid())
             .putOrderType(V_ONE_TIME)
             .putReEncumber(true)

@@ -30,18 +30,31 @@ public class ConfigurationListener implements ServletContextListener {
 			Iterator<String> keys = config.getKeys();
 			while (keys.hasNext()) {
 				String key = keys.next();
-				if (!key.contains("password")) {
-					logger.info(String.format("%-31s: %-23s", key, config.getProperty(key)));
-				}
 				context.setAttribute(key, config.getProperty(key));
 			}
 			ConfigurationCheck check = new ConfigurationCheck(config, context);
 			boolean passed = check.validateConfiguration();
+			keys = config.getKeys();
+			logger.info(" ");
+			while (keys.hasNext()) {
+				String key = keys.next();
+				if (!key.contains("password")) {
+					logger.info(String.format("%-31s: %-23s", key, config.getProperty(key)));
+				}
+			}
+			logger.info(" ");
+			check.report();
 			if (!passed) {
-				check.report();
-				if (config.containsKey("exitOnConfigErrors") && "true".equalsIgnoreCase(config.getString("exitOnConfigErrors"))) {
+				if ("true".equalsIgnoreCase(config.getString("exitOnConfigErrors"))) {
 					throw new ConfigurationException(
 									"SOME CONFIGURATION PROBLEMS ENCOUNTERED - SEE PREVIOUS LOG LINES");
+				}
+			}
+			if (!check.resolvedCodesAndNames()) {
+				if ("true".equalsIgnoreCase(config.getString("exitOnMissedReferences"))) {
+					throw new ConfigurationException(
+									"ONE OR MORE CODES/NAMES WHERE NOT FOUND"
+					);
 				}
 			}
 

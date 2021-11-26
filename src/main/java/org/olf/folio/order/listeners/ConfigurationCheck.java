@@ -3,7 +3,8 @@ package org.olf.folio.order.listeners;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.log4j.Logger;
 import org.olf.folio.order.Config;
-import org.olf.folio.order.Folio;
+import org.olf.folio.order.storage.FolioAccess;
+import org.olf.folio.order.storage.FolioData;
 
 import javax.servlet.ServletContext;
 import java.net.MalformedURLException;
@@ -25,6 +26,8 @@ public class ConfigurationCheck {
   private static final String P_LOAN_TYPE = "loanType";
   private static final String P_NOTE_TYPE = "noteType";
   private static final String P_MATERIAL_TYPE = "materialType";
+  private static final String P_PERM_LOCATION = "permLocation";
+  private static final String P_PERM_E_LOCATION = "permELocation";
 
   private final CompositeConfiguration config;
   private final ServletContext context;
@@ -39,14 +42,19 @@ public class ConfigurationCheck {
     this.context = context;
   }
   private boolean allMandatoryPresent = true;
-  private boolean authenticationPassed = false;
+  private boolean authenticationPassed = true;
   private boolean urlPassed = true;
+  private boolean codesAndNamesExist = true;
+
 
   public boolean validateConfiguration () {
     allMandatoryPresent = checkMissingMandatoryProperties();
     urlPassed = checkBaseOkapiEndpointUrl();
     if (allMandatoryPresent && urlPassed) {
       authenticationPassed = checkAccess ();
+      if (authenticationPassed) {
+        codesAndNamesExist = validateCodesAndNames ();
+      }
     }
     return (allMandatoryPresent && authenticationPassed && urlPassed);
   }
@@ -63,6 +71,10 @@ public class ConfigurationCheck {
 
   public boolean passed () {
     return allMandatoryPresent && authenticationPassed && urlPassed;
+  }
+
+  public boolean resolvedCodesAndNames() {
+    return codesAndNamesExist;
   }
 
   public void report () {
@@ -86,10 +98,9 @@ public class ConfigurationCheck {
         logger.error(error);
       }
       logger.error(" ");
-    } else {
-      for (String key: getPropertyErrors().keySet()) {
-        logger.error(key + ": " + getPropertyErrors().get(key));
-      }
+    }
+    for (String key: getPropertyErrors().keySet()) {
+      logger.error(key + ": " + getPropertyErrors().get(key));
     }
   }
 
@@ -100,7 +111,6 @@ public class ConfigurationCheck {
             P_OKAPI_PASSWORD,
             P_TENANT,
             P_FISCAL_YEAR_CODE,
-            P_LOAN_TYPE,
             P_NOTE_TYPE)) {
       if (!config.containsKey(prop)) {
         passed = false;
@@ -140,7 +150,7 @@ public class ConfigurationCheck {
   private boolean checkAccess () {
     Config conf = new Config(context);
     try {
-      Folio.initialize(conf, logger);
+      FolioAccess.initialize(conf, logger);
     } catch (Exception e) {
       accessErrors.add(e.getMessage());
       return false;
@@ -148,6 +158,45 @@ public class ConfigurationCheck {
     logger.info(" ");
     logger.info("Access to FOLIO works with the provided authentication configuration");
     return true;
+  }
+
+  private boolean validateCodesAndNames () {
+    boolean allCodesAndNamesResolved = true;
+    try {
+      String fiscalYearCode = config.getString(P_FISCAL_YEAR_CODE);
+      String fiscalYearId = FolioData.getFiscalYearId(fiscalYearCode);
+      logger.info(" ");
+      if (fiscalYearId == null) {
+        addPropertyError(P_FISCAL_YEAR_CODE, "Could not find fiscal year record for code [" + fiscalYearCode + "]");
+        allCodesAndNamesResolved = false;
+      } else {
+        logger.info("Found ID [" + fiscalYearId + "] for fiscal year code [" + fiscalYearCode + "]");
+      }
+      String permLocation = config.getString(P_PERM_LOCATION);
+      if (permLocation != null && !permLocation.equalsIgnoreCase("NA")) {
+        String permLocationId = FolioData.getLocationIdByName(permLocation);
+        if (permLocationId == null) {
+          addPropertyError(P_PERM_LOCATION, "Could not find location by the name [" + permLocation + "]");
+          allCodesAndNamesResolved = false;
+        } else {
+          logger.info("Found ID [" + permLocationId + "] for location name [" + permLocation + "]");
+        }
+      }
+      String permELocation = config.getString(P_PERM_E_LOCATION);
+      if (permELocation != null && !permELocation.equalsIgnoreCase("NA")) {
+        String permELocationId = FolioData.getLocationIdByName(permELocation);
+        if (permELocationId == null) {
+          addPropertyError(P_PERM_E_LOCATION, "Could not find location by the name [" + permELocation + "]");
+          allCodesAndNamesResolved = false;
+        } else {
+          logger.info("Found ID [" + permELocationId + "] for location name [" + permLocation + "]");
+        }
+      }
+    } catch (Exception e) {
+      logger.error("There was an API error looking up IDs by names/codes " + e.getMessage());
+      return false;
+    }
+    return allCodesAndNamesResolved;
   }
 
   public void addPropertyError(String property, String error) {
