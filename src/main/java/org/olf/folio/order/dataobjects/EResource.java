@@ -17,16 +17,13 @@ public class EResource extends JsonDataObject {
 
   public static EResource fromMarcRecord(MarcRecordMapping mappedMarc)
           throws Exception {
-    EResource eResource =
-            new EResource()
+
+    return new EResource()
                     .putActivated(false)
-                    .putCreateInventory(V_INSTANCE_HOLDING);
-    if (mappedMarc.hasUserLimit()) {
-      eResource.putUserLimit(mappedMarc.userLimit());
-    }
-    eResource.putTrial(false)
-            .putAccessProvider(mappedMarc.accessProviderUUID());
-    return eResource;
+                    .putCreateInventory(V_INSTANCE_HOLDING)
+                    .putUserLimitIfPresent(mappedMarc.userLimit())
+                    .putTrial(false)
+                    .putAccessProvider(mappedMarc.accessProviderUUID());
   }
 
   public EResource putActivated (boolean activated) {
@@ -37,6 +34,9 @@ public class EResource extends JsonDataObject {
   }
   public EResource putUserLimit(String userLimit) {
     return (EResource) putString(P_USER_LIMIT, userLimit);
+  }
+  public EResource putUserLimitIfPresent (String userLimit) {
+    return present(userLimit) ? putUserLimit(userLimit) : this;
   }
   public EResource putTrial(boolean trial) {
     return (EResource) putBoolean(P_TRIAL, trial);

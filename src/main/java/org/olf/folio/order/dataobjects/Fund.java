@@ -11,15 +11,12 @@ public class Fund extends JsonDataObject {
   public static final String P_EXPENSE_CLASS_ID = "expenseClassId";
 
   public static Fund fromMarcRecord(MarcRecordMapping mappedMarc) throws Exception{
-    Fund fund = new Fund()
+    return new Fund()
             .putDistributionType(V_PERCENTAGE)
             .putValue(100)
             .putFundId(mappedMarc.fundUUID())
-            .putCode(mappedMarc.fundCode());
-    if (mappedMarc.hasExpenseClassCode()) {
-      fund.putExpenseClassId(mappedMarc.getExpenseClassUUID());
-    }
-    return fund;
+            .putCode(mappedMarc.fundCode())
+            .putExpenseClassIdIfPresent(mappedMarc.getExpenseClassUUID());
   }
 
   public Fund putDistributionType (String distributionType) {
@@ -36,6 +33,9 @@ public class Fund extends JsonDataObject {
   }
   public Fund putExpenseClassId (String expenseClassId) {
     return (Fund) putString(P_EXPENSE_CLASS_ID, expenseClassId);
+  }
+  public Fund putExpenseClassIdIfPresent (String expenseClassId) {
+    return present(expenseClassId) ? putExpenseClassId(expenseClassId) : this;
   }
 
 }

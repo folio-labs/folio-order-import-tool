@@ -6,6 +6,7 @@ import org.marc4j.marc.DataField;
 import org.marc4j.marc.Record;
 import org.marc4j.marc.Subfield;
 import org.marc4j.marc.VariableField;
+import org.olf.folio.order.dataobjects.Identifier;
 import org.olf.folio.order.storage.FolioData;
 
 import java.util.Arrays;

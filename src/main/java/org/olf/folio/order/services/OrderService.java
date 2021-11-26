@@ -18,7 +18,6 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONArray;
-import org.olf.folio.order.Constants;
 import org.olf.folio.order.OrderImport;
 
 
@@ -56,14 +55,9 @@ public class OrderService {
 
 	@GET
 	public Response justACheck()  {
-
-		//RESET REFERENCE VALUES 
-		String filePath = (String) servletRequest.getServletContext().getAttribute("baseOkapEndpoint");
-		servletRequest.getServletContext().setAttribute(Constants.LOOKUP_TABLE,null);
-		return Response.status(Response.Status.OK).entity("OK:" + filePath).build();		
-
+		//RESET REFERENCE VALUES?
+		return Response.status(Response.Status.OK).entity("OK").build();
 	}
-
 
 	private void writeFile(InputStream uploadedInputStream,
 			String uploadedFileLocation) {

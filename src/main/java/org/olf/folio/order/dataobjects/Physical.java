@@ -9,9 +9,7 @@ public class Physical extends JsonDataObject {
   public static final String V_INSTANCE_HOLDING_ITEM = "Instance, Holding, Item";
 
   public static Physical fromMarcRecord(MarcRecordMapping mappedMarc) {
-    Physical physical = new Physical();
-    physical.putCreateInventory(V_INSTANCE_HOLDING_ITEM);
-    return physical;
+    return new Physical().putCreateInventory(V_INSTANCE_HOLDING_ITEM);
   }
 
   public Physical putCreateInventory(String createInventory) {
@@ -31,9 +29,5 @@ public class Physical extends JsonDataObject {
     return isUUID(materialType) ? materialType : Constants.MATERIAL_TYPES_MAP.get(materialType);
   }
 
-  private static boolean isUUID(String str)
-  {
-    return ( str != null && Constants.UUID_PATTERN.matcher( str ).matches() );
-  }
 
 }

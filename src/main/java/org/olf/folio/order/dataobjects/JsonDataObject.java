@@ -2,6 +2,7 @@ package org.olf.folio.order.dataobjects;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.olf.folio.order.Constants;
 
 public abstract class JsonDataObject {
 
@@ -48,4 +49,16 @@ public abstract class JsonDataObject {
   public JSONObject asJson() {
     return json;
   }
+
+  protected boolean present(String val) {
+    return (val != null && !val.isEmpty());
+  }
+  protected boolean present(JSONArray array) {
+    return (array != null && !array.isEmpty());
+  }
+
+  protected static boolean isUUID(String str) {
+    return ( str != null && Constants.UUID_PATTERN.matcher( str ).matches() );
+  }
+
 }

@@ -1,4 +1,4 @@
-package org.olf.folio.order;
+package org.olf.folio.order.dataobjects;
 
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import org.marc4j.marc.DataField;
 import org.marc4j.marc.Record;
 import org.marc4j.marc.VariableField;
+import org.olf.folio.order.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +86,7 @@ public class Identifier
      * @param inMarcRecord The MARC record to look for identifiers in
      * @return List of identifier fields matching the applicable criteria for the given identifier type
      */
-    static List<DataField> getDataFieldsForIdentifierType( String requestedIdentifierType, Record inMarcRecord) {
+    public static List<DataField> getDataFieldsForIdentifierType( String requestedIdentifierType, Record inMarcRecord) {
         List<DataField> identifierFields = new ArrayList<>();
         switch(requestedIdentifierType)
         {
@@ -150,7 +151,7 @@ public class Identifier
      * @param includeQualifiers Indication whether to add additional subfield(s) to the identifier value
      * @return The resulting identifier value
      */
-    static String getIdentifierValue ( String identifierType, DataField identifierField, boolean includeQualifiers) {
+    public static String getIdentifierValue ( String identifierType, DataField identifierField, boolean includeQualifiers) {
         String identifierValue;
         switch ( identifierType ) {
             case Constants.ISBN:                           // 020 using $a, extend with c,q

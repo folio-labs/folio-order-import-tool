@@ -40,6 +40,7 @@ public class PoLine extends JsonDataObject {
 
   public static PoLine fromMarcRecord(UUID orderId, MarcRecordMapping mappedMarc)
           throws Exception {
+
     PoLine poLine = new PoLine()
             .putId(UUID.randomUUID())
             .putPurchaseOrderId(orderId)
@@ -57,27 +58,20 @@ public class PoLine extends JsonDataObject {
       poLine.putVendorDetail(VendorDetail.fromMarcRecord(mappedMarc));
     }
     poLine.putTags(Tags.fromMarcRecord(mappedMarc))
-          .putCost(Cost.fromMarcRecord(mappedMarc).asJson())
-          .putLocations(new JSONArray().put(PoLineLocation.fromMarcRecord(mappedMarc).asJson()))
+            .putCost(Cost.fromMarcRecord(mappedMarc))
+            .putLocations(new JSONArray().put(PoLineLocation.fromMarcRecord(mappedMarc).asJson()))
             .putTitleOrPackage(mappedMarc.title())
             .putAcquisitionMethod(mappedMarc.acquisitionMethod())
-            .putRush(mappedMarc.rush());
-    if (mappedMarc.hasDescription()) {
-      poLine.putDescription(mappedMarc.description());
-    }
-    poLine.putFundDistribution(new JSONArray().put(Fund.fromMarcRecord(mappedMarc).asJson()))
-            .putPurchaseOrderId(orderId);
-    if (mappedMarc.hasSelector()) {
-      poLine.putSelector(mappedMarc.selector());
-    }
-    if (mappedMarc.hasDonor()) {
-      poLine.putDonor(mappedMarc.donor());
-    }
-    poLine.putContributors(mappedMarc.getContributorsForOrderLine());
-    poLine.putDetails(OrderLineDetails.fromMarcRecord(mappedMarc).asJson());
-    if (mappedMarc.hasEdition()) {
-      poLine.putEdition(mappedMarc.edition());
-    }
+            .putRush(mappedMarc.rush())
+            .putDescriptionIfPresent(mappedMarc.description())
+            .putFundDistribution(new JSONArray().put(Fund.fromMarcRecord(mappedMarc).asJson()))
+            .putPurchaseOrderId(orderId)
+            .putSelectorIfPresent(mappedMarc.selector())
+            .putDonorIfPresent(mappedMarc.donor())
+            .putContributors(mappedMarc.getContributorsForOrderLine())
+            .putDetails(OrderLineDetails.fromMarcRecord(mappedMarc).asJson())
+            .putEditionIfPresent(mappedMarc.edition());
+
     if (mappedMarc.has260()) {
       if (mappedMarc.publisher("260") != null)
         poLine.putPublisher(mappedMarc.publisher("260"));
@@ -152,15 +146,25 @@ public class PoLine extends JsonDataObject {
   public PoLine putDescription(String description) {
     return (PoLine) putString(P_DESCRIPTION, description);
   }
+  public PoLine putDescriptionIfPresent(String description) {
+    return present(description) ? putDescription(description) : this;
+  }
   public PoLine putFundDistribution (JSONArray fundDistribution) {
     return (PoLine) putArray(P_FUND_DISTRIBUTION, fundDistribution);
   }
   public PoLine putSelector(String selector) {
     return (PoLine) putString(P_SELECTOR, selector);
   }
+  public PoLine putSelectorIfPresent(String selector) {
+    return present(selector) ? putSelector(selector) : this;
+  }
   public PoLine putDonor (String donor) {
     return (PoLine) putString(P_DONOR, donor);
   }
+  public PoLine putDonorIfPresent (String donor) {
+    return present(donor) ?  putDonor(donor) : this;
+  }
+
   public PoLine putContributors (JSONArray contributors) {
     return (PoLine) putArray(P_CONTRIBUTORS, contributors);
   }
@@ -172,6 +176,9 @@ public class PoLine extends JsonDataObject {
   }
   public PoLine putEdition (String edition) {
     return (PoLine) putString(P_EDITION, edition);
+  }
+  public PoLine putEditionIfPresent (String edition) {
+    return (present(edition)) ? putEdition(edition) : this;
   }
   public PoLine putPublisher (String publisher) {
     return (PoLine) putString(P_PUBLISHER, publisher);

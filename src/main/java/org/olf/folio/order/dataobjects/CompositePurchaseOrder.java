@@ -34,25 +34,18 @@ public class CompositePurchaseOrder extends JsonDataObject {
   public static CompositePurchaseOrder fromMarcRecord(MarcRecordMapping mappedMarc)
           throws Exception {
 
-    CompositePurchaseOrder order = new CompositePurchaseOrder();
-
-    order.putPoNumber(FolioData.getNextPoNumberFromOrders())
-            .putVendor(mappedMarc.vendorUuid())
-            .putOrderType(V_ONE_TIME)
-            .putReEncumber(true)
-            .putId(UUID.randomUUID())
-            .putApproved(true)
-            .putWorkflowStatus(V_OPEN);
-
-    if (mappedMarc.billToUuid() != null) {
-      order.putBillTo(mappedMarc.billToUuid());
-    }
-
-    order.putCompositePoLines(new JSONArray()
-            .put(PoLine.fromMarcRecord(
-                    UUID.fromString(order.getId()), mappedMarc).asJson()));
-    return order;
-
+    UUID orderId = UUID.randomUUID();
+    return new CompositePurchaseOrder()
+                    .putPoNumber(FolioData.getNextPoNumberFromOrders())
+                    .putVendor(mappedMarc.vendorUuid())
+                    .putOrderType(V_ONE_TIME)
+                    .putReEncumber(true)
+                    .putId(orderId)
+                    .putApproved(true)
+                    .putWorkflowStatus(V_OPEN)
+                    .putBillToIfPresent(mappedMarc.billToUuid())
+                    .putCompositePoLines(new JSONArray()
+                        .put(PoLine.fromMarcRecord(orderId, mappedMarc).asJson()));
   }
 
   public CompositePurchaseOrder putId(UUID id) {
@@ -79,6 +72,10 @@ public class CompositePurchaseOrder extends JsonDataObject {
   public CompositePurchaseOrder putBillTo(String billTo) {
     return (CompositePurchaseOrder) putString(P_BILL_TO, billTo);
   }
+  public CompositePurchaseOrder putBillToIfPresent(String billTo) {
+    return present(billTo) ? putBillTo(billTo) : this;
+  }
+
   public CompositePurchaseOrder putCompositePoLines (JSONArray poLines) {
     return (CompositePurchaseOrder) putArray(P_COMPOSITE_PO_LINES, poLines);
   }

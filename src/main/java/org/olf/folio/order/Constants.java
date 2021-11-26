@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Constants {
-	public static final String LOOKUP_TABLE = "lookupTable";
 	public static final Pattern UUID_PATTERN = Pattern.compile("^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$");
 	public static final Map<String,String> MATERIAL_TYPES_MAP = Stream.of(new String[][] {
 			{"book","1a54b431-2e4f-452d-9cae-9cee66c9a892"},
