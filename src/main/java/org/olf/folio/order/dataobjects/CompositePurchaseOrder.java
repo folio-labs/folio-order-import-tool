@@ -25,6 +25,36 @@ public class CompositePurchaseOrder extends JsonDataObject {
 
   private static final Logger logger = Logger.getLogger(CompositePurchaseOrder.class);
 
+  public static CompositePurchaseOrder fromJson(JSONObject object) {
+    CompositePurchaseOrder po = new CompositePurchaseOrder();
+    po.json = object;
+    return po;
+  }
+
+  public static CompositePurchaseOrder fromMarcRecord(MarcRecordMapping mappedMarc)
+          throws Exception {
+
+    CompositePurchaseOrder order = new CompositePurchaseOrder();
+
+    order.putPoNumber(Folio.getNextPoNumberFromOrders())
+            .putVendor(mappedMarc.vendorUuid())
+            .putOrderType(V_ONE_TIME)
+            .putReEncumber(true)
+            .putId(UUID.randomUUID())
+            .putApproved(true)
+            .putWorkflowStatus(V_OPEN);
+
+    if (mappedMarc.billToUuid() != null) {
+      order.putBillTo(mappedMarc.billToUuid());
+    }
+
+    order.putCompositePoLines(new JSONArray()
+            .put(PoLine.fromMarcRecord(
+                    UUID.fromString(order.getId()), mappedMarc).asJson()));
+    return order;
+
+  }
+
   public CompositePurchaseOrder putId(UUID id) {
     return (CompositePurchaseOrder) putString(P_ID, id.toString());
   }
@@ -92,38 +122,10 @@ public class CompositePurchaseOrder extends JsonDataObject {
     List<PoLine> poLines = new ArrayList<>();
     for (Object pol : getCompositePoLinesJsonArray()) {
       JSONObject poLine = (JSONObject) pol;
-      poLines.add(PoLine.createPoLine(poLine));
+      poLines.add(PoLine.fromJson(poLine));
     }
     return poLines;
   }
 
-  public static CompositePurchaseOrder createCompositePurchaseOrder (MarcRecordMapping mappedMarc)
-    throws Exception {
 
-    CompositePurchaseOrder order = new CompositePurchaseOrder();
-
-    order.putPoNumber(Folio.getNextPoNumberFromOrders())
-            .putVendor(mappedMarc.vendorUuid())
-            .putOrderType(V_ONE_TIME)
-            .putReEncumber(true)
-            .putId(UUID.randomUUID())
-            .putApproved(true)
-            .putWorkflowStatus(V_OPEN);
-
-    if (mappedMarc.billToUuid() != null) {
-      order.putBillTo(mappedMarc.billToUuid());
-    }
-
-    order.putCompositePoLines(new JSONArray()
-            .put(PoLine.createPoLine(
-                    UUID.fromString(order.getId()), mappedMarc).asJson()));
-    return order;
-
-  }
-
-  public static CompositePurchaseOrder createCompositePurchaseOrder (JSONObject object) {
-    CompositePurchaseOrder po = new CompositePurchaseOrder();
-    po.json = object;
-    return po;
-  }
 }

@@ -9,6 +9,15 @@ public class VendorDetail extends JsonDataObject {
   public static final String P_VENDOR_ACCOUNT = "vendorAccount";
   public static final String P_REFERENCE_NUMBERS = "referenceNumbers";
 
+  public static VendorDetail fromMarcRecord (MarcRecordMapping mappedMarc) {
+    return new VendorDetail()
+            .putInstructions("")
+            .putVendorAccount(
+                    (mappedMarc.hasVendorAccount() ? mappedMarc.vendorAccount(): ""))
+            .putReferenceNumbers(
+                    new JSONArray().put(ReferenceNumber.fromMarcRecord(mappedMarc).asJson()));
+  }
+
   public VendorDetail putInstructions(String instructions) {
     return (VendorDetail) putString(P_INSTRUCTIONS, instructions);
   }
@@ -17,13 +26,5 @@ public class VendorDetail extends JsonDataObject {
   }
   public VendorDetail putReferenceNumbers(JSONArray referenceNumbers) {
     return (VendorDetail) putArray(P_REFERENCE_NUMBERS, referenceNumbers);
-  }
-  public static VendorDetail createVendorDetail(MarcRecordMapping mappedMarc) {
-    return new VendorDetail()
-            .putInstructions("")
-            .putVendorAccount(
-                    (mappedMarc.hasVendorAccount() ? mappedMarc.vendorAccount(): ""))
-            .putReferenceNumbers(
-                    new JSONArray().put(ReferenceNumber.createReferenceNumber(mappedMarc).asJson()));
   }
 }

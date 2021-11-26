@@ -21,7 +21,7 @@ import org.marc4j.marc.Record;
 import org.apache.log4j.Logger;
 import org.marc4j.marc.VariableField;
 import org.olf.folio.order.dataobjects.CompositePurchaseOrder;
-import org.olf.folio.order.dataobjects.Location;
+import org.olf.folio.order.dataobjects.PoLineLocation;
 
 public class OrderImport {
 
@@ -76,7 +76,7 @@ public class OrderImport {
 				counters.recordsProcessed++;
 				MarcRecordMapping mappedMarc = new MarcRecordMapping(record, uuidMappings);
 
-				CompositePurchaseOrder newOrder = CompositePurchaseOrder.createCompositePurchaseOrder(mappedMarc);
+				CompositePurchaseOrder newOrder = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
 
 				config.permLocationName = (config.importInvoice && mappedMarc.hasInvoice()
 								? config.permLocationWithInvoiceImport : config.permLocationName);
@@ -85,11 +85,11 @@ public class OrderImport {
 
 				if (!newOrder.getCompositePoLines().isEmpty()
 								&& !newOrder.getCompositePoLines().get(0).getLocations().isEmpty()) {
-					Location location = newOrder.getCompositePoLines().get(0).getLocations().get(0);
+					PoLineLocation poLineLocation = newOrder.getCompositePoLines().get(0).getLocations().get(0);
 					if (mappedMarc.electronic()) {
-						location.putLocationId(uuidMappings.getRefUuidByName(config.permELocationName + "-location"));
+						poLineLocation.putLocationId(uuidMappings.getRefUuidByName(config.permELocationName + "-poLineLocation"));
 					} else {
-						location.putLocationId(uuidMappings.getRefUuidByName(config.permLocationName+ "-location"));
+						poLineLocation.putLocationId(uuidMappings.getRefUuidByName(config.permLocationName+ "-poLineLocation"));
 					}
 				}
 				logger.info("Created CompositePurchaseOrder: " + newOrder.asJson().toString());

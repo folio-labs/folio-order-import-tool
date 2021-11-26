@@ -11,7 +11,6 @@ public class Link extends JsonDataObject {
   public Link putType(String type) {
     return (Link) putString(P_TYPE, type);
   }
-
   public Link putId(String orderLineUuid) {
     return (Link) putString(P_ID, orderLineUuid);
   }

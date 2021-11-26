@@ -52,7 +52,6 @@ public class OrderService {
 		catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getLocalizedMessage()).build();		
 		}
-
 	}
 
 	@GET

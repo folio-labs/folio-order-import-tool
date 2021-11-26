@@ -9,6 +9,16 @@ public class Cost extends JsonDataObject {
   public static final String P_LIST_UNIT_PRICE_ELECTRONIC = "listUnitPriceElectronic";
   public static final String P_CURRENCY = "currency";
 
+  public static Cost fromMarcRecord(MarcRecordMapping mappedMarc) {
+    Cost cost = new Cost();
+    if (mappedMarc.electronic()) {
+      cost.putQuantityElectronic(1);
+      cost.putListUnitPriceElectronic(mappedMarc.price());
+    }
+    cost.putCurrency(mappedMarc.currency());
+    return cost;
+  }
+
   public Cost putQuantityElectronic (int i) {
     return (Cost) putInteger(P_QUANTITY_ELECTRONIC, i);
   }
@@ -25,14 +35,5 @@ public class Cost extends JsonDataObject {
     return (Cost) putString(P_CURRENCY, currency);
   }
 
-  public static Cost createCost (MarcRecordMapping mappedMarc) {
-    Cost cost = new Cost();
-    if (mappedMarc.electronic()) {
-      cost.putQuantityElectronic(1);
-      cost.putListUnitPriceElectronic(mappedMarc.price());
-    }
-    cost.putCurrency(mappedMarc.currency());
-    return cost;
-  }
 
 }

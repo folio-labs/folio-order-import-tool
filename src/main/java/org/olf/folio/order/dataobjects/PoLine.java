@@ -38,7 +38,7 @@ public class PoLine extends JsonDataObject {
   public static final String P_PUBLICATION_DATE = "publicationDate";
   public static final String P_TAGS = "tags";
 
-  public static PoLine createPoLine (UUID orderId, MarcRecordMapping mappedMarc)
+  public static PoLine fromMarcRecord(UUID orderId, MarcRecordMapping mappedMarc)
           throws Exception {
     PoLine poLine = new PoLine()
             .putId(UUID.randomUUID())
@@ -48,24 +48,24 @@ public class PoLine extends JsonDataObject {
     if (mappedMarc.electronic()) {
       poLine.putOrderFormat(V_ELECTRONIC_RESOURCE)
             .putReceiptStatus(V_RECEIPT_NOT_REQUIRED)
-            .putEResource(EResource.createEResource(mappedMarc));
+            .putEResource(EResource.fromMarcRecord(mappedMarc));
     } else {
-      poLine.putPhysical(Physical.createPhysical(mappedMarc))
+      poLine.putPhysical(Physical.fromMarcRecord(mappedMarc))
               .putOrderFormat(PoLine.V_PHYSICAL_RESOURCE);
     }
     if (mappedMarc.hasVendorItemId()) {
-      poLine.putVendorDetail(VendorDetail.createVendorDetail(mappedMarc));
+      poLine.putVendorDetail(VendorDetail.fromMarcRecord(mappedMarc));
     }
-    poLine.putTags(Tags.createTags(mappedMarc))
-          .putCost(Cost.createCost(mappedMarc).asJson())
-          .putLocations(new JSONArray().put(Location.createLocation(mappedMarc).asJson()))
+    poLine.putTags(Tags.fromMarcRecord(mappedMarc))
+          .putCost(Cost.fromMarcRecord(mappedMarc).asJson())
+          .putLocations(new JSONArray().put(PoLineLocation.fromMarcRecord(mappedMarc).asJson()))
             .putTitleOrPackage(mappedMarc.title())
             .putAcquisitionMethod(mappedMarc.acquisitionMethod())
             .putRush(mappedMarc.rush());
     if (mappedMarc.hasDescription()) {
       poLine.putDescription(mappedMarc.description());
     }
-    poLine.putFundDistribution(new JSONArray().put(Fund.createFund(mappedMarc).asJson()))
+    poLine.putFundDistribution(new JSONArray().put(Fund.fromMarcRecord(mappedMarc).asJson()))
             .putPurchaseOrderId(orderId);
     if (mappedMarc.hasSelector()) {
       poLine.putSelector(mappedMarc.selector());
@@ -74,7 +74,7 @@ public class PoLine extends JsonDataObject {
       poLine.putDonor(mappedMarc.donor());
     }
     poLine.putContributors(mappedMarc.getContributorsForOrderLine());
-    poLine.putDetails(OrderLineDetails.createOrderLineDetails(mappedMarc).asJson());
+    poLine.putDetails(OrderLineDetails.fromMarcRecord(mappedMarc).asJson());
     if (mappedMarc.hasEdition()) {
       poLine.putEdition(mappedMarc.edition());
     }
@@ -92,7 +92,7 @@ public class PoLine extends JsonDataObject {
     return poLine;
   }
 
-  public static PoLine createPoLine (JSONObject poLineJson) {
+  public static PoLine fromJson(JSONObject poLineJson) {
     PoLine poLine = new PoLine();
     poLine.json = poLineJson;
     return poLine;
@@ -186,14 +186,14 @@ public class PoLine extends JsonDataObject {
     return putTags(tags.asJson());
   }
 
-  public List<Location> getLocations() {
-    List<Location> locationList = new ArrayList<>();
+  public List<PoLineLocation> getLocations() {
+    List<PoLineLocation> poLineLocationList = new ArrayList<>();
     JSONArray locations = json.getJSONArray(P_LOCATIONS);
     if (locations != null && !locations.isEmpty()) {
       for (Object o : locations) {
-        locationList.add(new Location((JSONObject) o));
+        poLineLocationList.add(PoLineLocation.fromJson((JSONObject) o));
       }
     }
-    return locationList;
+    return poLineLocationList;
   }
 }

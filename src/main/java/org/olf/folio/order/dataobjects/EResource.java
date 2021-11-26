@@ -15,6 +15,20 @@ public class EResource extends JsonDataObject {
   public static final String P_PUBLIC_NOTE = "publicNote";
   public static final String P_RELATIONSHIP_ID = "relationshipId";
 
+  public static EResource fromMarcRecord(MarcRecordMapping mappedMarc)
+          throws Exception {
+    EResource eResource =
+            new EResource()
+                    .putActivated(false)
+                    .putCreateInventory(V_INSTANCE_HOLDING);
+    if (mappedMarc.hasUserLimit()) {
+      eResource.putUserLimit(mappedMarc.userLimit());
+    }
+    eResource.putTrial(false)
+            .putAccessProvider(mappedMarc.accessProviderUUID());
+    return eResource;
+  }
+
   public EResource putActivated (boolean activated) {
     return (EResource) putBoolean(P_ACTIVATED, activated);
   }
@@ -41,22 +55,6 @@ public class EResource extends JsonDataObject {
   }
   public EResource putRelationshipId (String relationshipId) {
     return (EResource) putString(P_RELATIONSHIP_ID, relationshipId);
-  }
-
-
-
-  public static EResource createEResource (MarcRecordMapping mappedMarc)
-  throws Exception {
-    EResource eResource =
-            new EResource()
-                    .putActivated(false)
-                    .putCreateInventory(V_INSTANCE_HOLDING);
-    if (mappedMarc.hasUserLimit()) {
-      eResource.putUserLimit(mappedMarc.userLimit());
-    }
-    eResource.putTrial(false)
-            .putAccessProvider(mappedMarc.accessProviderUUID());
-    return eResource;
   }
 
 }
