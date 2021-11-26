@@ -39,7 +39,10 @@ public class ConfigurationListener implements ServletContextListener {
 			boolean passed = check.validateConfiguration();
 			if (!passed) {
 				check.report();
-				throw new ConfigurationException("SOME CONFIGURATION PROBLEMS ENCOUNTERED - SEE PREVIOUS LOG LINES");
+				if (config.containsKey("exitOnConfigErrors") && "true".equalsIgnoreCase(config.getString("exitOnConfigErrors"))) {
+					throw new ConfigurationException(
+									"SOME CONFIGURATION PROBLEMS ENCOUNTERED - SEE PREVIOUS LOG LINES");
+				}
 			}
 
 		} catch (ConfigurationException e) {
