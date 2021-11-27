@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.servlet.ServletContext;
+
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.marc4j.MarcReader;
 import org.marc4j.MarcStreamReader;
@@ -25,6 +27,7 @@ import org.olf.folio.order.dataobjects.PoLineLocation;
 import org.olf.folio.order.storage.FolioAccess;
 import org.olf.folio.order.storage.FolioData;
 import org.olf.folio.order.storage.SRSStorage;
+import org.folio.isbn.IsbnUtil;
 
 public class OrderImport {
 
@@ -32,7 +35,7 @@ public class OrderImport {
 	private ServletContext myContext;
 	private static Config config;
 
-	public  JSONArray  upload(String fileName) throws Exception {
+	public  JSONArray upload(String fileName, boolean doImport) throws Exception {
 
 		logger.info("...starting...");
 		if (config == null) {
@@ -56,9 +59,9 @@ public class OrderImport {
 		InputStream in = new FileInputStream(filePath + fileName);
 		MarcReader reader = new MarcStreamReader(in);
 
-		JSONArray validateRequiredResult = validateRequiredValues(reader);
-		if (!validateRequiredResult.isEmpty()) {
-			return validateRequiredResult;
+		JSONArray validationResult = validateMarcRecords(reader);
+		if (! doImport) {
+			return validationResult;
 		}
 
 		//AGAIN, READ THE MARC RECORD FROM THE FILE
@@ -72,9 +75,12 @@ public class OrderImport {
 
 		ProcessCounters counters = new ProcessCounters();
 		while (reader.hasNext()) {
+			JSONObject responseMessage = new JSONObject();
 			try {
 				Record record = reader.next();
+				responseMessage.put("source", record.toString());
 				counters.recordsProcessed++;
+
 				MarcRecordMapping mappedMarc = new MarcRecordMapping(record);
 
 				CompositePurchaseOrder newOrder = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
@@ -93,14 +99,12 @@ public class OrderImport {
 						poLineLocation.putLocationId(FolioData.getLocationIdByName(config.permLocationName));
 					}
 				}
-
 				logger.info("Created CompositePurchaseOrder: " + newOrder.asJson().toString());
 
 				//NOW WE CAN START CREATING THE PO!
-				JSONObject responseMessage = new JSONObject();
+				responseMessage.put("recNo", counters.recordsProcessed);
 				responseMessage.put("title", mappedMarc.title());
 	  		responseMessage.put("ISBN", mappedMarc.hasISBN() ? mappedMarc.getISBN() : "No ISBN in this record");
-
 
 				// CREATING THE PURCHASE ORDER
 				JSONObject order = createCompositePo(mappedMarc);
@@ -249,16 +253,32 @@ public class OrderImport {
 				responseMessage.put("theOne", hrid);
 
 				responseMessages.put(responseMessage);
+				counters.recordsImported++;
 			}
 			catch(Exception e) {
-				logger.fatal(e.toString());
-				JSONObject responseMessage = new JSONObject();
-				responseMessage.put("error",e.toString());
-				responseMessage.put("PONumber", "~error~");
+				logger.error(e.toString());
+				counters.recordsFailed++;
+				try {
+					responseMessage.put("PONumber", "~error~");
+					JSONObject msg = new JSONObject(e.getMessage());
+					if (msg.has("errors") && msg.get("errors") instanceof JSONArray && !msg.getJSONArray("errors").isEmpty()) {
+						responseMessage.put("error", ((JSONObject) (msg.getJSONArray("errors").get(0))).getString("message"));
+					}
+				} catch (JSONException | ClassCastException je) {
+					// IGNORE
+				}
+				if (responseMessage.getString("error") == null || responseMessage.getString("error").isEmpty()) {
+					responseMessage.put("error", e.getMessage());
+				}
 				responseMessages.put(responseMessage);
-				return responseMessages;
 			}
 		}
+		logger.info(counters.recordsProcessed + " record" + (counters.recordsProcessed == 1 ? "" : "s")
+						+ " processed, "
+						+ counters.recordsImported + " record" + (counters.recordsImported == 1 ? "" : "s")
+		        + " imported, and "
+						+ counters.recordsFailed + " record" + (counters.recordsFailed == 1 ? "" : "s")
+						+ " failed.");
 		return responseMessages;
 	}
 
@@ -449,79 +469,89 @@ public class OrderImport {
 		logger.info(invoiceLineResponse);
 	}
 
-	public JSONArray validateRequiredValues(MarcReader reader) {
+	public JSONArray validateMarcRecords(MarcReader reader) {
 
 		Record record;
 		JSONArray responseMessages = new JSONArray();
+		int r = 0;
 		while(reader.hasNext()) {
-			try {
-				record = reader.next();    					    
-				//GET THE 980s FROM THE MARC RECORD
+				record = reader.next();
+				r++;
 				MarcRecordMapping marc = new MarcRecordMapping(record);
-
-				if (!marc.has980()) {
-					JSONObject responseMessage = new JSONObject();
-					responseMessage.put("error", "Record is missing the 980 field");
-					responseMessage.put("PONumber", "~error~");
-					responseMessage.put("title", marc.title());
-					responseMessages.put(responseMessage);
-					continue;
-				}
-
-				Map<String, String> requiredFields = new HashMap<>();
-				if (config.objectCodeRequired) {
-					requiredFields.put("Object code", marc.objectCode());
-				}
-				requiredFields.put("Fund code", marc.fundCode());
-				requiredFields.put("Vendor Code", marc.vendorCode());
-				requiredFields.put("Price" , marc.price());
-
-				// MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
-				for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
-					if (entry.getValue()==null || entry.getValue().isEmpty()) {
-						JSONObject responseMessage = new JSONObject();
-						responseMessage.put("title", marc.title());
-						responseMessage.put("error", entry.getKey() + " Missing");
-						responseMessage.put("PONumber", "~error~");
-						responseMessages.put(responseMessage);
-					}
-				}
-
-				if (!responseMessages.isEmpty()) {
-					continue;
-				}
-
-				//VALIDATE THE ORGANIZATION, OBJECT CODE AND FUND
-				//STOP THE PROCESS IF ANY ERRORS WERE FOUND
-				JSONObject orgValidationResult = FolioData.validateOrganization(marc.vendorCode(), marc.title());
-				if (orgValidationResult != null) responseMessages.put(orgValidationResult);
-
-				if (marc.hasObjectCode()) {
-					JSONObject objectValidationResult = FolioData.validateObjectCode(marc.objectCode(), marc.title());
-					if (objectValidationResult != null) responseMessages.put(objectValidationResult);
-				}
-				if (marc.hasProjectCode()) {
-					// TODO: Check this
-					JSONObject projectValidationResult = FolioData.validateObjectCode(marc.projectCode(), marc.title());
-					if (projectValidationResult != null) responseMessages.put(projectValidationResult);
-				}
-				JSONObject fundValidationResult = FolioData.validateFund(marc.fundCode(), marc.title(), marc.price());
-				if (fundValidationResult != null) responseMessages.put(fundValidationResult);
-
-				if (config.importInvoice) {
-					JSONObject invoiceValidationResult = FolioData.validateRequiredValuesForInvoice(marc.title(), record);
-					if (invoiceValidationResult != null) responseMessages.put(invoiceValidationResult);
-				}
-
-			}	catch(Exception e) {
-				logger.fatal(e.getMessage());
-				JSONObject responseMessage = new JSONObject();
-				responseMessage.put("error", e.getMessage());
-				responseMessage.put("PONumber", "~error~");
-				responseMessages.put(responseMessage);
-			}
+				responseMessages.put(validateMarcRecord(marc, r));
 		}
 		return responseMessages;
+	}
+
+	private JSONObject validateMarcRecord (MarcRecordMapping mappedMarc, int recNo) {
+		JSONObject msg = new JSONObject();
+		try {
+			msg.put("recNo", recNo);
+			msg.put("controlNumber", mappedMarc.controlNumber());
+			msg.put("title", mappedMarc.title());
+			msg.put("source", mappedMarc.marcRecord.toString());
+
+			if (!mappedMarc.has980()) {
+				msg.put("error", String.format("Record #%s is missing the 980 field", recNo));
+				msg.put("PONumber", "~error~");
+				msg.put("title", mappedMarc.title());
+				return msg;
+			}
+
+			if (!mappedMarc.hasISBN()) {
+				msg.put("error", true);
+			} else if (!isValidIsbn(mappedMarc.getISBN())) {
+				msg.put("error", true);
+			}
+			msg.put("invalidIsbn", (mappedMarc.hasISBN() && !isValidIsbn(mappedMarc.getISBN())));
+			msg.put("noIsbn", (!mappedMarc.hasISBN()));
+			msg.put("ISBN", mappedMarc.hasISBN() ? mappedMarc.getISBN()  : "No ISBN");
+			msg.put("productIdentifiers", mappedMarc.getProductIdentifiers().toString());
+			msg.put("instanceIdentifiers", mappedMarc.getInstanceIdentifiers().toString());
+
+			Map<String, String> requiredFields = new HashMap<>();
+			if (config.objectCodeRequired) {
+				requiredFields.put("Object code", mappedMarc.objectCode());
+			}
+			requiredFields.put("Fund code", mappedMarc.fundCode());
+			requiredFields.put("Vendor Code", mappedMarc.vendorCode());
+			requiredFields.put("Price" , mappedMarc.price());
+
+			// MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
+			for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
+				if (entry.getValue()==null || entry.getValue().isEmpty()) {
+					msg.put("error", entry.getKey() + " Missing");
+				}
+			}
+
+			//VALIDATE THE ORGANIZATION, OBJECT CODE AND FUND
+			//STOP THE PROCESS IF ANY ERRORS WERE FOUND
+			JSONObject orgValidationResult = FolioData.validateOrganization(mappedMarc.vendorCode(), mappedMarc.title());
+			if (orgValidationResult != null) msg.put("error", msg.getString("error") + " " + orgValidationResult.getString("error"));
+
+			if (mappedMarc.hasObjectCode()) {
+				JSONObject objectValidationResult = FolioData.validateObjectCode(mappedMarc.objectCode(), mappedMarc.title());
+				if (objectValidationResult != null) msg.put("error", msg.getString("error") + " " + objectValidationResult.getString("error"));
+			}
+			if (mappedMarc.hasProjectCode()) {
+				// TODO: Check this
+				JSONObject projectValidationResult = FolioData.validateObjectCode(mappedMarc.projectCode(), mappedMarc.title());
+				if (projectValidationResult != null) msg.put("error", msg.getString("error") + " " + projectValidationResult.getString("error"));
+			}
+			JSONObject fundValidationResult = FolioData.validateFund(mappedMarc.fundCode(), mappedMarc.title(), mappedMarc.price());
+			if (fundValidationResult != null) msg.put("error", msg.getString("error") + " " + fundValidationResult.getString("error"));
+
+			if (config.importInvoice) {
+				JSONObject invoiceValidationResult = FolioData.validateRequiredValuesForInvoice(mappedMarc.title(), mappedMarc.marcRecord);
+				if (invoiceValidationResult != null) msg.put("error", msg.getString("error") + " " + invoiceValidationResult.getString("error"));
+			}
+
+		}	catch(Exception e) {
+			logger.error("Got exception when validating MARC record: " + e.getMessage() + " " + e.getClass());
+			msg.put("error", e.getMessage());
+		}
+		logger.info("Validation result: " + msg);
+		return msg;
 	}
 
 	public ServletContext getMyContext() {
@@ -539,5 +569,16 @@ public class OrderImport {
 	private static boolean isUUID(String str)
 	{
 		return ( str != null && Constants.UUID_PATTERN.matcher( str ).matches() );
+	}
+
+	private static boolean isValidIsbn (String isbn) {
+		if (isbn.length() == 10) {
+			return IsbnUtil.isValid10DigitNumber(isbn);
+		} else if (isbn.length() == 13) {
+			return IsbnUtil.isValid13DigitNumber(isbn);
+		} else {
+			return false;
+		}
+
 	}
 }

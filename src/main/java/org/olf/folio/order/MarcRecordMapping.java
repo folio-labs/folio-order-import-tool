@@ -2,6 +2,7 @@ package org.olf.folio.order;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.marc4j.marc.ControlField;
 import org.marc4j.marc.DataField;
 import org.marc4j.marc.Record;
 import org.marc4j.marc.Subfield;
@@ -77,6 +78,10 @@ public class MarcRecordMapping {
     d980 = (DataField) marcRecord.getVariableField("980");
     first856 = getFirst856(marcRecord);
     has856 =  (first856 != null);
+  }
+
+  public String controlNumber() {
+    return marcRecord.getControlNumber();
   }
 
   private DataField getFirst856 (Record record) {
