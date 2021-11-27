@@ -146,6 +146,7 @@ public class Identifier
 
     /**
      * Looks up the value of the identifier fields, optionally adding additional subfields to the value for given Identifier types
+     * Will strip colons and spaces from ISBN value when not including qualifiers.
      * @param identifierType The type of identifier to find the identifier value for
      * @param identifierField  The identifier field to look for the value in
      * @param includeQualifiers Indication whether to add additional subfield(s) to the identifier value
@@ -160,6 +161,8 @@ public class Identifier
                 if ( includeQualifiers ) {
                     if ( identifierField.getSubfield( 'c' ) != null ) identifierValue += " " + identifierField.getSubfieldsAsString( "c" );
                     if ( identifierField.getSubfield( 'q' ) != null ) identifierValue += " " + identifierField.getSubfieldsAsString( "q" );
+                } else {
+                    identifierValue = identifierValue.replaceAll("[: ]", "");
                 }
                 break;
             case Constants.INVALID_ISBN:                   // 020 using $z, extend with c,q
