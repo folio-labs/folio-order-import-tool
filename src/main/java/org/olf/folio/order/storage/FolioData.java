@@ -70,7 +70,7 @@ public class FolioData extends FolioAccess {
   public static String getExpenseClassId(String expenseClassCode) throws Exception {
     return getIdByKey(
             expenseClassCode,
-            "finance/expense-classes?query=code==%22" + expenseClassCode + "%22)",
+            "finance/expense-classes?query=(code==%22" + expenseClassCode + "%22)",
             EXPENSE_CLASSES_ARRAY,
             expenseClassCodeToUuid);
   }

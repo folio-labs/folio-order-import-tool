@@ -37,6 +37,8 @@ public class OrderService {
 
 		System.out.println(fileDetails.getFileName());
 		String filePath = (String) servletRequest.getServletContext().getAttribute("uploadFilePath");
+		String analyzeOnly = servletRequest.getParameter("analyzeOnly");
+		boolean doImport = ! ("true".equalsIgnoreCase(analyzeOnly));
 		UUID fileName = UUID.randomUUID();
 		String uploadedFileLocation = filePath + fileName + ".mrc";
 		// SAVE FILE TO DISK
@@ -45,7 +47,7 @@ public class OrderService {
 		OrderImport orderImportShortened = new OrderImport();
 		orderImportShortened.setMyContext(servletRequest.getServletContext());
 		try {
-			JSONArray message = orderImportShortened.upload(fileName + ".mrc");
+			JSONArray message = orderImportShortened.upload(fileName + ".mrc", doImport);
 			return Response.status(Response.Status.OK).entity(message.toString()).build();		
 		}
 		catch(Exception e) {

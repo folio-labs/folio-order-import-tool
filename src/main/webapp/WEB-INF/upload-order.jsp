@@ -57,7 +57,7 @@
 	display: block;
 }
 </style>
-
+<%@ page import="java.util.Arrays" %>
 <body class="layout-default">
 	<!-- NAVIGATION -->
 	<nav class="navbar">
@@ -88,9 +88,9 @@
 								<div>
 									<section class="tab-content">
 										<form name="request" id="request">
-											<div class="file has-name">
+											<div class="file has-name is-fullwidth">
 												<label class="file-label">
-													<input class="file-input" type="file" name="order-file" id="order-file" onchange="showName()"> <span class="file-cta">
+												  <input class="file-input" type="file" name="order-file" id="order-file" onchange="showName()"> <span class="file-cta">
 														<span class="file-icon"> <i class="fas fa-upload"></i>
 													</span> <span class="file-label"> Choose a file... </span> </span> <span class="file-name" id="file-name"> .... </span> </label>
 											</div>
@@ -98,21 +98,50 @@
 										<br>
 										<br>
 										<div class="buttons">
-											<button class="button is-primary" id="sendFile" name="sendFile" onclick="return sendRequest()">Send Request</button>
+										    <button class="button is-primary" id="analyze" name="analyze" onclick="return sendAnalyzeRequest()">Analyze MARC records</button>
+											<button class="button is-primary" id="import" name="import" onclick="return sendImportRequest()">Import MARC records</button>
 										</div>
 									</section>
 								</div>
 							</div>
 						</div>
-									<div class="tile is-parent">
-				<article class="tile is-child notification is-light">
-					<div class="content">
-						<p class="title">Response<span style="color:#f5f5f5">6-29-20B</span></p>
-						<p class="subtitle"></p>
-						<div id="logcontent" class="content" style="font-family: 'Special Elite', cursive;"></div>
-					</div>
-				</article>
-			</div>
+						<div class="tile is-parent">
+				            <article class="tile is-child notification is-light">
+					            <div class="content">
+						            <div id="logContent" class="content" style="font-family: 'Special Elite', cursive;">
+						               <p class="title">Configuration<span style="color:#f5f5f5"></span></p>
+						               <% String showConfig = (String) getServletContext().getAttribute("showConfig");
+                                    	  if (showConfig != null && !showConfig.equalsIgnoreCase("false")) {
+                                              for (String key : Arrays.asList(
+                                               "baseOkapiEndpoint",
+                                               "okapi_username",
+                                               "tenant",
+                                               "permLocation",
+                                               "permELocation",
+                                               "fiscalYearCode",
+                                               "loanType",
+                                               "textForElectronicResources",
+                                               "noteType",
+                                               "materialType",
+                                               "uploadFilePath",
+                                               "objectCodeRequired",
+                                               "importInvoice",
+                                               "failIfNoInvoiceData",
+                                               "paymentMethod",
+                                               "permLocationWithInvoiceImport",
+                                               "permELocationWithInvoiceImport",
+                                               "skipSRS",
+                                               "showConfig",
+                                               "exitOnConfigErrors",
+                                               "exitOnFailedIdLookups")) {
+                                                  out.println(key + ": " + getServletContext().getAttribute(key)); %>
+                                                  <br/>
+                                              <% }
+                                          } %>
+						            </div>
+					            </div>
+				            </article>
+			            </div>
 						<!-- left box end -->
 					</div>
 				</div>
@@ -147,9 +176,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.16/css/jquery.dataTables.css">
 <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.16/js/jquery.dataTables.js"></script>
 <script>
-function sendRequest() {
+function sendImportRequest() {
 
-	$('#sendFile').addClass('is-loading');
+	$('#import').addClass('is-loading');
 	var form_data = new FormData();
 	form_data.append('order-file', $('#order-file').get(0).files[0]);
 	$.ajax({
@@ -158,25 +187,57 @@ function sendRequest() {
 		contentType: false,
 		data: form_data,
 		url: "/import/service/upload",
-		success: showOrderInfo,
+		success: showImportResponse,
 		error: updateFailed
 	});
 	e.preventDefault();
 	return false;
 }
 
-function showOrderInfo(response) {
+function showImportResponse(response) {
 	//DISPLAY UPDATED LOG
-	$('#sendFile').removeClass('is-loading');
-	var source = document.getElementById("orderTemplate").innerHTML;
+	$('#import').removeClass('is-loading');
+	$('#analyze').removeClass('is-loading');
+	var source = document.getElementById("importResponseTemplate").innerHTML;
 	var template = Handlebars.compile(source);
 	var context = response;
 	var output = template(context);
-	document.getElementById("logcontent").innerHTML = output;
+	document.getElementById("logContent").innerHTML = output;
 }
 
+function sendAnalyzeRequest() {
+
+	$('#analyze').addClass('is-loading');
+	var form_data = new FormData();
+	form_data.append('order-file', $('#order-file').get(0).files[0]);
+	$.ajax({
+		type: "POST",
+		processData: false,
+		contentType: false,
+		data: form_data,
+		url: "/import/service/upload?analyzeOnly=true",
+		success: showAnalyzeResponse,
+		error: updateFailed
+	});
+	e.preventDefault();
+	return false;
+}
+
+function showAnalyzeResponse(response) {
+	//DISPLAY UPDATED LOG
+	$('#import').removeClass('is-loading');
+	$('#analyze').removeClass('is-loading');
+	var source = document.getElementById("analyzeResponseTemplate").innerHTML;
+	var template = Handlebars.compile(source);
+	var context = response;
+	var output = template(context);
+	document.getElementById("logContent").innerHTML = output;
+}
+
+
 function updateFailed(response) {
-	$('#sendFile').removeClass('is-loading');
+	$('#import').removeClass('is-loading');
+	$('#analyze').removeClass('is-loading');
 	alert(response.responseText);
 }
 </script>
@@ -225,19 +286,52 @@ function showName() {
 	document.getElementById('file-name').innerHTML = name.files.item(0).name;
 }
 </script>
-<script id="orderTemplate" type="text/x-handlebars-template"> 
+<script id="importResponseTemplate" type="text/x-handlebars-template">
+<p class="title">Order import results<span style="color:#f5f5f5"></span></p>
 {{#each this}}
-	<br> <b>Created PO</b>: {{PONumber}}
-	<br> Title: {{title}}
-    <br> 001: {{theOne}}
-<br>
-     {{#if error}}
-	  <br> <b>ERROR:</b> {{error}} 
-     <hr>
-     <br>
-    {{/if}}
+  {{#if error}}
+	<br> <b>Error: {{PONumber}}</b>
+	<br> {{error}}
+  {{else}}
+	<br> Passed: {{PONumber}}
+  {{/if}}
+  <br> Rec#: {{recNo}}
+  <br> Title: {{title}}
+  {{#if invalidIsbn}}
+    <br><b>Invalid ISBN: {{ISBN}}</b>
+  {{else if noIsbn}}
+    <br><b>ISBN: {{ISBN}}</b>
+  {{else}}
+    <br>ISBN: {{ISBN}}
+  {{/if}}
+  <br> Product identifiers: {{productIdentifiers}}
+  <br> Source: <pre>{{source}}</pre>
 {{/each}}
 
 </script>
+
+<script id="analyzeResponseTemplate" type="text/x-handlebars-template">
+<p class="title">Validation results<span style="color:#f5f5f5"></span></p>
+{{#each this}}
+  {{#if error}}
+	<br> <b>Problem: {{PONumber}}</b>
+  {{else}}
+	<br> Passed: {{PONumber}}
+  {{/if}}
+  <br> Rec#: {{recNo}}
+  <br> Title: {{title}}
+  {{#if invalidIsbn}}
+    <br><b>Invalid ISBN: {{ISBN}}</b>
+  {{else if noIsbn}}
+    <br><b>ISBN: {{ISBN}}</b>
+  {{else}}
+    <br>ISBN: {{ISBN}}
+  {{/if}}
+  <br> Product identifiers: {{productIdentifiers}}
+  <br> Source: <pre>{{source}}</pre>
+{{/each}}
+
+</script>
+
 
 </html>
