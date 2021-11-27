@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,6 +20,7 @@ import org.marc4j.marc.Record;
 import org.apache.log4j.Logger;
 import org.marc4j.marc.VariableField;
 import org.olf.folio.order.dataobjects.CompositePurchaseOrder;
+import org.olf.folio.order.dataobjects.Instance;
 import org.olf.folio.order.dataobjects.PoLineLocation;
 import org.olf.folio.order.storage.FolioAccess;
 import org.olf.folio.order.storage.FolioData;
@@ -137,18 +137,29 @@ public class OrderImport {
 				JSONObject instanceAsJson = FolioAccess.callApiGet("inventory/instances/" + instanceId);
 				String hrid = instanceAsJson.getString("hrid");
 
+
 				// UChicago have asked that the MARC NOT be stored to SRS since this has implications for the ability to
 				// batch update the instance record with the full cataloging when UChicago receive the invoice.
-				if ( config.importSRS )
-				{
-					SRSStorage.storeMarcToSRS(
-							record,
-							byteArrayOutputStream,
+				if ( config.importSRS ) {
+					SRSStorage.storeMarcToSRS(record,	byteArrayOutputStream,
 							UUID.randomUUID(), // snapshotId
 							UUID.randomUUID(), // recordTableId
-							instanceId,
-							hrid );
+							instanceId,	hrid );
 				}
+
+				Instance instance = Instance.fromJson(instanceAsJson)
+								.putTitle(mappedMarc.title())
+								.putSource(config.importSRS ? Instance.V_MARC : Instance.V_FOLIO)
+								.putInstanceTypeId(FolioData.getInstanceTypeId("text"))
+								.putIdentifiers(mappedMarc.getInstanceIdentifiers())
+								.putContributors(mappedMarc.getContributorsForInstance())
+								.putDiscoverySuppress(false)
+								.putElectronicAccess(mappedMarc.getElectronicAccess())
+							  .putNatureOfContentTermIds(new JSONArray())
+								.putPrecedingTitles(new JSONArray())
+								.putSucceedingTitles(new JSONArray());
+
+				logger.info("Two Instance objects, same HRID? : " + instance.getHrid().equalsIgnoreCase(hrid));
 
 				instanceAsJson.put("title", mappedMarc.title());
 				instanceAsJson.put("source", config.importSRS ? "MARC" : "FOLIO");
@@ -182,6 +193,8 @@ public class OrderImport {
 						eResources.put(eResource);
 					}
 				}
+
+				logger.info("Created Instance object " + instance.asJson());
 
 				//UPDATE THE INSTANCE RECORD
 				instanceAsJson.put("electronicAccess", eResources);

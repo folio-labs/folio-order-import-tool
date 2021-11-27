@@ -56,7 +56,9 @@ public abstract class JsonDataObject {
   protected boolean present(JSONArray array) {
     return (array != null && !array.isEmpty());
   }
-
+  protected boolean present(JSONObject object) {
+    return (object != null && !object.isEmpty());
+  }
   protected static boolean isUUID(String str) {
     return ( str != null && Constants.UUID_PATTERN.matcher( str ).matches() );
   }

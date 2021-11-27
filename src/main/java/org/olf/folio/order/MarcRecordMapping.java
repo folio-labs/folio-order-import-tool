@@ -6,9 +6,11 @@ import org.marc4j.marc.DataField;
 import org.marc4j.marc.Record;
 import org.marc4j.marc.Subfield;
 import org.marc4j.marc.VariableField;
+import org.olf.folio.order.dataobjects.ElectronicAccessUrl;
 import org.olf.folio.order.dataobjects.Identifier;
 import org.olf.folio.order.storage.FolioData;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -84,6 +86,17 @@ public class MarcRecordMapping {
     } else {
       return null;
     }
+  }
+
+  public List<DataField> getAll856s () {
+    List<DataField> d856List = new ArrayList<>();
+    List<VariableField> fields = marcRecord.getVariableFields("856");
+    if (fields != null) {
+      for (VariableField field : fields) {
+        d856List.add((DataField) field);
+      }
+    }
+    return d856List;
   }
 
   public boolean has250() {
@@ -523,6 +536,10 @@ public class MarcRecordMapping {
     }
     contributor.put("name", contributorName);
     return contributor;
+  }
+
+  public JSONArray getElectronicAccess () {
+    return ElectronicAccessUrl.getElectronicAccessFromMarcRecord(this);
   }
 
   public boolean hasISBN() {

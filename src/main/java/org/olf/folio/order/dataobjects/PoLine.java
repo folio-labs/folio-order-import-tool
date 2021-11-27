@@ -57,7 +57,7 @@ public class PoLine extends JsonDataObject {
     if (mappedMarc.hasVendorItemId()) {
       poLine.putVendorDetail(VendorDetail.fromMarcRecord(mappedMarc));
     }
-    poLine.putTags(Tags.fromMarcRecord(mappedMarc))
+    poLine.putTagsIfPresent(Tags.fromMarcRecord(mappedMarc))
             .putCost(Cost.fromMarcRecord(mappedMarc))
             .putLocations(new JSONArray().put(PoLineLocation.fromMarcRecord(mappedMarc).asJson()))
             .putTitleOrPackage(mappedMarc.title())
@@ -69,7 +69,7 @@ public class PoLine extends JsonDataObject {
             .putSelectorIfPresent(mappedMarc.selector())
             .putDonorIfPresent(mappedMarc.donor())
             .putContributors(mappedMarc.getContributorsForOrderLine())
-            .putDetails(OrderLineDetails.fromMarcRecord(mappedMarc).asJson())
+            .putDetailsIfPresent(OrderLineDetails.fromMarcRecord(mappedMarc).asJson())
             .putEditionIfPresent(mappedMarc.edition());
 
     if (mappedMarc.has260()) {
@@ -164,7 +164,6 @@ public class PoLine extends JsonDataObject {
   public PoLine putDonorIfPresent (String donor) {
     return present(donor) ?  putDonor(donor) : this;
   }
-
   public PoLine putContributors (JSONArray contributors) {
     return (PoLine) putArray(P_CONTRIBUTORS, contributors);
   }
@@ -173,6 +172,9 @@ public class PoLine extends JsonDataObject {
   }
   public PoLine putDetails (JSONObject details) {
     return (PoLine) putObject(P_DETAILS, details);
+  }
+  public PoLine putDetailsIfPresent(JSONObject details) {
+    return present(details) ? putDetails(details) : this;
   }
   public PoLine putEdition (String edition) {
     return (PoLine) putString(P_EDITION, edition);
@@ -191,6 +193,9 @@ public class PoLine extends JsonDataObject {
   }
   public PoLine putTags (Tags tags) {
     return putTags(tags.asJson());
+  }
+  public PoLine putTagsIfPresent (Tags tags) {
+    return present(tags.getTagList()) ? putTags(tags) : this;
   }
 
   public List<PoLineLocation> getLocations() {

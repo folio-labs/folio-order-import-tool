@@ -15,6 +15,7 @@ public class Config {
   public String permELocationName;
   public String noteTypeName;
   public String materialType;
+  public String textForElectronicResource;
   public boolean objectCodeRequired;
   public boolean importInvoice;
   public boolean failIfNoInvoiceData;
@@ -37,6 +38,7 @@ public class Config {
     fiscalYearCode = (String) context.getAttribute("fiscalYearCode");
     noteTypeName = (String) context.getAttribute("noteType");
     materialType = (String) context.getAttribute("materialType");
+    textForElectronicResource = (String) context.getAttribute("textForElectronicResource");
     // objectCode is required unless objectCodeRequired is explicitly set to false in import.properties
     objectCodeRequired = ! ("false".equalsIgnoreCase((String) context.getAttribute("objectCodeRequired")));
     importInvoice = "true".equalsIgnoreCase((String) context.getAttribute("importInvoice"));

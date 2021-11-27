@@ -4,7 +4,7 @@ import org.json.JSONArray;
 import org.olf.folio.order.MarcRecordMapping;
 
 public class Tags extends JsonDataObject {
-  public static final String tagList = "tagList";
+  public static final String P_TAG_LIST = "tagList";
 
   public static Tags fromMarcRecord(MarcRecordMapping mappedMarc) {
     JSONArray tagList = new JSONArray();
@@ -14,6 +14,10 @@ public class Tags extends JsonDataObject {
     if (mappedMarc.hasProjectCode()) {
       tagList.put(mappedMarc.projectCode());
     }
-    return (Tags) (new Tags().putArray("tagList", tagList));
+    return (Tags) (new Tags().putArray(P_TAG_LIST, tagList));
+  }
+
+  public JSONArray getTagList () {
+    return json.getJSONArray(P_TAG_LIST);
   }
 }

@@ -7,6 +7,8 @@ public class Instance extends JsonDataObject {
   public static final String P_HRID = "hrid";
   public static final String P_TITLE = "title";
   public static final String P_SOURCE = "source";
+  public static final String V_MARC = "MARC";
+  public static final String V_FOLIO = "FOLIO";
   public static final String P_INSTANCE_TYPE_ID = "instanceTypeId";
   public static final String P_IDENTIFIERS = "identifiers";
   public static final String P_CONTRIBUTORS = "contributors";
@@ -15,6 +17,12 @@ public class Instance extends JsonDataObject {
   public static final String P_NATURE_OF_CONTENT_TERM_IDS = "natureOfContentTermIds";
   public static final String P_PRECEDING_TITLES = "precedingTitles";
   public static final String P_SUCCEEDING_TITLES = "succeedingTitles";
+
+  public static Instance fromJson(JSONObject instanceJson) {
+    Instance instance = new Instance();
+    instance.json = instanceJson;
+    return instance;
+  }
 
   public String getHrid () {
     return getString(P_HRID);
@@ -37,8 +45,8 @@ public class Instance extends JsonDataObject {
   public Instance putDiscoverySuppress (boolean suppress) {
     return (Instance) putBoolean(P_DISCOVERY_SUPPRESS, suppress);
   }
-  public Instance putElectronicAccess (JSONObject electronicAccess) {
-    return (Instance) putObject(P_ELECTRONIC_ACCESS, electronicAccess);
+  public Instance putElectronicAccess (JSONArray electronicAccess) {
+    return (Instance) putArray(P_ELECTRONIC_ACCESS, electronicAccess);
   }
   public Instance putNatureOfContentTermIds (JSONArray natureOfContentTemIds) {
     return (Instance) putArray(P_NATURE_OF_CONTENT_TERM_IDS, natureOfContentTemIds);

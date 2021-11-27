@@ -147,8 +147,8 @@ container e.g.:
 |022 ($z $y $n)|Identifiers|instance.identifiers[].value /w type 'Invalid ISSN'|No| |
 |100, 700|Contributors|instance.contributors.name /w contributor name type 'Personal name" and contributor type from $4 or 'bkp'|No| |
 |245 $a ($b $c)|Instance title|instance.title, orderline.titleOrPackage|Yes|
-|856 $u |URI|instance. electronicAccess[]. uri, holdingsRecord.electronicAccess[].uri|No|
-|856 $z |Link text|instance. electronicAccess[]. linkText, holdingsRecord. electronicAccess[]. linkText|No|Static config value text-For-Electronic-Resources (see separate table)||
+|856 $u |URI|instance. electronicAccessUrl[]. uri, holdingsRecord.electronicAccessUrl[].uri|No|
+|856 $z |Link text|instance. electronicAccessUrl[]. linkText, holdingsRecord. electronicAccessUrl[]. linkText|No|Static config value text-For-Electronic-Resources (see separate table)||
 |980 $b |Fund code|orderLine. fundDistribution[]. fundCode and (resolved to) .fundId, | Yes| |Fund code must exist in FOLIO|
 |980 $c |Vendor item id|orderLine. vendorDetail. referenceNumbers[] .refNumber, refNumberType set to "Vendor internal number", but see 980$u|No|
 |980 $m |Price|orderLine. cost. listUnitPriceElectronic or orderLine. cost. listUnitPrice|Yes| |Format: [9999.99]|
@@ -185,7 +185,7 @@ container e.g.:
 |-------------|-------|--------|----------------|--------|-------|
 |permLocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if physical resource and not uploading invoice|The location must exist in FOLIO|
 |permELocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if electronic resource and not uploading invoice|The location must exist in FOLIO|
-|text For Electronic Resources|A link text|Available to Snapshot Users|instance. electronicAccess[]. linkText|
+|text For Electronic Resources|A link text|Available to Snapshot Users|instance. electronicAccessEntry[]. linkText|
 |noteType|The name of a note type for note in 980$n|General note|notes[].note.typeId (name resolved to id)|No|The note type must exist in FOLIO|
 |materialType|The name of a material type|book|orderLine. physical. materialType| |The material type must exist in FOLIO|
 |INVOICES|
