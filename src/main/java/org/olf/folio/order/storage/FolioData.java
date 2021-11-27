@@ -8,8 +8,6 @@ import org.marc4j.marc.Record;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 public class FolioData extends FolioAccess {
@@ -25,9 +23,7 @@ public class FolioData extends FolioAccess {
   public static final String CONTRIBUTOR_TYPES_ARRAY = "contributorTypes";
   public static final String HOLDINGS_TYPES_ARRAY = "holdingsTypes";
   public static final String NOTE_TYPES_ARRAY = "noteTypes";
-  public static final Map<String,String> fiscalYearCodeToUuid = new HashMap<>();
   public static final Map<String,String> organizationCodeToUuid = new HashMap<>();
-  public static final Map<String,String> fundCodeToUuid = new HashMap<>();
   public static final Map<String,String> expenseClassCodeToUuid = new HashMap<>();
   public static final Map<String,String> addressNameToUuid = new HashMap<>();
   public static final Map<String,String> locationNameToUuid = new HashMap<>();
@@ -36,19 +32,12 @@ public class FolioData extends FolioAccess {
   public static final Map<String,String> contributorTypeCodeToUuid = new HashMap<>();
   public static final Map<String,String> holdingsTypeNameToUuid = new HashMap<>();
   public static final Map<String,String> noteTypeNameToUuid = new HashMap<>();
-
-
+  public static final Map<String,String> fiscalYearCodeToUuid = new HashMap<>();
+  public static final Map<String,String> fundCodeToUuid = new HashMap<>();
+  public static final Map<String,String> fundIdAndFiscalYearIdToBudgetId = new HashMap<>();
 
   public static String getNextPoNumberFromOrders() throws Exception {
     return (callApiGet("orders/po-number")).getString("poNumber");
-  }
-
-  public static String getFiscalYearId (String fiscalYearCode) throws Exception {
-    return getIdByKey (
-            fiscalYearCode,
-            "finance/fiscal-years?query=(code='" + fiscalYearCode + "')",
-            FISCAL_YEARS_ARRAY,
-            fiscalYearCodeToUuid);
   }
 
   public static String getLocationIdByName(String locationName) throws Exception {
@@ -142,9 +131,22 @@ public class FolioData extends FolioAccess {
             fundCodeToUuid);
   }
 
-  public static JSONArray getFundBalances (String fundId, String fiscalYearId) throws Exception {
-    String fundBalanceQuery = "finance/budgets?query=(fundId==" + "%22" + fundId + "%22" + "+and+" + "fiscalYearId==" + "%22" + fiscalYearId + "%22)";
-    return callApiGet(fundBalanceQuery).getJSONArray(ARR_BUDGETS);
+  public static String getFiscalYearId (String fiscalYearCode) throws Exception {
+    return getIdByKey (
+            fiscalYearCode,
+            "finance/fiscal-years?query=(code='" + fiscalYearCode + "')",
+            FISCAL_YEARS_ARRAY,
+            fiscalYearCodeToUuid);
+  }
+
+  public static String getBudgetId(String fundId, String fiscalYearId) throws Exception {
+    String comboKey = fundId + "/" + fiscalYearId;
+    if (! fundIdAndFiscalYearIdToBudgetId.containsKey(comboKey)) {
+      String fundBalanceQuery = "finance/budgets?query=(fundId==" + "%22" + fundId + "%22" + "+and+" + "fiscalYearId==" + "%22" + fiscalYearId + "%22)";
+      String budgetId = getFirstId(callApiGet(fundBalanceQuery).getJSONArray(ARR_BUDGETS));
+      fundIdAndFiscalYearIdToBudgetId.put(comboKey, budgetId);
+    }
+    return fundIdAndFiscalYearIdToBudgetId.get(comboKey);
   }
 
   public static JSONArray getTags (String objectCode) throws Exception {
@@ -182,7 +184,7 @@ public class FolioData extends FolioAccess {
     }
 
     //MAKE SURE THE FUND CODE EXISTS FOR THE CURRENT FISCAL YEAR
-    if (getFundBalances(fundId, fiscalYearId).length() < 1) {
+    if (getBudgetId(fundId, fiscalYearId) == null) {
       responseMessage.put("error", "Fund code in file (" + fundCode + ") does not have a budget for fiscal year code in file (" + config.fiscalYearCode +")");
       responseMessage.put("title", title);
       responseMessage.put("PONumber", "~error~");
