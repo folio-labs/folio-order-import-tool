@@ -305,7 +305,7 @@ function showName() {
     <br>ISBN: {{ISBN}}
   {{/if}}
   <br> Product identifiers: {{productIdentifiers}}
-  <br> Source: <pre>{{source}}</pre>
+  <br><pre><span class="inner-pre" style="font-size: 11px;">{{source}}</span></pre>
 {{/each}}
 
 </script>
@@ -328,7 +328,7 @@ function showName() {
     <br>ISBN: {{ISBN}}
   {{/if}}
   <br> Product identifiers: {{productIdentifiers}}
-  <br> Source: <pre>{{source}}</pre>
+  <br><pre><span class="inner-pre" style="font-size: 11px;">{{source}}</span></pre>
 {{/each}}
 
 </script>
