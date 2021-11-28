@@ -13,6 +13,7 @@ public class Config {
   public String apiUsername;
   public String apiPassword;
   public String tenant;
+  public String uploadFilePath;
   public String fiscalYearCode;
   public String permLocationName;
   public String permELocationName;
@@ -40,6 +41,7 @@ public class Config {
     apiUsername = (String) context.getAttribute("okapi_username");
     apiPassword = (String) context.getAttribute("okapi_password");
     tenant = (String) context.getAttribute("tenant");
+    uploadFilePath = (String) context.getAttribute("uploadFilePath");
     permLocationName = (String) context.getAttribute("permLocation"); // Default, could change with invoice
     permELocationName = (String) context.getAttribute("permELocation"); // Default, could change with invoice
     fiscalYearCode = (String) context.getAttribute("fiscalYearCode");

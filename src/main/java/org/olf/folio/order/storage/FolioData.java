@@ -12,7 +12,15 @@ import java.util.Map;
 
 public class FolioData extends FolioAccess {
 
+  public static final String HOLDINGS_STORAGE_PATH = "holdings-storage/holdings";
+  public static final String INSTANCES_PATH = "inventory/instances";
+  public static final String ITEMS_PATH = "inventory/items";
+  public static final String COMPOSITE_ORDERS_PATH = "orders/composite-orders";
+  public static final String NOTES_PATH = "notes";
 
+  public static final String INSTANCES_ARRAY = "instances";
+  public static final String HOLDINGS_RECORDS_ARRAY = "holdingsRecords";
+  public static final String ITEMS_ARRAY = "items";
   public static final String ORGANIZATIONS_ARRAY = "organizations";
   public static final String FUNDS_ARRAY = "funds";
   public static final String EXPENSE_CLASSES_ARRAY = "expenseClasses";
@@ -25,6 +33,7 @@ public class FolioData extends FolioAccess {
   public static final String NOTE_TYPES_ARRAY = "noteTypes";
   public static final String CONFIGS_ARRAY = "configs";
   public static final String TAGS_ARRAY = "tags";
+
   public static final Map<String,String> organizationCodeToUuid = new HashMap<>();
   public static final Map<String,String> expenseClassCodeToUuid = new HashMap<>();
   public static final Map<String,String> addressNameToUuid = new HashMap<>();

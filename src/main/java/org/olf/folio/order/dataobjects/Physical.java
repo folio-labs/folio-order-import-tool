@@ -1,5 +1,6 @@
 package org.olf.folio.order.dataobjects;
 
+import org.json.JSONObject;
 import org.olf.folio.order.Constants;
 import org.olf.folio.order.MarcRecordMapping;
 
@@ -10,6 +11,12 @@ public class Physical extends JsonDataObject {
 
   public static Physical fromMarcRecord(MarcRecordMapping mappedMarc) {
     return new Physical().putCreateInventory(V_INSTANCE_HOLDING_ITEM);
+  }
+
+  public static Physical fromJson(JSONObject physicalJson) {
+    Physical physical = new Physical();
+    physical.json = physicalJson;
+    return physical;
   }
 
   public Physical putCreateInventory(String createInventory) {

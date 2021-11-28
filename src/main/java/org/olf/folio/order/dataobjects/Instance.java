@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class Instance extends JsonDataObject {
+  public static final String P_ID = "id";
   public static final String P_HRID = "hrid";
   public static final String P_TITLE = "title";
   public static final String P_SOURCE = "source";

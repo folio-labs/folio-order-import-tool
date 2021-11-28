@@ -3,12 +3,8 @@ package org.olf.folio.order;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.marc4j.marc.DataField;
-import org.marc4j.marc.Record;
-import org.marc4j.marc.VariableField;
 import org.olf.folio.order.storage.FolioData;
 
-import java.util.List;
 import java.util.UUID;
 
 public class JsonObjectBuilder {
@@ -156,21 +152,6 @@ public class JsonObjectBuilder {
     return ( str != null && Constants.UUID_PATTERN.matcher( str ).matches() );
   }
 
-  static JSONObject createNoteJson(MarcRecordMapping mappedMarc, JSONObject order, Config config) throws Exception {
-    JSONObject noteAsJson = new JSONObject();
-    JSONArray links = new JSONArray();
-    JSONObject link = new JSONObject();
-    link.put("type","poLine");
-    link.put("id", ((JSONObject) ( order.getJSONArray("compositePoLines").get(0))).getString("id"));
-    links.put(link);
-    noteAsJson.put("links", links);
-    noteAsJson.put("typeId", FolioData.getNoteTypeIdByName(config.noteTypeName));
-    noteAsJson.put("domain", "orders");
-    noteAsJson.put("content", mappedMarc.notes());
-    noteAsJson.put("title", mappedMarc.notes());
-    return noteAsJson;
-  }
-
   // Hard-coded values
   final static String BATCH_GROUP_ID = "2a2cb998-1437-41d1-88ad-01930aaeadd5"; // ='FOLIO', System default
 
@@ -209,75 +190,4 @@ public class JsonObjectBuilder {
     return invoiceLine;
   }
 
-  public static JSONArray createElectronicAccessJson(Record record, Config config) {
-    JSONArray eResources = new JSONArray();
-    String linkText = config.textForElectronicResource;
-    List<VariableField> urls =  record.getVariableFields("856");
-    for (VariableField url : urls) {
-      DataField dataField = (DataField) url;
-      if (dataField != null && dataField.getSubfield('u') != null) {
-        if (dataField.getSubfield('y') != null) {
-          linkText = dataField.getSubfield('y').getData();
-        }
-        String licenseNote = dataField.getSubfield('z').getData();
-        JSONObject eResource = new JSONObject();
-        eResource.put("uri", dataField.getSubfield('u').getData());
-        //DO WE WANT TO CHANGE THE LINK TEXT?
-        eResource.put("linkText", linkText);
-        if (licenseNote != null) eResource.put("publicNote", licenseNote);
-        //THIS RELATIONSHIP (UUID) IS BUILT INTO FOLIO
-        //IMPLEMENTER
-        eResource.put("relationshipId", Constants.ELECTRONIC_ACCESS_RELATIONSHIP_TYPE_RESOURCE);
-        eResources.put(eResource);
-      }
-    }
-    return eResources;
-  }
-
-  public static JSONObject updateItemJsonWithBookplateNote(MarcRecordMapping mappedMarc, JSONObject itemJson) {
-    JSONObject bookplateNote = new JSONObject();
-    bookplateNote.put("itemNoteTypeId", Constants.ITEM_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE);
-    bookplateNote.put("note", mappedMarc.donor());
-    bookplateNote.put("staffOnly", false);
-    JSONArray itemNotes = (itemJson.has("notes") ? itemJson.getJSONArray("notes") : new JSONArray());
-    itemNotes.put(bookplateNote);
-    itemJson.put("notes", itemNotes);
-    return itemJson;
-  }
-
-  public static JSONObject updateHoldingsRecordJson(JSONObject holdingsRecord, MarcRecordMapping mappedMarc, JSONArray eResources) throws Exception {
-    //UPDATE THE HOLDINGS RECORD
-    //GET THE HOLDINGS RECORD FOLIO CREATED, SO WE CAN ADD URLs FROM THE 856 IN THE MARC RECORD
-    holdingsRecord.put("electronicAccess", eResources);
-    //IF THIS WAS AN ELECTRONIC RECORD, MARK THE HOLDING AS E-HOLDING
-    if (mappedMarc.electronic()) {
-      holdingsRecord.put("holdingsTypeId", FolioData.getHoldingsTypeIdByName("Electronic"));
-
-      if (mappedMarc.hasDonor()) {
-        JSONObject bookplateNote = new JSONObject();
-        bookplateNote.put("holdingsNoteTypeId", Constants.HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE);
-        bookplateNote.put("note", mappedMarc.donor());
-        bookplateNote.put("staffOnly", false);
-        JSONArray holdingsNotes = (holdingsRecord.has("notes") ? holdingsRecord.getJSONArray("notes") : new JSONArray());
-        holdingsNotes.put(bookplateNote);
-        holdingsRecord.put("notes", holdingsNotes);
-      }
-    }
-    return holdingsRecord;
-  }
-
-  public static JSONObject updateInstanceJson(MarcRecordMapping mappedMarc, JSONObject instanceAsJson, JSONArray eResources) throws Exception {
-    //UPDATE THE INSTANCE RECORD
-    instanceAsJson.put("title", mappedMarc.title());
-    instanceAsJson.put("source", OrderImport.config.importSRS ? "MARC" : "FOLIO");
-    instanceAsJson.put("instanceTypeId", FolioData.getInstanceTypeId("text"));
-    instanceAsJson.put("identifiers", mappedMarc.getInstanceIdentifiers());
-    instanceAsJson.put("contributors", mappedMarc.getContributorsForInstance());
-    instanceAsJson.put("discoverySuppress", false);
-    instanceAsJson.put("electronicAccess", eResources);
-    instanceAsJson.put("natureOfContentTermIds", new JSONArray());
-    instanceAsJson.put("precedingTitles", new JSONArray());
-    instanceAsJson.put("succeedingTitles", new JSONArray());
-    return instanceAsJson;
-  }
 }

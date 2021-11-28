@@ -276,6 +276,10 @@ public class MarcRecordMapping {
     return "ELECTRONIC".equalsIgnoreCase(electronicIndicator());
   }
 
+  public boolean physical() {
+    return !electronic();
+  }
+
   public String currency() {
     return d980.getSubfieldsAsString(CURRENCY) == null ? "USD"
             : d980.getSubfieldsAsString(CURRENCY);

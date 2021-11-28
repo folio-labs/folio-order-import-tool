@@ -6,6 +6,8 @@ import org.olf.folio.order.Constants;
 
 public abstract class JsonDataObject {
 
+  public static String P_ID = "id";
+
   JSONObject json = new JSONObject();
 
   protected JsonDataObject putString(String key, String value) {
@@ -26,9 +28,6 @@ public abstract class JsonDataObject {
     json.put(key, value);
     return this;
   }
-  protected JSONObject getObject (String key) {
-    return json.getJSONObject(key);
-  }
 
   protected JsonDataObject putInteger (String key, int value) {
     json.put(key, value);
@@ -42,12 +41,19 @@ public abstract class JsonDataObject {
     return this;
   }
 
+  protected JSONObject getJSONObject (String key) {
+    return json.getJSONObject(key);
+  }
   protected JSONArray getArray (String key) {
     return json.getJSONArray(key);
   }
 
   public JSONObject asJson() {
     return json;
+  }
+
+  public String getId() {
+    return getString(P_ID);
   }
 
   protected boolean present(String val) {

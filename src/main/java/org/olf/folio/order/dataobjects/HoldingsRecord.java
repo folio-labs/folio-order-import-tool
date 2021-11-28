@@ -5,6 +5,7 @@ import org.json.JSONObject;
 
 public class HoldingsRecord extends JsonDataObject {
 
+  public static final String P_ID = "id";
   public static final String P_ELECTRONIC_ACCESS = "electronicAccess";
   public static final String P_HOLDINGS_TYPE_ID = "holdingsTypeId";
   public static final String P_NOTES = "notes";

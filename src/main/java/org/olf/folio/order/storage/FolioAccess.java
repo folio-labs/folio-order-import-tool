@@ -15,6 +15,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.olf.folio.order.Config;
+import org.olf.folio.order.dataobjects.JsonDataObject;
 
 import java.nio.charset.Charset;
 
@@ -23,7 +24,6 @@ public class FolioAccess {
   protected static Config config;
   protected static String token;
   protected static Logger logger;
-
 
   /**
    * Capture configuration from import.properties, authenticate to FOLIO and retrieve reference data
@@ -80,9 +80,13 @@ public class FolioAccess {
     return token;
   }
 
-  public static JSONObject callApiGet(String url) throws Exception {
+  public static JSONObject callApiGetById (String apiPath, String id) throws Exception {
+    return callApiGet(apiPath + "/" + id);
+  }
+
+  public static JSONObject callApiGet(String apiPath) throws Exception {
     CloseableHttpClient client = HttpClients.custom().build();
-    HttpUriRequest request = RequestBuilder.get().setUri(config.baseOkapiEndpoint + url)
+    HttpUriRequest request = RequestBuilder.get().setUri(config.baseOkapiEndpoint + apiPath)
             .setHeader("x-okapi-tenant", config.tenant)
             .setHeader("x-okapi-token", token)
             .setHeader("Accept", "application/json")
@@ -95,7 +99,7 @@ public class FolioAccess {
     int responseCode = response.getStatusLine().getStatusCode();
 
     logger.debug("GET:");
-    logger.debug(url);
+    logger.debug(apiPath);
     logger.debug(responseCode);
     logger.debug(responseString);
 
@@ -128,11 +132,15 @@ public class FolioAccess {
     }
   }
 
-  public static String callApiPut(String url, JSONObject body)
+  public static String callApiPut(String apiPath, JsonDataObject object) throws Exception {
+    return callApiPut(apiPath + "/" + object.getId(), object.asJson());
+  }
+
+  public static String callApiPut(String uri, JSONObject body)
           throws Exception {
     CloseableHttpClient client = HttpClients.custom().build();
     HttpUriRequest request = RequestBuilder.put()
-            .setUri(config.baseOkapiEndpoint + url)
+            .setUri(config.baseOkapiEndpoint + uri)
             .setCharset(Charset.defaultCharset())
             .setEntity(new StringEntity(body.toString(),"UTF8"))
             .setHeader("x-okapi-tenant", config.tenant)
@@ -144,7 +152,7 @@ public class FolioAccess {
     //THE ORDERS-STORAGE ENDPOINT WANTS 'TEXT/PLAIN'
     //THE OTHER API CALL THAT USES PUT,
     //WANTS 'APPLICATION/JSON'
-    if (url.contains("orders-storage") || url.contains("holdings-storage")) {
+    if (uri.contains("orders-storage") || uri.contains("holdings-storage")) {
       request.setHeader("Accept","text/plain");
     }
     HttpResponse response = client.execute(request);
@@ -152,7 +160,7 @@ public class FolioAccess {
 
     logger.info("PUT:");
     logger.info(body.toString());
-    logger.info(url);
+    logger.info(uri);
     logger.info(responseCode);
     //logger.info(responseString);
 
@@ -163,14 +171,18 @@ public class FolioAccess {
     return "ok";
   }
 
+  public static JSONObject callApiPostWithUtf8(String apiPath, JsonDataObject object) throws Exception {
+    return callApiPostWithUtf8(apiPath, object.asJson());
+  }
+
   //POST TO PO SEEMS TO WANT UTF8 (FOR SPECIAL CHARS)
   //IF UTF8 IS USED TO POST TO SOURCE RECORD STORAGE
   //SPECIAL CHARS DON'T LOOK CORRECT
-  public static JSONObject callApiPostWithUtf8(String url, JSONObject body)
+  public static JSONObject callApiPostWithUtf8(String apiPath, JSONObject body)
           throws Exception {
     CloseableHttpClient client = HttpClients.custom().build();
     HttpUriRequest request = RequestBuilder.post()
-            .setUri(config.baseOkapiEndpoint + url)
+            .setUri(config.baseOkapiEndpoint + apiPath)
             .setHeader("x-okapi-tenant", config.tenant)
             .setHeader("x-okapi-token", token)
             .setEntity(new StringEntity(body.toString(),"UTF-8"))
@@ -185,7 +197,7 @@ public class FolioAccess {
 
     logger.info("POST:");
     logger.info(body.toString());
-    logger.info(url);
+    logger.info(apiPath);
     logger.info(responseCode);
     logger.info(responseString);
 

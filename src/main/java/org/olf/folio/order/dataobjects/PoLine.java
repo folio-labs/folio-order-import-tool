@@ -37,6 +37,7 @@ public class PoLine extends JsonDataObject {
   public static final String P_PUBLISHER = "publisher";
   public static final String P_PUBLICATION_DATE = "publicationDate";
   public static final String P_TAGS = "tags";
+  public static final String P_INSTANCE_ID = "instanceId";
 
   public static PoLine fromMarcRecord(UUID orderId, MarcRecordMapping mappedMarc)
           throws Exception {
@@ -198,6 +199,10 @@ public class PoLine extends JsonDataObject {
     return present(tags.getTagList()) ? putTags(tags) : this;
   }
 
+  public String getInstanceId () {
+    return getString(P_INSTANCE_ID);
+  }
+
   public List<PoLineLocation> getLocations() {
     List<PoLineLocation> poLineLocationList = new ArrayList<>();
     JSONArray locations = json.getJSONArray(P_LOCATIONS);
@@ -207,5 +212,9 @@ public class PoLine extends JsonDataObject {
       }
     }
     return poLineLocationList;
+  }
+
+  public Physical getPhysical () {
+    return Physical.fromJson(getJSONObject(P_PHYSICAL));
   }
 }

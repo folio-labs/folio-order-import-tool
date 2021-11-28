@@ -44,8 +44,9 @@ public class CompositePurchaseOrder extends JsonDataObject {
                     .putApproved(true)
                     .putWorkflowStatus(V_OPEN)
                     .putBillToIfPresent(mappedMarc.billToUuid())
-                    .putCompositePoLines(new JSONArray()
-                        .put(PoLine.fromMarcRecord(orderId, mappedMarc).asJson()));
+                    .putCompositePoLines(
+                            new JSONArray().put(PoLine.fromMarcRecord(orderId, mappedMarc).asJson())
+                    );
   }
 
   public CompositePurchaseOrder putId(UUID id) {
@@ -90,12 +91,17 @@ public class CompositePurchaseOrder extends JsonDataObject {
     return this;
   }
 
-  public String getId () {
-    return getString(P_ID);
-  }
   public String getPoNumber() {
     return getString(P_PO_NUMBER);
   }
+  public String getInstanceId () {
+    if (hasPoLines()) {
+      return getCompositePoLines().get(0).getInstanceId();
+    } else {
+      return null;
+    }
+  }
+
   public String getVendor() {
     return getString(P_VENDOR);
   }
@@ -115,6 +121,10 @@ public class CompositePurchaseOrder extends JsonDataObject {
     return getArray(P_COMPOSITE_PO_LINES);
   }
 
+  public boolean hasPoLines () {
+    return !getCompositePoLines().isEmpty();
+  }
+
   public List<PoLine> getCompositePoLines () {
     List<PoLine> poLines = new ArrayList<>();
     for (Object pol : getCompositePoLinesJsonArray()) {
@@ -124,5 +134,20 @@ public class CompositePurchaseOrder extends JsonDataObject {
     return poLines;
   }
 
+  public CompositePurchaseOrder setMaterialTypeOnPoLines (String materialType) {
+    for (PoLine line : getCompositePoLines()) {
+      line.getPhysical().putMaterialType(materialType);
+    }
+    return this;
+  }
+
+  public CompositePurchaseOrder setLocationIdOnPoLines (String locationId) {
+    for (PoLine line : getCompositePoLines()) {
+      for (PoLineLocation location : line.getLocations()) {
+        location.putLocationId(locationId);
+      }
+    }
+    return this;
+  }
 
 }

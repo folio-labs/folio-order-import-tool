@@ -1,7 +1,5 @@
 package org.olf.folio.order.dataobjects;
 
-import org.json.JSONObject;
-
 public class Link extends JsonDataObject {
 
   public static final String P_TYPE = "type";

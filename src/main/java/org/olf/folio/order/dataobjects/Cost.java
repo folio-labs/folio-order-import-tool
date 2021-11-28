@@ -14,6 +14,9 @@ public class Cost extends JsonDataObject {
     if (mappedMarc.electronic()) {
       cost.putQuantityElectronic(1);
       cost.putListUnitPriceElectronic(mappedMarc.price());
+    } else {
+      cost.putQuantityPhysical(1);
+      cost.putListUnitPrice(mappedMarc.price());
     }
     cost.putCurrency(mappedMarc.currency());
     return cost;
