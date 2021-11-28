@@ -133,7 +133,10 @@
                                                "skipSRS",
                                                "showConfig",
                                                "exitOnConfigErrors",
-                                               "exitOnFailedIdLookups")) {
+                                               "exitOnFailedIdLookups",
+                                               "folioUiUrl",
+                                               "folioUiInventoryPath",
+                                               "folioUiOrdersPath")) {
                                                   out.println(key + ": " + getServletContext().getAttribute(key)); %>
                                                   <br/>
                                               <% }
@@ -289,14 +292,23 @@ function showName() {
 <script id="importResponseTemplate" type="text/x-handlebars-template">
 <p class="title">Order import results<span style="color:#f5f5f5"></span></p>
 {{#each this}}
+  <br> Rec# {{recNo}}
   {{#if error}}
 	<br> <b>Error: {{PONumber}}</b>
 	<br> {{error}}
   {{else}}
-	<br> Passed: {{PONumber}}
+    {{#if ordersUrl}}
+	    <br> <b>PO number: <a href="{{ordersUrl}}" target="orders">{{PONumber}}</a></b>
+	{{else}}
+	    <br> <b>PO number: {{PONumber}}</b>
+	{{/if}}
   {{/if}}
-  <br> Rec#: {{recNo}}
   <br> Title: {{title}}
+  {{#if inventoryUrl}}
+	    <br> Instance HRID: <a href="{{inventoryUrl}}" target="inventory">{{instanceHrid}}</a>
+  {{else}}
+        <br> Instance HRID: {{instanceHrid}}
+  {{/if}}
   {{#if invalidIsbn}}
     <br><b>Invalid ISBN: {{ISBN}}</b>
   {{else if noIsbn}}
@@ -313,12 +325,12 @@ function showName() {
 <script id="analyzeResponseTemplate" type="text/x-handlebars-template">
 <p class="title">Validation results<span style="color:#f5f5f5"></span></p>
 {{#each this}}
+  <br> Rec# {{recNo}}
   {{#if error}}
-	<br> <b>Problem: {{PONumber}}</b>
+	<br> <b>Problem</b>
   {{else}}
-	<br> Passed: {{PONumber}}
+	<br> <b>Passed</b>
   {{/if}}
-  <br> Rec#: {{recNo}}
   <br> Title: {{title}}
   {{#if invalidIsbn}}
     <br><b>Invalid ISBN: {{ISBN}}</b>

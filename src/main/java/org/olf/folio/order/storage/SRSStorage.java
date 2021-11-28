@@ -15,9 +15,11 @@ import java.util.UUID;
 
 public class SRSStorage extends FolioAccess {
 
-  public static void storeMarcToSRS(Record record, ByteArrayOutputStream byteArrayOutputStream, UUID snapshotId, UUID recordTableId, String instanceId, String hrid ) throws Exception
+  public static void storeMarcToSRS(Record record, ByteArrayOutputStream byteArrayOutputStream, String instanceId, String hrid ) throws Exception
   {
     logger.info("Storing MARC to SRS");
+    UUID snapshotId = UUID.randomUUID();
+    UUID recordTableId = UUID.randomUUID();
     //PREPARING TO ADD THE MARC RECORD TO SOURCE RECORD STORAGE:
     //CONSTRUCTING THE 999 OF THE MARC RECORD for FOLIO:
     DataField field = MarcFactory.newInstance().newDataField();

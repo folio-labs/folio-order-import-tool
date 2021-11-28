@@ -33,7 +33,7 @@ public class OrderService {
 	@Produces("application/json")
 	public Response uploadFile(
 			@FormDataParam("order-file") InputStream uploadedInputStream,
-			@FormDataParam("order-file") FormDataContentDisposition fileDetails) throws Exception {
+			@FormDataParam("order-file") FormDataContentDisposition fileDetails)  {
 
 		System.out.println(fileDetails.getFileName());
 		String filePath = (String) servletRequest.getServletContext().getAttribute("uploadFilePath");
@@ -44,10 +44,10 @@ public class OrderService {
 		// SAVE FILE TO DISK
 		writeFile(uploadedInputStream, uploadedFileLocation);
 		// PASS FILE INFO TO 'OrderImport' WHICH MAKES THE FOLIO API CALLS
-		OrderImport orderImportShortened = new OrderImport();
-		orderImportShortened.setMyContext(servletRequest.getServletContext());
+		OrderImport orderImport = new OrderImport();
+		orderImport.setMyContext(servletRequest.getServletContext());
 		try {
-			JSONArray message = orderImportShortened.upload(fileName + ".mrc", doImport);
+			JSONArray message = orderImport.upload(fileName + ".mrc", doImport);
 			return Response.status(Response.Status.OK).entity(message.toString()).build();		
 		}
 		catch(Exception e) {

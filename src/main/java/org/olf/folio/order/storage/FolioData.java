@@ -17,12 +17,14 @@ public class FolioData extends FolioAccess {
   public static final String FUNDS_ARRAY = "funds";
   public static final String EXPENSE_CLASSES_ARRAY = "expenseClasses";
   public static final String LOCATIONS_ARRAY = "locations";
-  public static final String ARR_BUDGETS = "budgets";
+  public static final String BUDGETS_ARRAY = "budgets";
   public static final String FISCAL_YEARS_ARRAY = "fiscalYears";
   public static final String INSTANCE_TYPES_ARRAY = "instanceTypes";
   public static final String CONTRIBUTOR_TYPES_ARRAY = "contributorTypes";
   public static final String HOLDINGS_TYPES_ARRAY = "holdingsTypes";
   public static final String NOTE_TYPES_ARRAY = "noteTypes";
+  public static final String CONFIGS_ARRAY = "configs";
+  public static final String TAGS_ARRAY = "tags";
   public static final Map<String,String> organizationCodeToUuid = new HashMap<>();
   public static final Map<String,String> expenseClassCodeToUuid = new HashMap<>();
   public static final Map<String,String> addressNameToUuid = new HashMap<>();
@@ -110,8 +112,8 @@ public class FolioData extends FolioAccess {
     } else {
       if (addressNameToUuid.isEmpty()) {
         String configsEndpoint = "configurations/entries?limit=1000&query=%28module%3DTENANT%20and%20configName%3Dtenant.addresses%29";
-        JSONArray addresses = callApiGet(configsEndpoint).getJSONArray("configs");
-        if (addresses.length()>0) {
+        JSONArray addresses = callApiGetArray(configsEndpoint, CONFIGS_ARRAY);
+        if (addresses != null && !addresses.isEmpty()) {
           for (int i = 0; i < addresses.length(); i++) {
             JSONObject address = addresses.getJSONObject(i);
             addressNameToUuid.put(new JSONObject(address.getString("value")).getString("name"),
@@ -143,7 +145,7 @@ public class FolioData extends FolioAccess {
     String comboKey = fundId + "/" + fiscalYearId;
     if (! fundIdAndFiscalYearIdToBudgetId.containsKey(comboKey)) {
       String fundBalanceQuery = "finance/budgets?query=(fundId==" + "%22" + fundId + "%22" + "+and+" + "fiscalYearId==" + "%22" + fiscalYearId + "%22)";
-      String budgetId = getFirstId(callApiGet(fundBalanceQuery).getJSONArray(ARR_BUDGETS));
+      String budgetId = getFirstId(callApiGetArray(fundBalanceQuery, BUDGETS_ARRAY));
       fundIdAndFiscalYearIdToBudgetId.put(comboKey, budgetId);
     }
     return fundIdAndFiscalYearIdToBudgetId.get(comboKey);
@@ -151,7 +153,7 @@ public class FolioData extends FolioAccess {
 
   public static JSONArray getTags (String objectCode) throws Exception {
     String tagEndpoint = "tags?query=(label==" + objectCode + ")";
-    return callApiGet(tagEndpoint).getJSONArray("tags");
+    return callApiGetArray(tagEndpoint,TAGS_ARRAY);
   }
 
   private static String getIdByKey (String key, String url, String nameOfArray, Map<String,String> map)

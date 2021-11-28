@@ -7,6 +7,9 @@ import javax.servlet.ServletContext;
 public class Config {
 
   public String baseOkapiEndpoint;
+  public String folioUiUrl;
+  public String folioUiInventoryPath;
+  public String folioUiOrdersPath;
   public String apiUsername;
   public String apiPassword;
   public String tenant;
@@ -19,9 +22,10 @@ public class Config {
   public boolean objectCodeRequired;
   public boolean importInvoice;
   public boolean failIfNoInvoiceData;
-  public boolean importSRS;
+  public String paymentMethod;
   public String permLocationWithInvoiceImport;
   public String permELocationWithInvoiceImport;
+  public boolean importSRS;
 
   private static final Logger logger = Logger.getLogger(Config.class);
 
@@ -30,6 +34,9 @@ public class Config {
     if (baseOkapiEndpoint == null || baseOkapiEndpoint.isEmpty()) {
       baseOkapiEndpoint = (String) context.getAttribute("baseOkapEndpoint"); //previous spelling
     }
+    folioUiUrl = (String) context.getAttribute("folioUiUrl");
+    folioUiInventoryPath = (String) context.getAttribute("folioUiInventoryPath");
+    folioUiOrdersPath = (String) context.getAttribute("folioUiOrdersPath");
     apiUsername = (String) context.getAttribute("okapi_username");
     apiPassword = (String) context.getAttribute("okapi_password");
     tenant = (String) context.getAttribute("tenant");
@@ -43,6 +50,7 @@ public class Config {
     objectCodeRequired = ! ("false".equalsIgnoreCase((String) context.getAttribute("objectCodeRequired")));
     importInvoice = "true".equalsIgnoreCase((String) context.getAttribute("importInvoice"));
     failIfNoInvoiceData =  "true".equalsIgnoreCase((String) context.getAttribute("failIfNoInvoiceData"));
+    paymentMethod = (String) context.getAttribute("paymentMethod");
     importSRS = "true".equalsIgnoreCase((String) context.getAttribute("importSRS"));
 
     permLocationWithInvoiceImport = (String) context.getAttribute("permLocationWithInvoiceImport");

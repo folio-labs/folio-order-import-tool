@@ -114,6 +114,20 @@ public class FolioAccess {
     }
   }
 
+  public static JSONObject callApiGetFirstObjectOfArray (String url, String nameOfArray) throws Exception {
+    try {
+      JSONArray array = callApiGet(url).getJSONArray(nameOfArray);
+      if (array != null && !array.isEmpty()) {
+        return array.getJSONObject(0);
+      } else {
+        return null;
+      }
+    } catch (ClassCastException cce) {
+      logger.error("GET result from " + url + " did not return an array by the name " + nameOfArray);
+      return null;
+    }
+  }
+
   public static String callApiPut(String url, JSONObject body)
           throws Exception {
     CloseableHttpClient client = HttpClients.custom().build();
@@ -152,7 +166,7 @@ public class FolioAccess {
   //POST TO PO SEEMS TO WANT UTF8 (FOR SPECIAL CHARS)
   //IF UTF8 IS USED TO POST TO SOURCE RECORD STORAGE
   //SPECIAL CHARS DON'T LOOK CORRECT
-  public static String callApiPostWithUtf8(String url, JSONObject body)
+  public static JSONObject callApiPostWithUtf8(String url, JSONObject body)
           throws Exception {
     CloseableHttpClient client = HttpClients.custom().build();
     HttpUriRequest request = RequestBuilder.post()
@@ -178,8 +192,7 @@ public class FolioAccess {
     if (responseCode > 399) {
       throw new Exception(responseString);
     }
-
-    return responseString;
+    return new JSONObject(responseString);
   }
 
 }
