@@ -19,7 +19,9 @@ import org.marc4j.converter.impl.AnselToUnicode;
 import org.marc4j.marc.Record;
 import org.apache.log4j.Logger;
 import org.olf.folio.order.dataobjects.CompositePurchaseOrder;
+import org.olf.folio.order.dataobjects.HoldingsRecord;
 import org.olf.folio.order.dataobjects.Instance;
+import org.olf.folio.order.dataobjects.Item;
 import org.olf.folio.order.dataobjects.PoLineLocation;
 import org.olf.folio.order.storage.FolioAccess;
 import org.olf.folio.order.storage.FolioData;
@@ -121,40 +123,77 @@ public class OrderImport {
 
 				//GET THE INSTANCE RECORD FOLIO CREATED, SO WE CAN ADD BIB INFO TO IT:
 				JSONObject fetchedInstance = FolioAccess.callApiGet("inventory/instances/" + instanceId);
-				String instanceHrid = fetchedInstance.getString("hrid");
-				String instanceUuid = fetchedInstance.getString("id");
+				//String instanceHrid = fetchedInstance.getString("hrid");
 
 				// UChicago have asked that the MARC NOT be stored to SRS since this has implications for the ability to
 				// batch update the instance record with the full cataloging when UChicago receive the invoice.
 				if ( config.importSRS ) {
 					if (byteArrayOutputStreamForSRS == null )
 						byteArrayOutputStreamForSRS = getOutputStreamForSRS();
-					SRSStorage.storeMarcToSRS(record,	byteArrayOutputStreamForSRS, instanceId,	instanceHrid );
+					SRSStorage.storeMarcToSRS(record,	byteArrayOutputStreamForSRS, instanceId,	fetchedInstance.getString("hrid") );
 				}
 
 				// new logic not in use
-				Instance instance_new_logic = DataObjectBuilder.createUpdatedInstance(mappedMarc, fetchedInstance, config);
-				logger.info("Created Instance object with data object logic: " + instance_new_logic.asJson());
+				Instance instance_new_logic = DataObjectBuilder.createAndUpdateInstanceFromJson(fetchedInstance, mappedMarc, config);
+				logger.info("JSON from newCreated Instance object with data object logic: " + instance_new_logic.asJson());
         //
 
 				JSONArray createdElectronicAccess = JsonObjectBuilder.createElectronicAccessJson(record, config);
 
 				JSONObject updatedInstance = JsonObjectBuilder.updateInstanceJson(mappedMarc, fetchedInstance, createdElectronicAccess);
+
+				if (!(instance_new_logic.asJson().toString()).equalsIgnoreCase(updatedInstance.toString())) {
+					logger.info("Instance JSON was not exactly identical from old and new JSON creation logic: ");
+					logger.info("String length old: "
+									+ instance_new_logic.toString().length()
+									+ ", String length new: "
+									+ updatedInstance.toString().length());
+					logger.info("Instance JSON, new logic: " + instance_new_logic.asJson().toString());
+					logger.info("Instance JSON, old logic: " + updatedInstance);
+				}
+
 				FolioAccess.callApiPut( "inventory/instances/" + instanceId,  updatedInstance);
 
 				JSONObject fetchedHoldingsRecord = FolioAccess.callApiGetFirstObjectOfArray("holdings-storage/holdings?query=(instanceId==" + instanceId + ")", "holdingsRecords");
 				if (fetchedHoldingsRecord == null) {
-					throw new Exception("Failed to retrieve holdings record that was supposed to be created on uploading the order");
+					throw new Exception("Failed to retrieve holdings record that was expected to be created on uploading the order");
 				}
+				HoldingsRecord holdingsRecord_new_logic =
+								DataObjectBuilder.createAndUpdateHoldingsRecordFromJson(fetchedHoldingsRecord, mappedMarc);
+
 				JSONObject updatedHoldingsRecord = JsonObjectBuilder.updateHoldingsRecordJson(
-								fetchedHoldingsRecord, mappedMarc, instanceId, createdElectronicAccess);
+								fetchedHoldingsRecord, mappedMarc, createdElectronicAccess);
+
+				if (!(holdingsRecord_new_logic.asJson().toString()).equalsIgnoreCase(updatedHoldingsRecord.toString())) {
+					logger.info("HoldingsRecord JSON was not exactly identical from old and new JSON creation logic: ");
+					logger.info("String length old: "
+									+ holdingsRecord_new_logic.toString().length()
+									+ ", String length new: "
+									+ updatedHoldingsRecord.toString().length());
+					logger.info("HoldingsRecord JSON, new logic: " + holdingsRecord_new_logic.asJson().toString());
+					logger.info("HoldingsRecord JSON, old logic: " + updatedHoldingsRecord);
+				}
+
 				FolioAccess.callApiPut("holdings-storage/holdings/" + updatedHoldingsRecord.getString("id"),
 								updatedHoldingsRecord);
 
 				if (!mappedMarc.electronic() && mappedMarc.hasDonor()) {
 					//IF PHYSICAL RESOURCE WITH DONOR INFO, GET THE ITEM FOLIO CREATED, SO WE CAN ADD NOTE ABOUT DONOR
-					JSONObject fetchedItems = FolioAccess.callApiGet("inventory/items?query=(holdingsRecordId==" + updatedHoldingsRecord.get("id") + ")");
-					JSONObject updatedItem = JsonObjectBuilder.updateItemJsonWithBookplateNote(mappedMarc, fetchedItems);
+					JSONObject fetchedItem = FolioAccess.callApiGetFirstObjectOfArray("inventory/items?query=(holdingsRecordId==" + updatedHoldingsRecord.get("id") + ")", "items");
+					Item item_new_logic = DataObjectBuilder.createAndUpdateItemFromJson(fetchedItem,mappedMarc);
+					if (fetchedItem == null) {
+						throw new Exception("Failed to retrieve Item that was expected to be created on uploading the order");
+					}
+					JSONObject updatedItem = JsonObjectBuilder.updateItemJsonWithBookplateNote(mappedMarc, fetchedItem);
+					if (!(item_new_logic.asJson().toString()).equalsIgnoreCase(updatedItem.toString())) {
+						logger.info("Item JSON was not exactly identical from old and new JSON creation logic: ");
+						logger.info("String length old: "
+										+ item_new_logic.toString().length()
+										+ ", String length new: "
+										+ updatedItem.toString().length());
+						logger.info("Item JSON, new logic: " + item_new_logic.asJson().toString());
+						logger.info("Item JSON, old logic: " + updatedItem);
+					}
 					FolioAccess.callApiPut("inventory/items/" + updatedItem.getString("id"), updatedItem);
 				}
 

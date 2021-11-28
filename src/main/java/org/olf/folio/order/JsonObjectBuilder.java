@@ -234,19 +234,18 @@ public class JsonObjectBuilder {
     return eResources;
   }
 
-  public static JSONObject updateItemJsonWithBookplateNote(MarcRecordMapping mappedMarc, JSONObject itemsAsJson) {
-    JSONObject item = itemsAsJson.getJSONArray("items").getJSONObject(0);
+  public static JSONObject updateItemJsonWithBookplateNote(MarcRecordMapping mappedMarc, JSONObject itemJson) {
     JSONObject bookplateNote = new JSONObject();
     bookplateNote.put("itemNoteTypeId", Constants.ITEM_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE);
     bookplateNote.put("note", mappedMarc.donor());
     bookplateNote.put("staffOnly", false);
-    JSONArray itemNotes = (item.has("notes") ? item.getJSONArray("notes") : new JSONArray());
+    JSONArray itemNotes = (itemJson.has("notes") ? itemJson.getJSONArray("notes") : new JSONArray());
     itemNotes.put(bookplateNote);
-    item.put("notes", itemNotes);
-    return item;
+    itemJson.put("notes", itemNotes);
+    return itemJson;
   }
 
-  public static JSONObject updateHoldingsRecordJson(JSONObject holdingsRecord, MarcRecordMapping mappedMarc, String instanceId, JSONArray eResources) throws Exception {
+  public static JSONObject updateHoldingsRecordJson(JSONObject holdingsRecord, MarcRecordMapping mappedMarc, JSONArray eResources) throws Exception {
     //UPDATE THE HOLDINGS RECORD
     //GET THE HOLDINGS RECORD FOLIO CREATED, SO WE CAN ADD URLs FROM THE 856 IN THE MARC RECORD
     holdingsRecord.put("electronicAccess", eResources);

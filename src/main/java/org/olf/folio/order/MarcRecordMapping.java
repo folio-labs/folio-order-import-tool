@@ -158,16 +158,6 @@ public class MarcRecordMapping {
     return edition() != null && ! edition().isEmpty();
   }
 
-  public boolean hasPublisher() {
-    return (has260() && d260.getSubfieldsAsString(PUBLISHER) != null) ||
-            (has264() && d264.getSubfieldsAsString(PUBLISHER) != null);
-  }
-
-  public boolean hasPublicationDate() {
-    return (has260() && d260.getSubfieldsAsString(PUBLISHER) != null) ||
-            (has264() && d264.getSubfieldsAsString(PUBLISHER) != null);
-  }
-
   public String publisher(String field) {
     if (field != null && Arrays.asList("260","264").contains(field)) {
       if (field.equals("260")) {
