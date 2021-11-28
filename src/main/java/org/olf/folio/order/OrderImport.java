@@ -68,8 +68,6 @@ public class OrderImport {
 				responseMessage.put("source", record.toString());
 				MarcRecordMapping mappedMarc = new MarcRecordMapping(record);
 
-				CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
-				setPreconfiguredValues(compositePo, mappedMarc);
 
 				//NOW WE CAN START CREATING THE PO!
 				responseMessage.put("recNo", counters.recordsProcessed);
@@ -77,9 +75,11 @@ public class OrderImport {
 	  		responseMessage.put("ISBN", mappedMarc.hasISBN() ? mappedMarc.getISBN() : "No ISBN in this record");
 
 				// CREATE AND POST THE PURCHASE ORDER AND LINE
+				CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
+				setPreconfiguredValues(compositePo, mappedMarc);
 				FolioAccess.callApiPostWithUtf8(FolioData.COMPOSITE_ORDERS_PATH, compositePo);
 
-				//INSERT THE NOTE IF THERE IS A NOTE IN THE MARC RECORD
+				//INSERT A NOTE IF THERE IS ONE IN THE MARC RECORD
 				if (mappedMarc.hasNotes()
 								&& compositePo.hasPoLines() && config.noteTypeName != null) {
 					Note note = new Note()
@@ -93,19 +93,18 @@ public class OrderImport {
 					FolioAccess.callApiPostWithUtf8(FolioData.NOTES_PATH,note.asJson());
 				}
 
-				//GET THE UPDATED PURCHASE ORDER FROM THE API AND PULL OUT THE ID FOR THE INSTANCE FOLIO CREATED:
+				// GET THE UPDATED PURCHASE ORDER FROM FOLIO AND PULL OUT THE ID OF THE RELATED INSTANCE
 				CompositePurchaseOrder fetchedPo = CompositePurchaseOrder.fromJson(
 								FolioAccess.callApiGetById(FolioData.COMPOSITE_ORDERS_PATH, compositePo.getId()));
 
+				// RETRIEVE, UPDATE, AND PUT THE RELATED INSTANCE
 				Instance fetchedInstance = Instance.fromJson(
 												FolioAccess.callApiGetById(FolioData.INSTANCES_PATH, fetchedPo.getInstanceId()));
-
 				if ( config.importSRS ) {
 					if (byteArrayOutputStreamForSRS == null )
 						byteArrayOutputStreamForSRS = getOutputStreamForSRS();
 					SRSStorage.storeMarcToSRS(record,	byteArrayOutputStreamForSRS, fetchedPo.getInstanceId(),	fetchedInstance.getHrid());
 				}
-
 				fetchedInstance.putTitle(mappedMarc.title())
 								.putSource(config.importSRS ? Instance.V_MARC : Instance.V_FOLIO)
 								.putInstanceTypeId(FolioData.getInstanceTypeId("text"))
@@ -116,9 +115,10 @@ public class OrderImport {
 								.putNatureOfContentTermIds(new JSONArray())
 								.putPrecedingTitles(new JSONArray())
 								.putSucceedingTitles(new JSONArray());
-
 				FolioAccess.callApiPut( FolioData.INSTANCES_PATH,  fetchedInstance);
+        // END OF INSTANCE
 
+				// RETRIEVE, UPDATE, AND PUT THE RELATED HOLDINGS RECORD
 				HoldingsRecord fetchedHoldingsRecord = HoldingsRecord.fromJson(
 								FolioAccess.callApiGetFirstObjectOfArray(
 												FolioData.HOLDINGS_STORAGE_PATH
@@ -131,7 +131,9 @@ public class OrderImport {
 					}
 				}
 				FolioAccess.callApiPut(FolioData.HOLDINGS_STORAGE_PATH, fetchedHoldingsRecord);
+        // END OF HOLDINGS RECORD
 
+				// RETRIEVE, UPDATE, AND PUT THE RELATED ITEM IF THE MARC RECORD HAS A DONOR
 				if (!mappedMarc.electronic() && mappedMarc.hasDonor()) {
 					//IF PHYSICAL RESOURCE WITH DONOR INFO, GET THE ITEM FOLIO CREATED, SO WE CAN ADD NOTE ABOUT DONOR
 					Item fetchedItem = Item.fromJson(
@@ -140,7 +142,9 @@ public class OrderImport {
 					fetchedItem.addBookplateNote(BookplateNote.createPhysicalBookplateNote(mappedMarc.donor()));
 					FolioAccess.callApiPut( FolioData.ITEMS_PATH, fetchedItem);
 				}
+        // END OF ITEM
 
+				// IMPORT INVOICE
 				if (config.importInvoice && mappedMarc.hasInvoice()) {
 					importInvoice(
 									fetchedPo.getPoNumber(),
@@ -150,10 +154,9 @@ public class OrderImport {
 									config);
 				}
 
-				//SAVE THE PO NUMBER FOR THE RESPONSE
+				// REPORT RESULTS TO THE CLIENT
 				responseMessage.put("PONumber",  fetchedPo.getPoNumber());
 				responseMessage.put("instanceHrid", fetchedInstance.getHrid());
-
 				if (config.folioUiUrl != null) {
 					if (config.folioUiInventoryPath != null) {
 						responseMessage.put("inventoryUrl",
@@ -169,7 +172,6 @@ public class OrderImport {
 														+ "?qindex=poNumber&query=" + fetchedPo.getPoNumber());
 					}
 				}
-
 				responseMessages.put(responseMessage);
 				counters.recordsImported++;
 
@@ -238,21 +240,14 @@ public class OrderImport {
 							   MarcRecordMapping marc,
 	               Config config) throws Exception {
 
-		//CREATE INVOICE OBJECTS
 		JSONObject invoice = JsonObjectBuilder.createInvoiceJson(poNumber, vendorId, marc, config);
 		JSONObject invoiceLine = JsonObjectBuilder.createInvoiceLineJson(orderLineUUID, marc, invoice);
-		//POST INVOICE OBJECTS
 		logger.info(
 						FolioAccess.callApiPostWithUtf8("invoice/invoices", invoice)
 										.toString());
 		logger.info(
 						FolioAccess.callApiPostWithUtf8("invoice/invoice-lines", invoiceLine)
 										.toString());
-	}
-
-
-	public ServletContext getMyContext() {
-		return myContext;
 	}
 
 	public void setMyContext(ServletContext myContext) {
