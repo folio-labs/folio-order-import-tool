@@ -130,10 +130,10 @@
                                                "paymentMethod",
                                                "permLocationWithInvoiceImport",
                                                "permELocationWithInvoiceImport",
-                                               "skipSRS",
                                                "showConfig",
                                                "exitOnConfigErrors",
                                                "exitOnFailedIdLookups",
+                                               "onValidationErrors",
                                                "folioUiUrl",
                                                "folioUiInventoryPath",
                                                "folioUiOrdersPath")) {
@@ -292,32 +292,47 @@ function showName() {
 <script id="importResponseTemplate" type="text/x-handlebars-template">
 <p class="title">Order import results<span style="color:#f5f5f5"></span></p>
 {{#each this}}
-  <br> Rec# {{recNo}}
-  {{#if error}}
-	<br> <b>Error: {{PONumber}}</b>
-	<br> {{error}}
+  {{#if isHeader}}
+    {{#if isCancelled}}
+      <br> <h3>The import was cancelled due to one or more records failing validation</h3>
+    {{else}}
+      {{#if isError}}
+        <br> <h4>{{error}}</h4>
+      {{/if}}
+    {{/if}}
+
   {{else}}
-    {{#if ordersUrl}}
-	    <br> <b>PO number: <a href="{{ordersUrl}}" target="orders">{{PONumber}}</a></b>
-	{{else}}
-	    <br> <b>PO number: {{PONumber}}</b>
-	{{/if}}
-  {{/if}}
-  <br> Title: {{title}}
-  {{#if inventoryUrl}}
-	    <br> Instance HRID: <a href="{{inventoryUrl}}" target="inventory">{{instanceHrid}}</a>
-  {{else}}
-        <br> Instance HRID: {{instanceHrid}}
-  {{/if}}
-  {{#if invalidIsbn}}
-    <br><b>Invalid ISBN: {{ISBN}}</b>
-  {{else if noIsbn}}
-    <br><b>ISBN: {{ISBN}}</b>
-  {{else}}
-    <br>ISBN: {{ISBN}}
-  {{/if}}
-  <br> Product identifiers: {{productIdentifiers}}
-  <br><pre><span class="inner-pre" style="font-size: 11px;">{{source}}</span></pre>
+      <br> Rec# {{recNo}}
+      {{#if isError}}
+        {{#if error}}
+          <br> <b>Error: {{PONumber}}</b>
+          <br> {{error}}
+        {{/if}}
+      {{else}}
+        {{#if ordersUrl}}
+            <br> <b>PO number: <a href="{{ordersUrl}}" target="orders">{{PONumber}}</a></b>
+        {{else}}
+            {{#if PONumber}}
+                <br> <b>PO number: {{PONumber}}</b>
+            {{/if}}
+        {{/if}}
+      {{/if}}
+      <br> Title: {{title}}
+      {{#if inventoryUrl}}
+            <br> Instance HRID: <a href="{{inventoryUrl}}" target="inventory">{{instanceHrid}}</a>
+      {{else}}
+            <br> Instance HRID: {{instanceHrid}}
+      {{/if}}
+      {{#if invalidIsbn}}
+        <br><b>Invalid ISBN: {{ISBN}}</b>
+      {{else if noIsbn}}
+        <br><b>ISBN: {{ISBN}}</b>
+      {{else}}
+        <br>ISBN: {{ISBN}}
+      {{/if}}
+      <br> Product identifiers: {{productIdentifiers}}
+      <br><pre><span class="inner-pre" style="font-size: 11px;">{{source}}</span></pre>
+   {{/if}}
 {{/each}}
 
 </script>

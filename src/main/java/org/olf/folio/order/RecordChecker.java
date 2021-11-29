@@ -17,6 +17,7 @@ import java.util.Map;
 
 public class RecordChecker {
 
+  boolean foundErrors = false;
   final Config config;
   private static Logger logger = Logger.getLogger(RecordChecker.class);
 
@@ -39,7 +40,7 @@ public class RecordChecker {
     return responseMessages;
   }
 
-  private JSONObject validateMarcRecord (MarcRecordMapping mappedMarc, int recNo) {
+  public JSONObject validateMarcRecord (MarcRecordMapping mappedMarc, int recNo) {
     JSONObject msg = new JSONObject();
     try {
       msg.put("recNo", recNo);
@@ -48,16 +49,21 @@ public class RecordChecker {
       msg.put("source", mappedMarc.marcRecord.toString());
 
       if (!mappedMarc.has980()) {
+        msg.put("isError", true);
         msg.put("error", String.format("Record #%s is missing the 980 field", recNo));
         msg.put("PONumber", "~error~");
         msg.put("title", mappedMarc.title());
+        foundErrors = true;
         return msg;
       }
 
       if (!mappedMarc.hasISBN()) {
-        msg.put("error", true);
+        msg.put("isError", true);
+        msg.put("error", "No ISBN." + ( config.onValidationErrorsSKipFailed ? " Record skipped " : "" ));
       } else if (!isValidIsbn(mappedMarc.getISBN())) {
-        msg.put("error", true);
+        foundErrors = true;
+        msg.put("error", "Invalid ISBN. " + ( config.onValidationErrorsSKipFailed ? " Record skipped " : "" ));
+        msg.put("isError", true);
       }
       msg.put("invalidIsbn", (mappedMarc.hasISBN() && !isValidIsbn(mappedMarc.getISBN())));
       msg.put("noIsbn", (!mappedMarc.hasISBN()));
@@ -76,34 +82,57 @@ public class RecordChecker {
       // MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
       for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
         if (entry.getValue()==null || entry.getValue().isEmpty()) {
-          msg.put("error", entry.getKey() + " Missing");
+          msg.put("error", entry.getKey() + " Missing. " + ( config.onValidationErrorsSKipFailed ? " Record skipped." : "" ) );
+          msg.put("isError", true);
+          foundErrors = true;
         }
       }
 
       //VALIDATE THE ORGANIZATION, OBJECT CODE AND FUND
       //STOP THE PROCESS IF ANY ERRORS WERE FOUND
       JSONObject orgValidationResult = FolioData.validateOrganization(mappedMarc.vendorCode(), mappedMarc.title());
-      if (orgValidationResult != null) msg.put("error", msg.getString("error") + " " + orgValidationResult.getString("error"));
+      if (orgValidationResult != null) {
+        msg.put("error", msg.getString("error") + " " + orgValidationResult.getString("error"));
+        msg.put("isError", true);
+        foundErrors = true;
+      }
 
       if (mappedMarc.hasObjectCode()) {
         JSONObject objectValidationResult = FolioData.validateObjectCode(mappedMarc.objectCode(), mappedMarc.title());
-        if (objectValidationResult != null) msg.put("error", msg.getString("error") + " " + objectValidationResult.getString("error"));
+        if (objectValidationResult != null) {
+          msg.put("error", msg.getString("error") + " " + objectValidationResult.getString("error"));
+          msg.put("isError", true);
+          foundErrors = true;
+        }
       }
       if (mappedMarc.hasProjectCode()) {
         // TODO: Check this
         JSONObject projectValidationResult = FolioData.validateObjectCode(mappedMarc.projectCode(), mappedMarc.title());
-        if (projectValidationResult != null) msg.put("error", msg.getString("error") + " " + projectValidationResult.getString("error"));
+        if (projectValidationResult != null) {
+          msg.put("error", msg.getString("error") + " " + projectValidationResult.getString("error"));
+          msg.put("isError", true);
+          foundErrors = true;
+        }
       }
       JSONObject fundValidationResult = FolioData.validateFund(mappedMarc.fundCode(), mappedMarc.title(), mappedMarc.price());
-      if (fundValidationResult != null) msg.put("error", msg.getString("error") + " " + fundValidationResult.getString("error"));
+      if (fundValidationResult != null) {
+        msg.put("error", msg.getString("error") + " " + fundValidationResult.getString("error"));
+        msg.put("isError", true);
+        foundErrors = true;
+      }
 
       if (config.importInvoice) {
         JSONObject invoiceValidationResult = FolioData.validateRequiredValuesForInvoice(mappedMarc.title(), mappedMarc.marcRecord);
-        if (invoiceValidationResult != null) msg.put("error", msg.getString("error") + " " + invoiceValidationResult.getString("error"));
+        if (invoiceValidationResult != null) {
+          msg.put("error", msg.getString("error") + " " + invoiceValidationResult.getString("error"));
+          msg.put("isError", true);
+          foundErrors = true;
+        }
       }
 
     }	catch(Exception e) {
       logger.error("Got exception when validating MARC record: " + e.getMessage() + " " + e.getClass());
+      msg.put("isError", true);
       msg.put("error", e.getMessage());
     }
     logger.info("Validation result: " + msg);
@@ -118,6 +147,10 @@ public class RecordChecker {
     } else {
       return false;
     }
+  }
+
+  public boolean errorsFound () {
+    return foundErrors;
   }
 
 }

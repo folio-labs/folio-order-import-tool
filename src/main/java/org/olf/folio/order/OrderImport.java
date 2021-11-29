@@ -11,9 +11,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.marc4j.MarcReader;
 import org.marc4j.MarcStreamReader;
-import org.marc4j.MarcStreamWriter;
-import org.marc4j.MarcWriter;
-import org.marc4j.converter.impl.AnselToUnicode;
 import org.marc4j.marc.Record;
 import org.apache.log4j.Logger;
 import org.olf.folio.order.dataobjects.BookplateNote;
@@ -25,7 +22,6 @@ import org.olf.folio.order.dataobjects.Link;
 import org.olf.folio.order.dataobjects.Note;
 import org.olf.folio.order.storage.FolioAccess;
 import org.olf.folio.order.storage.FolioData;
-import org.olf.folio.order.storage.SRSStorage;
 
 public class OrderImport {
 
@@ -41,7 +37,6 @@ public class OrderImport {
 		}
 		FolioAccess.initialize(config, logger);
 		JSONArray responseMessages = new JSONArray();
-		ByteArrayOutputStream byteArrayOutputStreamForSRS = null;
 
 		//GET THE UPLOADED FILE, EXIT IF NONE PROVIDED
 		if (fileName == null) {
@@ -52,9 +47,23 @@ public class OrderImport {
 			return responseMessages;
 		}
 
+		RecordChecker check = new RecordChecker(config);
 		if (analyze) {
-			RecordChecker check = new RecordChecker(config);
 			return check.validateMarcRecords(fileName);
+		} else if (config.onValidationErrorsCancelAll) {
+			JSONArray result = check.validateMarcRecords(fileName);
+			if (check.errorsFound()) {
+				JSONObject message = new JSONObject();
+				message.put("isHeader", true);
+				message.put("isCancelled", true);
+				message.put("error", "The import was cancelled due to one or more validation errors");
+				JSONArray response = new JSONArray();
+				response.put(message);
+				for (Object msg : result) {
+					response.put(msg);
+				}
+				return response;
+			}
 		}
 
 		InputStream in = new FileInputStream(config.uploadFilePath + fileName);
@@ -65,11 +74,17 @@ public class OrderImport {
 			try {
 				Record record = reader.next();
 				counters.recordsProcessed++;
-				responseMessage.put("source", record.toString());
 				MarcRecordMapping mappedMarc = new MarcRecordMapping(record);
-
-
-				//NOW WE CAN START CREATING THE PO!
+				if (config.onValidationErrorsSKipFailed) {
+					JSONObject result = check.validateMarcRecord(mappedMarc,counters.recordsProcessed);
+					if (result.has("error")) {
+						result.put("skipped", "record was not imported, due to validation errors");
+						responseMessages.put(result);
+						counters.recordsSkipped++;
+						continue;
+					}
+				}
+				responseMessage.put("source", record.toString());
 				responseMessage.put("recNo", counters.recordsProcessed);
 				responseMessage.put("title", mappedMarc.title());
 	  		responseMessage.put("ISBN", mappedMarc.hasISBN() ? mappedMarc.getISBN() : "No ISBN in this record");
@@ -100,13 +115,8 @@ public class OrderImport {
 				// RETRIEVE, UPDATE, AND PUT THE RELATED INSTANCE
 				Instance fetchedInstance = Instance.fromJson(
 												FolioAccess.callApiGetById(FolioData.INSTANCES_PATH, fetchedPo.getInstanceId()));
-				if ( config.importSRS ) {
-					if (byteArrayOutputStreamForSRS == null )
-						byteArrayOutputStreamForSRS = getOutputStreamForSRS();
-					SRSStorage.storeMarcToSRS(record,	byteArrayOutputStreamForSRS, fetchedPo.getInstanceId(),	fetchedInstance.getHrid());
-				}
 				fetchedInstance.putTitle(mappedMarc.title())
-								.putSource(config.importSRS ? Instance.V_MARC : Instance.V_FOLIO)
+								.putSource(Instance.V_FOLIO)
 								.putInstanceTypeId(FolioData.getInstanceTypeId("text"))
 								.putIdentifiers(mappedMarc.getInstanceIdentifiers())
 								.putContributors(mappedMarc.getContributorsForInstance())
@@ -174,7 +184,6 @@ public class OrderImport {
 				}
 				responseMessages.put(responseMessage);
 				counters.recordsImported++;
-
 			}	catch(Exception e) {
 				logger.error(e.toString());
 				counters.recordsFailed++;
@@ -193,12 +202,21 @@ public class OrderImport {
 				responseMessages.put(responseMessage);
 			}
 		}
-		logger.info(counters.recordsProcessed + " record" + (counters.recordsProcessed == 1 ? "" : "s")
-						+ " processed, "
-						+ counters.recordsImported + " record" + (counters.recordsImported == 1 ? "" : "s")
-		        + " imported, and "
-						+ counters.recordsFailed + " record" + (counters.recordsFailed == 1 ? "" : "s")
-						+ " failed.");
+		if (counters.recordsSkipped>0 || counters.recordsFailed>0) {
+			JSONObject message = new JSONObject();
+			message.put("isHeader", true);
+			message.put("isError", true);
+			message.put("error", counters.recordsSkipped
+							+ " records where skipped due to validation errors. "
+							+ counters.recordsFailed + " records failed during import. "
+							+ counters.recordsImported + " records were imported ");
+			JSONArray response = new JSONArray();
+			response.put(message);
+			for (Object msg : responseMessages) {
+				response.put(msg);
+			}
+			responseMessages = response;
+		}
 		return responseMessages;
 	}
 
@@ -223,14 +241,6 @@ public class OrderImport {
 			String materialTypeId = Constants.MATERIAL_TYPES_MAP.get(config.materialType);
 			newCompositePurchaseOrder.setMaterialTypeOnPoLines(materialTypeId);
 		}
-	}
-
-	private ByteArrayOutputStream getOutputStreamForSRS() {
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		MarcWriter w = new MarcStreamWriter(byteArrayOutputStream,"UTF-8");
-		AnselToUnicode conv = new AnselToUnicode();
-		w.setConverter(conv);
-		return byteArrayOutputStream;
 	}
 
 	public static void importInvoice(

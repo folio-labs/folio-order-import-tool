@@ -1,7 +1,5 @@
 package org.olf.folio.order.listeners;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Iterator;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -10,6 +8,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
+import org.olf.folio.order.Config;
 
 public class ConfigurationListener implements ServletContextListener {
 
@@ -45,13 +44,13 @@ public class ConfigurationListener implements ServletContextListener {
 			logger.info(" ");
 			check.report();
 			if (!passed) {
-				if ("true".equalsIgnoreCase(config.getString("exitOnConfigErrors"))) {
+				if ("true".equalsIgnoreCase(config.getString(Config.P_EXIT_ON_CONFIG_ERRORS))) {
 					throw new ConfigurationException(
 									"SOME CONFIGURATION PROBLEMS ENCOUNTERED - SEE PREVIOUS LOG LINES");
 				}
 			}
 			if (!check.resolvedCodesAndNames()) {
-				if ("true".equalsIgnoreCase(config.getString("exitOnFailedIdLookups"))) {
+				if ("true".equalsIgnoreCase(config.getString(Config.P_EXIT_ON_FAILED_ID_LOOKUPS))) {
 					throw new ConfigurationException(
 									"ONE OR MORE CODES/NAMES WHERE NOT FOUND"
 					);

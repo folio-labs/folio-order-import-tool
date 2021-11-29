@@ -4,6 +4,7 @@ import org.json.JSONObject;
 import org.marc4j.MarcJsonWriter;
 import org.marc4j.MarcStreamWriter;
 import org.marc4j.MarcWriter;
+import org.marc4j.converter.impl.AnselToUnicode;
 import org.marc4j.marc.ControlField;
 import org.marc4j.marc.DataField;
 import org.marc4j.marc.MarcFactory;
@@ -15,6 +16,15 @@ import java.util.UUID;
 
 public class SRSStorage extends FolioAccess {
 
+  public ByteArrayOutputStream getOutputStream() {
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    MarcWriter w = new MarcStreamWriter(byteArrayOutputStream,"UTF-8");
+    AnselToUnicode conv = new AnselToUnicode();
+    w.setConverter(conv);
+    return byteArrayOutputStream;
+  }
+
+  
   public static void storeMarcToSRS(Record record, ByteArrayOutputStream byteArrayOutputStream, String instanceId, String hrid ) throws Exception
   {
     logger.info("Storing MARC to SRS");

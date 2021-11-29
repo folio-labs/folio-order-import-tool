@@ -18,17 +18,6 @@ import java.util.Map;
 
 public class ConfigurationCheck {
 
-  private static final String P_BASE_OKAPI_ENDPOINT = "baseOkapiEndpoint";
-  private static final String P_BASE_OKAP_ENDPOINT = "baseOkapEndpoint"; // previous spelling
-  private static final String P_TENANT = "tenant";
-  private static final String P_OKAPI_USERNAME = "okapi_username";
-  private static final String P_OKAPI_PASSWORD = "okapi_password";
-  private static final String P_FISCAL_YEAR_CODE = "fiscalYearCode";
-  private static final String P_NOTE_TYPE = "noteType";
-  private static final String P_MATERIAL_TYPE = "materialType";
-  private static final String P_PERM_LOCATION = "permLocation";
-  private static final String P_PERM_E_LOCATION = "permELocation";
-
   private final CompositeConfiguration config;
   private final ServletContext context;
   private final Map<String,String> propertyErrors = new HashMap<>();
@@ -45,7 +34,7 @@ public class ConfigurationCheck {
   private boolean authenticationPassed = true;
   private boolean urlPassed = true;
   private boolean codesAndNamesExist = true;
-
+  private boolean validOnAnalysisErrorsSetting = true;
 
   public boolean validateConfiguration () {
     allMandatoryPresent = checkMissingMandatoryProperties();
@@ -56,7 +45,27 @@ public class ConfigurationCheck {
         codesAndNamesExist = validateCodesAndNames ();
       }
     }
-    return (allMandatoryPresent && authenticationPassed && urlPassed);
+    validOnAnalysisErrorsSetting = configOnValidationErrorsIsValid();
+    return (allMandatoryPresent && authenticationPassed && urlPassed && validOnAnalysisErrorsSetting);
+  }
+
+  public boolean configOnValidationErrorsIsValid() {
+    if (config.containsKey(Config.P_ON_VALIDATION_ERRORS)) {
+      List<String> validValues = Arrays.asList(
+              Config.V_ON_VALIDATION_ERRORS_CANCEL_ALL,
+              Config.V_ON_VALIDATION_ERRORS_SKIP_FAILED,
+              Config.V_ON_VALIDATION_ERRORS_ATTEMPT_IMPORT);
+      String val = config.getString(Config.P_ON_VALIDATION_ERRORS);
+      if (validValues.contains(val)) {
+        return true;
+      } else {
+        addPropertyError(Config.P_ON_VALIDATION_ERRORS,
+                "The value [" + val + "] not valid for this config property, " +
+                        "should be one of " + validValues);
+        return false;
+      }
+    }
+    return true;
   }
 
   public List<String> getMissingMandatoryProperties () {
@@ -107,19 +116,20 @@ public class ConfigurationCheck {
   private boolean checkMissingMandatoryProperties () {
     boolean passed = true;
     for (String prop : Arrays.asList(
-            P_OKAPI_USERNAME,
-            P_OKAPI_PASSWORD,
-            P_TENANT,
-            P_FISCAL_YEAR_CODE,
-            P_NOTE_TYPE)) {
+            Config.P_OKAPI_USERNAME,
+            Config.P_OKAPI_PASSWORD,
+            Config.P_TENANT,
+            Config.P_FISCAL_YEAR_CODE,
+            Config.P_NOTE_TYPE)) {
       if (!config.containsKey(prop)) {
         passed = false;
         addMissingMandatoryProperty(prop);
       }
     }
-    if (!config.containsKey(P_BASE_OKAPI_ENDPOINT) && !config.containsKey(P_BASE_OKAP_ENDPOINT)) {
+    if (!config.containsKey(Config.P_BASE_OKAPI_ENDPOINT) && !config.containsKey(
+            Config.P_BASE_OKAP_ENDPOINT)) {
       passed = false;
-      addMissingMandatoryProperty(P_BASE_OKAPI_ENDPOINT);
+      addMissingMandatoryProperty(Config.P_BASE_OKAPI_ENDPOINT);
     }
     if (passed) {
       logger.info(" ");
@@ -129,14 +139,15 @@ public class ConfigurationCheck {
   }
 
   private boolean checkBaseOkapiEndpointUrl () {
-    if (config.containsKey(P_BASE_OKAPI_ENDPOINT) || config.containsKey(P_BASE_OKAP_ENDPOINT)) {
-      String baseOkapiEndpoint = config.containsKey(P_BASE_OKAPI_ENDPOINT)
-              ? config.getString(P_BASE_OKAPI_ENDPOINT)
-              : config.getString(P_BASE_OKAP_ENDPOINT);
+    if (config.containsKey(Config.P_BASE_OKAPI_ENDPOINT) || config.containsKey(
+            Config.P_BASE_OKAP_ENDPOINT)) {
+      String baseOkapiEndpoint = config.containsKey(Config.P_BASE_OKAPI_ENDPOINT)
+              ? config.getString(Config.P_BASE_OKAPI_ENDPOINT)
+              : config.getString(Config.P_BASE_OKAP_ENDPOINT);
       try {
         new URL(baseOkapiEndpoint);
       } catch (MalformedURLException mue) {
-        addPropertyError(P_BASE_OKAPI_ENDPOINT, mue.getMessage());
+        addPropertyError(Config.P_BASE_OKAPI_ENDPOINT, mue.getMessage());
         return false;
       }
       logger.info(" ");
@@ -163,50 +174,50 @@ public class ConfigurationCheck {
   private boolean validateCodesAndNames () {
     boolean allCodesAndNamesResolved = true;
     try {
-      String fiscalYearCode = config.getString(P_FISCAL_YEAR_CODE);
+      String fiscalYearCode = config.getString(Config.P_FISCAL_YEAR_CODE);
       String fiscalYearId = FolioData.getFiscalYearId(fiscalYearCode);
       logger.info(" ");
       if (fiscalYearId == null) {
-        addPropertyError(P_FISCAL_YEAR_CODE, "Could not find fiscal year record for code [" + fiscalYearCode + "]");
+        addPropertyError(Config.P_FISCAL_YEAR_CODE, "Could not find fiscal year record for code [" + fiscalYearCode + "]");
         allCodesAndNamesResolved = false;
       } else {
         logger.info("Found ID [" + fiscalYearId + "] for fiscal year code [" + fiscalYearCode + "]");
       }
-      String permLocation = config.getString(P_PERM_LOCATION);
+      String permLocation = config.getString(Config.P_PERM_LOCATION);
       if (permLocation != null && !permLocation.equalsIgnoreCase("NA")) {
         String permLocationId = FolioData.getLocationIdByName(permLocation);
         if (permLocationId == null) {
-          addPropertyError(P_PERM_LOCATION, "Could not find location by the name [" + permLocation + "]");
+          addPropertyError(Config.P_PERM_LOCATION, "Could not find location by the name [" + permLocation + "]");
           allCodesAndNamesResolved = false;
         } else {
           logger.info("Found ID [" + permLocationId + "] for location name [" + permLocation + "]");
         }
       }
-      String permELocation = config.getString(P_PERM_E_LOCATION);
+      String permELocation = config.getString(Config.P_PERM_E_LOCATION);
       if (permELocation != null && !permELocation.equalsIgnoreCase("NA")) {
         String permELocationId = FolioData.getLocationIdByName(permELocation);
         if (permELocationId == null) {
-          addPropertyError(P_PERM_E_LOCATION, "Could not find location by the name [" + permELocation + "]");
+          addPropertyError(Config.P_PERM_E_LOCATION, "Could not find location by the name [" + permELocation + "]");
           allCodesAndNamesResolved = false;
         } else {
           logger.info("Found ID [" + permELocationId + "] for location name [" + permLocation + "]");
         }
       }
-      String noteType = config.getString(P_NOTE_TYPE);
+      String noteType = config.getString(Config.P_NOTE_TYPE);
       if (noteType != null && !noteType.isEmpty()) {
         String noteTypeId = FolioData.getNoteTypeIdByName(noteType);
         if (noteTypeId == null) {
-          addPropertyError(P_NOTE_TYPE, "Could not find note type by the name [" + noteType + "]");
+          addPropertyError(Config.P_NOTE_TYPE, "Could not find note type by the name [" + noteType + "]");
           allCodesAndNamesResolved = false;
         } else {
           logger.info("Found ID [" + noteTypeId + "] for note type name [" + noteType + "]");
         }
       }
-      String materialType = config.getString(P_MATERIAL_TYPE);
+      String materialType = config.getString(Config.P_MATERIAL_TYPE);
       if (materialType != null && !materialType.isEmpty() && !materialType.equalsIgnoreCase("NA")) {
         String materialTypeId = Constants.MATERIAL_TYPES_MAP.get(materialType);
         if (materialTypeId == null) {
-          addPropertyError(P_MATERIAL_TYPE, "Could not find material type by the name [" + materialType + "]");
+          addPropertyError(Config.P_MATERIAL_TYPE, "Could not find material type by the name [" + materialType + "]");
           allCodesAndNamesResolved = false;
         } else {
           logger.info("Found ID [" + materialTypeId + "] for material type name [" + materialType + "]");

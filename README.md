@@ -25,15 +25,6 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
     - Importing an invoice is mandatory: Set `importInvoice = true` and `failIfNoInvoiceData = true`
 * Will import one invoice and one invoice line
 
-#### Optional SRS import
-
-* By default, the script will not attempt to import the MARC record to SRS.
-* Importing the MARC record to SRS can be turned on by setting the optional config parameter `importSRS` to `true` in
-  import.properties:
-    - `importSRS = true`. However, currently SRS will probably reject the script's attempt to subsequently update the
-      Instance as certain Instance properties handled by this script are blocked when an SRS record exists.
-* Leaving `importSRS` out or setting it to something else than `true` will make the script skip the SRS import.
-
 ### API Calls
 
 * Several get calls to initialize reference values (like instance types, material types, note types)
