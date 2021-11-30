@@ -1,6 +1,5 @@
 package org.olf.folio.order.recordvalidation;
 
-import org.apache.log4j.Logger;
 import org.folio.isbn.IsbnUtil;
 import org.json.JSONObject;
 import org.marc4j.MarcReader;
@@ -19,7 +18,6 @@ import java.util.Map;
 public class RecordChecker {
 
   final Config config;
-  private static Logger logger = Logger.getLogger(RecordChecker.class);
 
   public RecordChecker (Config config) {
     this.config = config;
@@ -38,20 +36,18 @@ public class RecordChecker {
     return validationResults.toJson();
   }
 
-  public void validateMarcRecord (MarcRecordMapping mappedMarc, RecordResult result) {
+  public void validateMarcRecord (MarcRecordMapping mappedMarc, RecordResult outcome) {
     try {
-      result.setInputMarcData(mappedMarc);
+      outcome.setInputMarcData(mappedMarc);
 
       if (!mappedMarc.has980()) {
-        result
-                .addValidationMessageIfNotNull("Record is missing the 980 field")
+        outcome.addValidationMessageIfNotNull("Record is missing the 980 field")
                 .markSkipped(config.onValidationErrorsSKipFailed);
         return;
       }
 
       if (mappedMarc.hasISBN() && !isValidIsbn(mappedMarc.getISBN())) {
-        result
-                .addValidationMessageIfNotNull("ISBN is invalid")
+        outcome.addValidationMessageIfNotNull("ISBN is invalid")
                 .markSkipped(config.onValidationErrorsSKipFailed);
       }
 
@@ -66,7 +62,7 @@ public class RecordChecker {
       // MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
       for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
         if (entry.getValue()==null || entry.getValue().isEmpty()) {
-          result.addValidationMessageIfNotNull("Mandatory data element " + entry.getKey() + " missing.")
+          outcome.addValidationMessageIfNotNull("Mandatory data element " + entry.getKey() + " missing.")
                   .markSkipped(config.onValidationErrorsSKipFailed);
         }
       }
@@ -75,30 +71,30 @@ public class RecordChecker {
       //STOP THE PROCESS IF ANY ERRORS WERE FOUND
       String orgValidationResult = FolioData.validateOrganization(mappedMarc.vendorCode(), mappedMarc.title());
       if (orgValidationResult != null) {
-        result.addValidationMessageIfNotNull(orgValidationResult)
+        outcome.addValidationMessageIfNotNull(orgValidationResult)
                 .markSkipped(config.onValidationErrorsSKipFailed);
       }
 
       if (mappedMarc.hasObjectCode()) {
-        result.addValidationMessageIfNotNull(
+        outcome.addValidationMessageIfNotNull(
                 FolioData.validateObjectCode(mappedMarc.objectCode(), mappedMarc.title()))
                 .markSkipped(config.onValidationErrorsSKipFailed);
       }
       if (mappedMarc.hasProjectCode()) {
-        result.addValidationMessageIfNotNull(
+        outcome.addValidationMessageIfNotNull(
                 FolioData.validateObjectCode(mappedMarc.projectCode(), mappedMarc.title()))
                 .markSkipped(config.onValidationErrorsSKipFailed);
       }
       //result.addErrorMessageIfNotNull(FolioData.validateFund(mappedMarc.fundCode()));
 
       if (config.importInvoice) {
-        result.addValidationMessageIfNotNull(
+        outcome.addValidationMessageIfNotNull(
                 FolioData.validateRequiredValuesForInvoice(mappedMarc.title(), mappedMarc.getRecord()))
                 .markSkipped(config.onValidationErrorsSKipFailed);
       }
 
     }	catch(Exception e) {
-      result.addValidationMessageIfNotNull("Got exception when validating MARC record: " + e.getMessage() + " " + e.getClass());
+      outcome.addValidationMessageIfNotNull("Got exception when validating MARC record: " + e.getMessage() + " " + e.getClass());
     }
   }
 

@@ -163,7 +163,7 @@ public class JsonObjectBuilder {
   final static String INVOICE_LINE_STATUS = "Open";
   final static boolean RELEASE_ENCUMBRANCE = true;
 
-  static JSONObject createInvoiceJson(String poNumber, String vendorId, MarcRecordMapping marc, Config config) {
+  static JSONObject createInvoiceJson(String poNumber, MarcRecordMapping marc, Config config) throws Exception {
     JSONObject invoice = new JSONObject();
     invoice.put("id", UUID.randomUUID());
     invoice.put("poNumbers", (new JSONArray()).put(poNumber)); // optional
@@ -174,7 +174,7 @@ public class JsonObjectBuilder {
     invoice.put("status", STATUS); // required
     invoice.put("source", SOURCE); // required
     invoice.put("vendorInvoiceNo", marc.vendorInvoiceNo()); // required
-    invoice.put("vendorId", vendorId); // required
+    invoice.put("vendorId", marc.vendorUuid()); // required
     return invoice;
   }
 
