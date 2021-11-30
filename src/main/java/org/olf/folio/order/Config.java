@@ -22,7 +22,7 @@ public class Config {
   public static final String P_PERM_E_LOCATION = "permELocation";
   public static final String P_PERM_LOCATION_WITH_INVOICE_IMPORT = "permLocationWithInvoice";
   public static final String P_PERM_E_LOCATION_WITH_INVOICE_IMPORT = "permELocationWithInvoiceImport";
-  public static final String P_TEXT_FOR_ELECTRONIC_RESOURCE = "textForElectronicResource";
+  public static final String P_TEXT_FOR_ELECTRONIC_RESOURCES = "textForElectronicResources";
   public static final String P_PAYMENT_METHOD = "paymentMethod";
   // PROCESSING INSTRUCTIONS
   public static final String P_OBJECT_CODE_REQUIRED = "objectCodeRequired";
@@ -52,7 +52,7 @@ public class Config {
   public String permELocationName;
   public String noteTypeName;
   public String materialType;
-  public String textForElectronicResource;
+  public String textForElectronicResources;
   public boolean objectCodeRequired;
   public boolean importInvoice;
   public boolean failIfNoInvoiceData;
@@ -89,7 +89,7 @@ public class Config {
     noteTypeName = (String) context.getAttribute(P_NOTE_TYPE);
     materialType = (String) context.getAttribute(P_MATERIAL_TYPE);
     paymentMethod = (String) context.getAttribute(P_PAYMENT_METHOD);
-    textForElectronicResource = (String) context.getAttribute(P_TEXT_FOR_ELECTRONIC_RESOURCE);
+    textForElectronicResources = (String) context.getAttribute(P_TEXT_FOR_ELECTRONIC_RESOURCES);
     // Processing instructions
     // objectCode is required unless objectCodeRequired is explicitly set to false in import.properties
     exitOnConfigErrors = "true".equalsIgnoreCase((String) context.getAttribute(P_EXIT_ON_CONFIG_ERRORS));
