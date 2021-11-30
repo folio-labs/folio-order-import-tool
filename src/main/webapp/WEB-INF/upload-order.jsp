@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Order upload Demo</title>
+	<title>FOLIO Order import tool</title>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.1/css/bulma.min.css">
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -63,7 +63,7 @@
 	<br>
 	<div class="container">
 		<div class="field">
-			<label class="label">FOLIO Order Import Tool</label>
+			<label class="label">FOLIO Order import tool</label>
 		</div>
 	</div>
 	<!--CONTENTS-->
@@ -77,7 +77,7 @@
 							<div id="tabs-with-content">
 								<div class="tabs is-centered">
 									<ul>
-										<li><a>Upload Order</a></li>
+										<li><a>Upload Orders</a></li>
 										<li><a>View Configuration</a></li>
 									</ul>
 								</div>
@@ -88,7 +88,7 @@
 												<label class="file-label">
 												  <input class="file-input" type="file" name="order-file" id="order-file" onchange="showName()"> <span class="file-cta">
 														<span class="file-icon"> <i class="fas fa-upload"></i>
-													</span> <span class="file-label"> Choose a file... </span> </span> <span class="file-name" id="file-name"> .... </span> </label>
+													</span> <span class="file-label"> Choose a MARC file... </span> </span> <span class="file-name" id="file-name"> .... </span> </label>
 											</div>
 										</form>
 										<br>
