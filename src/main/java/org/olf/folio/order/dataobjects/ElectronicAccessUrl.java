@@ -18,19 +18,21 @@ public class ElectronicAccessUrl extends JsonDataObject {
   private static final String LICENSE_NOTE         = "z";
 
 
-  public static JSONArray getElectronicAccessFromMarcRecord (MarcRecordMapping mappedMarc) {
+  public static JSONArray getElectronicAccessFromMarcRecord (MarcRecordMapping mappedMarc, String defaultLinkText) {
     JSONArray electronicAccess = new JSONArray();
     for (DataField d856 : mappedMarc.getAll856s()) {
       if (d856.getSubfieldsAsString(URI) != null) {
         electronicAccess.put(new ElectronicAccessUrl()
-                .putLinkTextIfPresent(d856.getSubfieldsAsString(LINK_TEXT))
+                .putLinkTextIfPresent(
+                        present(d856.getSubfieldsAsString(LINK_TEXT))
+                        ? d856.getSubfieldsAsString(LINK_TEXT) : defaultLinkText)
                 .putUri(d856.getSubfieldsAsString(URI))
                 .putPublicNoteIfPresent(d856.getSubfieldsAsString(LICENSE_NOTE))
                 .putRelationshipId(Constants.ELECTRONIC_ACCESS_RELATIONSHIP_TYPE_RESOURCE)
                 .asJson());
       }
     }
-    return null;
+    return electronicAccess;
   }
 
   public ElectronicAccessUrl putLinkText (String linkText) {
