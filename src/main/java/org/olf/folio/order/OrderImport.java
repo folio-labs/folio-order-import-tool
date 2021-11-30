@@ -60,106 +60,81 @@ public class OrderImport {
 			try {
 				Record record = reader.next();
 				MarcRecordMapping mappedMarc = new MarcRecordMapping(record);
-				if (config.onValidationErrorsSKipFailed) {
-					new RecordChecker(config).validateMarcRecord(mappedMarc, recordResult);
-				}
-				// CREATE AND POST THE PURCHASE ORDER AND LINE
-				CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
-				setPreconfiguredValues(compositePo, mappedMarc);
+  			new RecordChecker(config).validateMarcRecord(mappedMarc, recordResult);
+				if (!recordResult.isSkipped()) {
+					// RECORD VALIDATION PASSED OR SERVICE IS CONFIGURED TO ATTEMPT IMPORT IN ANY CASE
+					// CREATE AND POST THE PURCHASE ORDER AND LINE
+					CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
+					setPreconfiguredValues(compositePo, mappedMarc);
+					logger.info("We created the Purchase Order JSON from MARC etc.");
 
-				logger.info("We create the Purchase Order JSON.");
-				FolioAccess.callApiPostWithUtf8(FolioData.COMPOSITE_ORDERS_PATH, compositePo);
-        logger.info("We posted the Purchase Order JSON to FOLIO.");
-				recordResult
-								.setPoNumber(compositePo.getPoNumber())
-								.setPoUiUrl(
-												config.folioUiUrl, config.folioUiOrdersPath,
-												compositePo.getId(), compositePo.getPoNumber());
+					FolioAccess.callApiPostWithUtf8(FolioData.COMPOSITE_ORDERS_PATH, compositePo);
+					logger.info("We posted the Purchase Order JSON to FOLIO.");
+					recordResult.setPoNumber(compositePo.getPoNumber()).setPoUiUrl(config.folioUiUrl, config.folioUiOrdersPath,
+									compositePo.getId(), compositePo.getPoNumber());
 
-				//INSERT A NOTE IF THERE IS ONE IN THE MARC RECORD
-				if (mappedMarc.hasNotes()
-								&& compositePo.hasPoLines() && config.noteTypeName != null) {
-					Note note = new Note()
-									.addLink(new Link()
-													.putType(Link.V_PO_LINE)
-													.putId(compositePo.getCompositePoLines().get(0).getId()))
-									.putTypeId(FolioData.getNoteTypeIdByName(config.noteTypeName))
-									.putDomain(Note.V_ORDERS)
-									.putContent(mappedMarc.notes())
-									.putTitle(mappedMarc.notes());
-					logger.info("We created a Note JSON.");
-					FolioAccess.callApiPostWithUtf8(FolioData.NOTES_PATH,note.asJson());
-					logger.info("We posted the Note JSON to FOLIO.");
-				}
-
-				// GET THE UPDATED PURCHASE ORDER FROM FOLIO AND PULL OUT THE ID OF THE RELATED INSTANCE
-				CompositePurchaseOrder fetchedPo = CompositePurchaseOrder.fromJson(
-								FolioAccess.callApiGetById(FolioData.COMPOSITE_ORDERS_PATH, compositePo.getId()));
-				logger.info("We fetched the updated Purchase Order from FOLIO.");
-				// RETRIEVE, UPDATE, AND PUT THE RELATED INSTANCE
-				Instance fetchedInstance = Instance.fromJson(
-												FolioAccess.callApiGetById(FolioData.INSTANCES_PATH, fetchedPo.getInstanceId()));
-				logger.info("We fetched the linked Instance from FOLIO.");
-				fetchedInstance.putTitle(mappedMarc.title())
-								.putSource(Instance.V_FOLIO)
-								.putInstanceTypeId(FolioData.getInstanceTypeId("text"))
-								.putIdentifiers(mappedMarc.getInstanceIdentifiers())
-								.putContributors(mappedMarc.getContributorsForInstance())
-								.putDiscoverySuppress(false)
-								.putElectronicAccess(mappedMarc.getElectronicAccess(config.textForElectronicResources))
-								.putNatureOfContentTermIds(new JSONArray())
-								.putPrecedingTitles(new JSONArray())
-								.putSucceedingTitles(new JSONArray());
-				logger.info("We updated the fetched Instance JSON.");
-				FolioAccess.callApiPut( FolioData.INSTANCES_PATH,  fetchedInstance);
-				logger.info("We posted the updated Instance JSON to FOLIO.");
-        // END OF INSTANCE
-				recordResult
-								.setInstanceHrid(fetchedInstance.getHrid())
-								.setInstanceUiUrl(
-												config.folioUiUrl, config.folioUiInventoryPath,
-												fetchedInstance.getId(), fetchedInstance.getHrid());
-
-				// RETRIEVE, UPDATE, AND PUT THE RELATED HOLDINGS RECORD
-				HoldingsRecord fetchedHoldingsRecord = HoldingsRecord.fromJson(
-								FolioAccess.callApiGetFirstObjectOfArray(
-												FolioData.HOLDINGS_STORAGE_PATH
-																+ "?query=(instanceId==" + fetchedInstance.getId() + ")", FolioData.HOLDINGS_RECORDS_ARRAY)	);
-				logger.info("We fetched the related Holdings Record from FOLIO.");
-				fetchedHoldingsRecord.putElectronicAccess(mappedMarc.getElectronicAccess(config.textForElectronicResources));
-				if (mappedMarc.electronic()) {
-					fetchedHoldingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName("Electronic"));
-					if (mappedMarc.hasDonor()) {
-						fetchedHoldingsRecord.addBookplateNote(BookplateNote.createElectronicBookplateNote(mappedMarc.donor()));
+					//INSERT A NOTE IF THERE IS ONE IN THE MARC RECORD
+					if (mappedMarc.hasNotes() && compositePo.hasPoLines() && config.noteTypeName != null) {
+						Note note = new Note().addLink(new Link().putType(Link.V_PO_LINE).putId(compositePo.getCompositePoLines().get(0).getId())).putTypeId(
+										FolioData.getNoteTypeIdByName(config.noteTypeName)).putDomain(Note.V_ORDERS).putContent(mappedMarc.notes()).putTitle(mappedMarc.notes());
+						logger.info("We created a Note JSON.");
+						FolioAccess.callApiPostWithUtf8(FolioData.NOTES_PATH, note.asJson());
+						logger.info("We posted the Note JSON to FOLIO.");
 					}
-				}
-				logger.info("We updated the fetched Holdings Record JSON.");
-				FolioAccess.callApiPut(FolioData.HOLDINGS_STORAGE_PATH, fetchedHoldingsRecord);
-				logger.info("We put the updated Holdings Record JSON to FOLIO.");
-        // END OF HOLDINGS RECORD
 
-				// RETRIEVE, UPDATE, AND PUT THE RELATED ITEM IF THE MARC RECORD HAS A DONOR
-				if (!mappedMarc.electronic() && mappedMarc.hasDonor()) {
-					//IF PHYSICAL RESOURCE WITH DONOR INFO, GET THE ITEM FOLIO CREATED, SO WE CAN ADD NOTE ABOUT DONOR
-					Item fetchedItem = Item.fromJson(
-									FolioAccess.callApiGetFirstObjectOfArray(
-													FolioData.ITEMS_PATH + "?query=(holdingsRecordId==" + fetchedHoldingsRecord.getId() + ")", FolioData.ITEMS_ARRAY));
-					logger.info("We fetched the related Item from FOLIO.");
-					fetchedItem.addBookplateNote(BookplateNote.createPhysicalBookplateNote(mappedMarc.donor()));
-					logger.info("We updated the fetched Item JSON.");
-					FolioAccess.callApiPut( FolioData.ITEMS_PATH, fetchedItem);
-					logger.info("We put the updated Item JSON to FOLIO.");
-				}
-        // END OF ITEM
+					// GET THE UPDATED PURCHASE ORDER FROM FOLIO AND PULL OUT THE ID OF THE RELATED INSTANCE
+					CompositePurchaseOrder fetchedPo = CompositePurchaseOrder.fromJson(FolioAccess.callApiGetById(FolioData.COMPOSITE_ORDERS_PATH, compositePo.getId()));
+					logger.info("We fetched the updated Purchase Order from FOLIO.");
+					// RETRIEVE, UPDATE, AND PUT THE RELATED INSTANCE
+					Instance fetchedInstance = Instance.fromJson(FolioAccess.callApiGetById(FolioData.INSTANCES_PATH, fetchedPo.getInstanceId()));
+					logger.info("We fetched the linked Instance from FOLIO.");
+					fetchedInstance.putTitle(mappedMarc.title()).putSource(Instance.V_FOLIO).putInstanceTypeId(
+									FolioData.getInstanceTypeId("text")).putIdentifiers(mappedMarc.getInstanceIdentifiers()).putContributors(
+									mappedMarc.getContributorsForInstance()).putDiscoverySuppress(false).putElectronicAccess(mappedMarc.getElectronicAccess(
+									config.textForElectronicResources)).putNatureOfContentTermIds(new JSONArray()).putPrecedingTitles(new JSONArray()).putSucceedingTitles(
+									new JSONArray());
+					logger.info("We updated the fetched Instance JSON.");
+					FolioAccess.callApiPut(FolioData.INSTANCES_PATH, fetchedInstance);
+					logger.info("We posted the updated Instance JSON to FOLIO.");
+					// END OF INSTANCE
+					recordResult.setInstanceHrid(fetchedInstance.getHrid()).setInstanceUiUrl(config.folioUiUrl, config.folioUiInventoryPath,
+									fetchedInstance.getId(), fetchedInstance.getHrid());
 
-				// IMPORT INVOICE
-				if (config.importInvoice && mappedMarc.hasInvoice()) {
-					importInvoice(
-									fetchedPo.getPoNumber(),
-									UUID.fromString(fetchedPo.getCompositePoLines().get(0).getId()),
-									mappedMarc.vendorUuid(),
-									mappedMarc,
-									config);
+					// RETRIEVE, UPDATE, AND PUT THE RELATED HOLDINGS RECORD
+					HoldingsRecord fetchedHoldingsRecord = HoldingsRecord.fromJson(
+									FolioAccess.callApiGetFirstObjectOfArray(FolioData.HOLDINGS_STORAGE_PATH + "?query=(instanceId==" + fetchedInstance.getId() + ")",
+													FolioData.HOLDINGS_RECORDS_ARRAY));
+					logger.info("We fetched the related Holdings Record from FOLIO.");
+					fetchedHoldingsRecord.putElectronicAccess(mappedMarc.getElectronicAccess(config.textForElectronicResources));
+					if (mappedMarc.electronic()) {
+						fetchedHoldingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName("Electronic"));
+						if (mappedMarc.hasDonor()) {
+							fetchedHoldingsRecord.addBookplateNote(BookplateNote.createElectronicBookplateNote(mappedMarc.donor()));
+						}
+					}
+					logger.info("We updated the fetched Holdings Record JSON.");
+					FolioAccess.callApiPut(FolioData.HOLDINGS_STORAGE_PATH, fetchedHoldingsRecord);
+					logger.info("We put the updated Holdings Record JSON to FOLIO.");
+					// END OF HOLDINGS RECORD
+
+					// RETRIEVE, UPDATE, AND PUT THE RELATED ITEM IF THE MARC RECORD HAS A DONOR
+					if (!mappedMarc.electronic() && mappedMarc.hasDonor()) {
+						//IF PHYSICAL RESOURCE WITH DONOR INFO, GET THE ITEM FOLIO CREATED, SO WE CAN ADD NOTE ABOUT DONOR
+						Item fetchedItem = Item.fromJson(FolioAccess.callApiGetFirstObjectOfArray(FolioData.ITEMS_PATH + "?query=(holdingsRecordId==" + fetchedHoldingsRecord.getId() + ")",
+										FolioData.ITEMS_ARRAY));
+						logger.info("We fetched the related Item from FOLIO.");
+						fetchedItem.addBookplateNote(BookplateNote.createPhysicalBookplateNote(mappedMarc.donor()));
+						logger.info("We updated the fetched Item JSON.");
+						FolioAccess.callApiPut(FolioData.ITEMS_PATH, fetchedItem);
+						logger.info("We put the updated Item JSON to FOLIO.");
+					}
+					// END OF ITEM
+
+					// IMPORT INVOICE
+					if (config.importInvoice && mappedMarc.hasInvoice()) {
+						importInvoice(fetchedPo.getPoNumber(), UUID.fromString(fetchedPo.getCompositePoLines().get(0).getId()),
+										mappedMarc.vendorUuid(), mappedMarc, config);
+					}
 				}
 			} catch (JSONException je) {
 				recordResult.setImportError("Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
