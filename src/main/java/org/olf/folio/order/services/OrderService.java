@@ -15,17 +15,19 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+
+import org.apache.log4j.Logger;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONArray;
-import org.olf.folio.order.Constants;
-import org.olf.folio.order.OrderImportShortened;
-
+import org.json.JSONObject;
+import org.olf.folio.order.OrderImport;
 
 
 @Path ("/upload")
 public class OrderService {
 
+	Logger logger = Logger.getLogger(OrderService.class);
 	@Context
 	private HttpServletRequest servletRequest;
 	private HttpServletResponse servletResponse;
@@ -35,47 +37,41 @@ public class OrderService {
 	@Produces("application/json")
 	public Response uploadFile(
 			@FormDataParam("order-file") InputStream uploadedInputStream,
-			@FormDataParam("order-file") FormDataContentDisposition fileDetails) throws IOException, InterruptedException, Exception {
+			@FormDataParam("order-file") FormDataContentDisposition fileDetails)  {
 
 		System.out.println(fileDetails.getFileName());
 		String filePath = (String) servletRequest.getServletContext().getAttribute("uploadFilePath");
+		String analyzeOnly = servletRequest.getParameter("analyzeOnly");
+		boolean analyze = "true".equalsIgnoreCase(analyzeOnly);
 		UUID fileName = UUID.randomUUID();
-		String uploadedFileLocation = filePath + fileName.toString() + ".mrc";
+		String uploadedFileLocation = filePath + fileName + ".mrc";
 		// SAVE FILE TO DISK
 		writeFile(uploadedInputStream, uploadedFileLocation);
-		// PASS FILE INFO TO 'OrderImportShortened' WHICH MAKES THE FOLIO API CALLS
-		OrderImportShortened orderImportShortened = new OrderImportShortened();
-		orderImportShortened.setMyContext(servletRequest.getServletContext());
+		// PASS FILE INFO TO 'OrderImport' WHICH MAKES THE FOLIO API CALLS
+		OrderImport orderImport = new OrderImport();
+		orderImport.setMyContext(servletRequest.getServletContext());
 		try {
-			JSONArray message = orderImportShortened.upload(fileName.toString() + ".mrc");
+			JSONObject message = orderImport.upload(fileName + ".mrc", analyze);
+			logger.info("Sending response to client: " + message.toString());
 			return Response.status(Response.Status.OK).entity(message.toString()).build();		
 		}
 		catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getLocalizedMessage()).build();		
 		}
-
 	}
 
 	@GET
-	public Response justACheck() throws IOException, InterruptedException, Exception {
-
-		//RESET REFERENCE VALUES 
-		String filePath = (String) servletRequest.getServletContext().getAttribute("baseOkapEndpoint");
-		servletRequest.getServletContext().setAttribute(Constants.LOOKUP_TABLE,null);
-		return Response.status(Response.Status.OK).entity("OK:" + filePath).build();		
-
+	public Response justACheck()  {
+		//RESET REFERENCE VALUES?
+		return Response.status(Response.Status.OK).entity("OK").build();
 	}
-
 
 	private void writeFile(InputStream uploadedInputStream,
 			String uploadedFileLocation) {
 		try {
-			OutputStream out = new FileOutputStream(new File(
-					uploadedFileLocation));
-			int read = 0;
+			int read;
 			byte[] bytes = new byte[1024];
-
-			out = new FileOutputStream(new File(uploadedFileLocation));
+			OutputStream out = new FileOutputStream(uploadedFileLocation);
 			while ((read = uploadedInputStream.read(bytes)) != -1) {
 				out.write(bytes, 0, read);
 			}
