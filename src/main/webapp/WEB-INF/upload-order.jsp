@@ -287,6 +287,31 @@ function showName() {
 <!-- See project''s README for documentation about the schema for the JSON data received here : -->
 <script id="importResponseTemplate" type="text/x-handlebars-template">
 <p class="title">Order import results<span style="color:#f5f5f5"></span></p>
+  <br>Records processed: {{summary.recordsProcessed}}
+  {{#if summary.validation.hasErrors}}
+    <br> Records passed validation: {{summary.validation.succeeded}}
+    <br> Records failed validation: {{summary.validation.failed}}
+  {{/if}}
+  {{#if summary.import.hasErrors}}
+    <br> <b> {{summary.import.failed}} record(s) failed to import (fully or partially) </b>
+  {{/if}}
+  <br> {{summary.import.succeeded}} record(s) imported
+  {{#each records}}
+    <br>Rec# {{recNo}}
+    {{#if hasValidationErrors}}<b>failed</b>
+      {{#each validationErrors}}
+        <br>Error {{this}}
+      {{/each}}
+    {{/if}}
+    {{#if hasImportError}}
+      <br>Error: {{importError}}
+    {{/if}}
+    <br>Title: {{data.title}}
+    <br>ISBN: {{data.isbn}}
+    {{#if hasValidationErrors}}
+      <br><pre><div class="inner-pre" style="font-size: 11px; height: 100px; width: 1000px;" >{{data.source}}</div></pre>
+    {{/if}}
+  {{/each}}
 
 </script>
 
