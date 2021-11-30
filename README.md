@@ -1,8 +1,9 @@
-# order-import-poc
+# FOLIO Order import tool
 
-Proof of concept workaround needed until FOLIO supports importing MARC records to create orders.
+Workaround for importing orders from MARC records until FOLIO data import supports importing MARC records to create
+orders.
 
-### What does it do?
+## What does it do?
 
 * It takes an uploaded file that contains MARC records and creates orders, instances, holdings, items and MARC records
   for each.
@@ -12,8 +13,24 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
 * It lets FOLIO create the instance, holdings and item records using the "createInventory" value in the order line
 * It optionally creates an invoice
 * It does all of this using the FOLIO API
-* It uses a property file to determine location, fiscal year, loan type, note type and material type and default text
-  for electronic resources (in case subfield z is missing)
+* It uses a property file to determine locations, fiscal year, note type, payment method (if import invoices), and
+  material type and default text for electronic resources (in case subfield z is missing)
+
+## If you want to try it
+
+* It expects the properties file to be here: `/yourhomefolder/order/import.properties` unless you specify an alternative
+  config file as an environment property on the command line: `-DconfigFile=/path/to/your.properties`
+* You will have to add the Okapi userid/password, and you may have to adjust the file upload path (where it will save
+  the uploaded file)
+* clone the repo
+* call: `mvn jetty:run [-DconfigFile=path-to-properties-file]`
+* It should start a jetty server, and you should be able to point your browser to http://localhost:8888/import and try
+  it
+* If `exitOnConfigFailes` is set to true in the properties, the service will stop if it detects configuration problems
+* If `exitOnFailedIdLookups` is set to true, the service will stop if it could not find FOLIO UUIDs for names or codes
+  defined in the properties.
+* We've included example MARC files, but you will have to update them with your vendor, fund, object codes
+* To effectuate changes of import properties, restart the service
 
 #### Optional Invoice import
 
@@ -25,24 +42,31 @@ Proof of concept workaround needed until FOLIO supports importing MARC records t
     - Importing an invoice is mandatory: Set `importInvoice = true` and `failIfNoInvoiceData = true`
 * Will import one invoice and one invoice line
 
-### API Calls
+## Operations
 
-* Several get calls to initialize reference values (like instance types, material types, note types)
-* Get next PO number (GET /orders/po-number)
-* Posts a purchase order (approved and open) and one line item for each MARC record in a file (POST
-  /orders/composite-orders)
-* Retrieves the purchase order (to get the ID of the instance FOLIO automatically created) (GET
-  /orders/composite-orders/theOrderUuid)
-* Retrieve the new instance (GET /inventory/instances/theInstanceId)
-* Posts to snapshots (POST source-storage/snapshots)
-* Posts to source record storage (/source-storage/records)
-* Retrieves holdings record FOLIO created (GET /holdings-storage/holdings?query=(instanceId==theinstanceid))
-* PUT to /instances (to update the instance with source 'MARC' and add data)  (PUT /inventory/instances/theinstancid)
-* PUT to holdings (to add 856s to holdings) (PUT /holdings-storage/holdings/...)
-* Optionally POST an invoice (POST /invoice/invoices)
-* Optionally POST an invoice line (POST /invoice/invoice-lines)
+#### Configurations in import.properties
 
-### User permissions
+There are a number of configuration parameters that control the startup of the service, and it's operations:
+
+|Name|Values|What it does|
+|-----------|-----------|-----------------|
+|**Service start**|
+|exitOnConfigurationErrors|true, false|True: If the service detects fatal problems with the configuration properties it will exit. False: The service will log configuration problems| 
+|exitOnFailedIdLookups|true, false|True: The service looks up FOLIO UUIDs by names of codes of certain properties and will exit if it fails to find any. False: The service will log missing values|
+|**Server**|
+|uploadFilePath|file system path|Defines where uploaded MARC files are stored on the server|
+|**Processing**|
+|onValidationErrors|cancelAll, skipFailed, attemptImport|If one or more records fail the initial validation check, this setting will cause the service to either cancel the entire import (`cancelAll`), skip the current, failed record (`skipFailed`), or attempt import anyway (`attemptImport`). With the last option, the import itself would presumably eventually fail.|
+|objectCodeRequired|true, false|If true, the validation will fail if no object code is found in the incoming MARC|
+|importInvoice|true, false|Will look for invoice data to import if `true`|
+|failIfNoInvoiceData|true, false|If importInvoice is `true` and this setting is `true` the service will report an error if input is missing invoice data
+|**UI options**|
+|folioUiUrl|Protocol and domain of FOLIO UI, ie https://folio-snapshot.dev.folio.org/|If provided, with a path as well, links to FOLIO's UI will be displayed for records in the import log|
+|folioUiInventoryPath|Path to the Inventory UI|Will display a link in the import log to the Instance in UI Inventory|
+|folioUiOrdersPath|Path to the Orders UI|Will display a link in the import log to the order in UI Orders|
+
+
+#### User permissions
 
 To access the APIs, the FOLIO user defined in the `import.properties` file needs the following permissions:
 
@@ -90,27 +114,30 @@ To access the APIs, the FOLIO user defined in the `import.properties` file needs
     "orders.item.post",
     "orders.po-number.item.get",
     "organizations-storage.organizations.collection.get",
-    "source-storage.records.post",
-    "source-storage.snapshots.post",
     "tags.collection.get"
   ]
 }
 ```
 
-### If you want to try it
+#### API Calls
 
-* It expects the properties file to be here: `/yourhomefolder/order/import.properties` unless you specify an alternative
-  config file as an environment property on the command line: `-DconfigFile=/path/to/your.properties`
-* You will have to add the Okapi userid/password, and you may have to adjust the file upload path (where it will save
-  the uploaded file)
-* clone the repo
-* call: `mvn jetty:run [-DconfigFile=path-to-properties-file]`
-* It should start a jetty server and you should be able to point your browser to http://localhost:8888/import and try it
-* I've included example MARC files but you will have to update them with your vendor, fund, object codes
-* The first call is a bit slow because it initializes reference values/UUIDs
-* To effectuate changes of import properties, restart the service
+The service accesses following FOLIO APIs:
 
-### Docker image
+* GET calls to initialize reference values (fiscal years, fund codes, budgets, instance types, material types, note
+  types)
+* Get next PO number (GET /orders/po-number)
+* Posts a purchase order (approved and open) and one line item for each MARC record in a file (POST
+  /orders/composite-orders)
+* Retrieves the purchase order (to get the ID of the instance FOLIO automatically created) (GET
+  /orders/composite-orders/theOrderUuid)
+* Retrieve the new instance (GET /inventory/instances/theInstanceId)
+* Retrieves holdings record FOLIO created (GET /holdings-storage/holdings?query=(instanceId==theInstanceId))
+* PUT to /instances (to update the instance with source 'MARC' and add data)  (PUT /inventory/instances/theInstanceId)
+* PUT to /holdings (to add 856s to holdings) (PUT /holdings-storage/holdings/...)
+* Optionally POST an invoice (POST /invoice/invoices)
+* Optionally POST an invoice line (POST /invoice/invoice-lines)
+
+#### Docker image
 
 You can build a Docker image using the [Dockerfile](Dockerfile) in this repository.
 
@@ -127,7 +154,7 @@ container e.g.:
 
     docker run -d -v $(pwd)/order:/var/lib/jetty/order -p 8080:8080 <imageId>
 
-### Mappings
+### MARC to FOLIO mappings
 
 |MARC fields|Description|Target properties|Required|Default|Content (incoming)|
 |-----------|-----------|-----------------|--------|-------|--------|
@@ -137,7 +164,7 @@ container e.g.:
 |022 $l ($c $q)|Identifiers|instance.identifiers[].value /w type 'Linking ISSN'|No| |
 |022 ($z $y $n)|Identifiers|instance.identifiers[].value /w type 'Invalid ISSN'|No| |
 |100, 700|Contributors|instance.contributors.name /w contributor name type 'Personal name" and contributor type from $4 or 'bkp'|No| |
-|245 $a ($b $c)|Instance title|instance.title, orderline.titleOrPackage|Yes|
+|245 $a ($b $c)|Instance title|instance.title, orderLine.titleOrPackage|Yes|
 |856 $u |URI|instance. electronicAccessUrl[]. uri, holdingsRecord.electronicAccessUrl[].uri|No|
 |856 $z |Link text|instance. electronicAccessUrl[]. linkText, holdingsRecord. electronicAccessUrl[]. linkText|No|Static config value text-For-Electronic-Resources (see separate table)||
 |980 $b |Fund code|orderLine. fundDistribution[]. fundCode and (resolved to) .fundId, | Yes| |Fund code must exist in FOLIO|
@@ -148,7 +175,7 @@ container e.g.:
 |980 $r |Project code|orderLine tag list|No|
 |980 $v |Vendor code|order.vendor.vendorId (code resolved to id)|Yes| |Vendor code must exist in FOLIO|
 |980 $z |Electronic indicator|orderLine.orderFormat ("Electronic Resource" or "Physical Resource")|No|"Physical resource"|Values: [ELECTRONIC] or arbitrary text or nothing|
-|UCHICAGO|
+|University of Chicago|
 |035 $a |Identifiers|instance.identifiers[].value /w type 'System control number'|No|
 |856 (first occurrence) $x|User limit|orderLine.eResource.userLimit if ELECTRONIC|No| |Integer|
 |856 (first occurrence) $y|Access provider code|orderLine. eresource. accessProvider if ELECTRONIC|No|Vendor code (if 856$y is not present or the code does not resolve to an existing org.)| |
@@ -174,15 +201,16 @@ container e.g.:
 
 |Property name|Description|Examples|Target properties|Required|Content|
 |-------------|-------|--------|----------------|--------|-------|
-|permLocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if physical resource and not uploading invoice|The location must exist in FOLIO|
-|permELocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if electronic resource and not uploading invoice|The location must exist in FOLIO|
-|text For Electronic Resources|A link text|Available to Snapshot Users|instance. electronicAccessEntry[]. linkText|
-|noteType|The name of a note type for note in 980$n|General note|notes[].note.typeId (name resolved to id)|No|The note type must exist in FOLIO|
-|materialType|The name of a material type|book|orderLine. physical. materialType| |The material type must exist in FOLIO|
+|permLocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if physical resource and not uploading invoice|The location must exist in FOLIO. Validated on startup.|
+|permELocation|The name of a FOLIO location|SECOND FLOOR|orderLine.locations[].id (name resolved to id)|Yes, if electronic resource and not uploading invoice|The location must exist in FOLIO. Validated on startup.|
+|fiscalYearCode|The code of a FOLIO fiscal year|FY2022|For resolving fund ID|Yes|Must exist in FOLIO. Validated on startup.|
+|text For Electronic Resources|A link text|Available to Snapshot Users|instance. electronicAccessEntry[]. linkText| |A default.|
+|noteType|The name of a note type for note in 980$n|General note|notes[].note.typeId (name resolved to id)|No|The note type must exist in FOLIO. Validated on startup.|
+|materialType|The name of a material type|book|orderLine. physical. materialType|Yes|The material type must exist in FOLIO. Validated on startup.|
 |INVOICES|
 |paymentMethod|Payment method code|EFT|invoice.paymentMethod|Yes|One of a list of enumerated values|
-|permLocationWithInvoiceImport|The name of a FOLIO location|Annex|orderLine.locations[].id (name resolved ot id|Yes, if physical resource and uploading invoice|The location must exist in FOLIO|
-|permELocationWithInvoiceImport|The name of a FOLIO location|Online|orderLine.locations[].id (name resolved ot id|Yes, if electronic resource and uploading invoice|The location must exist in FOLIO|
+|perm Location With Invoice Import|The name of a FOLIO location|Annex|orderLine.locations[].id (name resolved ot id|Yes, if physical resource and uploading invoice|The location must exist in FOLIO|
+|perm ELocation With Invoice Import|The name of a FOLIO location|Online|orderLine.locations[].id (name resolved ot id|Yes, if electronic resource and uploading invoice|The location must exist in FOLIO|
 
 #### Hard-coded values
 
@@ -215,28 +243,6 @@ container e.g.:
 |invoiceLine.quantity|1|
 |invoiceLine.releaseEncumbrance|true|
 
-### Lots of areas for improvement including:
+### Development
 
-* Better way to get data out of the MARC record to include on the instance.
-* Better way to store reference values needed for lookup
-* Current version contains some hard-coded values (e.g. currency: USD)
-* If duplicate PO number error - get the next PO number and try again
-
-### What's new?
-
-* 11-16-2020
-    - Removed reference to the 001 field. Wasn't necessary and was causing an error when it was missing.
-
-* 9-23-2020
-    - Removed the check for enough money in the budget
-    - Fixed where the electronic indicator is initialized (needed to be per record)
-
-* 7-31-2020
-    - Better handling of special characters
-    - Handles multiple records in a file
-    - Validates each record in the file
-
-* (March/April 2021)
-    - Optional import of an invoice, and an invoice line
-    - Additional mappings of fields to order and order line.
-    - Dockerfile
+Documentation on the schema for communication between the service and the UI can be found in [IMPORT_RESPONSE_SCHEMA](IMPORT_RESPONSE_SCHEMA.md) 

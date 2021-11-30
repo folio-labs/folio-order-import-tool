@@ -284,11 +284,13 @@ function showName() {
 }
 </script>
 
+<!-- See project''s README for documentation about the schema for the JSON data received here : -->
 <script id="importResponseTemplate" type="text/x-handlebars-template">
 <p class="title">Order import results<span style="color:#f5f5f5"></span></p>
 
 </script>
 
+<!-- See project''s README for documentation about the schema for the JSON data received here: -->
 <script id="analyzeResponseTemplate" type="text/x-handlebars-template">
 <p class="title">Validation results<span style="color:#f5f5f5"></span></p>
   <br>Records processed: {{summary.recordsProcessed}}
