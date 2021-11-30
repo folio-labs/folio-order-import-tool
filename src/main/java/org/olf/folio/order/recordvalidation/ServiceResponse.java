@@ -29,6 +29,7 @@ public class ServiceResponse {
   boolean importing;
 
   public ServiceResponse(boolean importing) {
+    this.importing = importing;
     response.put(P_SUMMARY, summary);
     summary.put(P_VALIDATION, validation);
     if (importing) {
