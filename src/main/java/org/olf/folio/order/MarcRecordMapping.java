@@ -2,7 +2,6 @@ package org.olf.folio.order;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.marc4j.marc.ControlField;
 import org.marc4j.marc.DataField;
 import org.marc4j.marc.Record;
 import org.marc4j.marc.Subfield;
@@ -78,6 +77,10 @@ public class MarcRecordMapping {
     d980 = (DataField) marcRecord.getVariableField("980");
     first856 = getFirst856(marcRecord);
     has856 =  (first856 != null);
+  }
+
+  public Record getRecord() {
+    return marcRecord;
   }
 
   public String controlNumber() {
@@ -537,8 +540,8 @@ public class MarcRecordMapping {
     return contributor;
   }
 
-  public JSONArray getElectronicAccess () {
-    return ElectronicAccessUrl.getElectronicAccessFromMarcRecord(this);
+  public JSONArray getElectronicAccess (String defaultLinkText) {
+    return ElectronicAccessUrl.getElectronicAccessFromMarcRecord(this, defaultLinkText);
   }
 
   public boolean hasISBN() {

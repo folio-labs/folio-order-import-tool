@@ -174,55 +174,35 @@ public class FolioData extends FolioAccess {
     return map.get(key);
   }
 
-  public static JSONObject validateFund(String fundCode, String title, String price ) throws Exception {
-
-    JSONObject responseMessage = new JSONObject();
-
+  public static String validateFund(String fundCode) throws Exception {
     //VALIDATE FISCAL YEAR CODE
     String fiscalYearId = getFiscalYearId(config.fiscalYearCode);
     if (fiscalYearId == null) {
-      responseMessage.put("error", "Fiscal year code in file (" + config.fiscalYearCode + ") does not exist in FOLIO");
-      responseMessage.put("PONumber", "~error~");
-      return responseMessage;
+      return "Fiscal year code in file (" + config.fiscalYearCode + ") does not exist in FOLIO";
     }
-
      //VALIDATE FUND CODE
     String fundId = getFundId(fundCode);
     if (fundId == null) {
-      responseMessage.put("error", "Fund code in file (" + fundCode + ") does not exist in FOLIO");
-      responseMessage.put("PONumber", "~error~");
-      return responseMessage;
+      return "Fund code in file (" + fundCode + ") does not exist in FOLIO";
     }
-
     //MAKE SURE THE FUND CODE EXISTS FOR THE CURRENT FISCAL YEAR
     if (getBudgetId(fundId, fiscalYearId) == null) {
-      responseMessage.put("error", "Fund code in file (" + fundCode + ") does not have a budget for fiscal year code in file (" + config.fiscalYearCode +")");
-      responseMessage.put("title", title);
-      responseMessage.put("PONumber", "~error~");
-      return responseMessage;
+      return "Fund code in file (" + fundCode + ") does not have a budget for fiscal year code in file (" + config.fiscalYearCode +")";
     }
     return null;
   }
 
-  public static JSONObject validateObjectCode(String objectCode, String title) throws Exception {
-    //---------->VALIDATION: MAKE SURE THE TAG (AKA OBJECT CODE) EXISTS
-    JSONObject responseMessage = new JSONObject();
+  public static String validateObjectCode(String objectCode, String title) throws Exception {
     if (getTags(objectCode).length() < 1) {
-      responseMessage.put("error", "Object code in the record (" + objectCode + ") does not exist in FOLIO");
-      responseMessage.put("title", title);
-      responseMessage.put("PONumber", "~error~");
-      return responseMessage;
+      return "Object code in the record (" + objectCode + ") does not exist in FOLIO";
     }
     return null;
   }
 
-  public static JSONObject validateOrganization(String orgCode, String title) throws Exception {
+  public static String validateOrganization(String orgCode, String title) throws Exception {
     JSONObject responseMessage = new JSONObject();
     if (getOrganizationId(orgCode) == null) {
-      responseMessage.put("error", "Organization code in file (" + orgCode + ") does not exist in FOLIO");
-      responseMessage.put("title", title);
-      responseMessage.put("PONumber", "~error~");
-      return responseMessage;
+      return "Organization code in file (" + orgCode + ") does not exist in FOLIO";
     }
     return null;
   }
@@ -239,18 +219,14 @@ public class FolioData extends FolioAccess {
     return null;
   }
 
-  public static JSONObject validateRequiredValuesForInvoice(String title, Record record) {
+  public static String validateRequiredValuesForInvoice(String title, Record record) {
 
     DataField nineEighty = (DataField) record.getVariableField("980");
     String vendorInvoiceNo = nineEighty.getSubfieldsAsString("h");
     String invoiceDate = nineEighty.getSubfieldsAsString("i");
 
     if (vendorInvoiceNo == null && invoiceDate == null && config.failIfNoInvoiceData) {
-      JSONObject responseMessage = new JSONObject();
-      responseMessage.put("title", title);
-      responseMessage.put("error", "Invoice data configured to be required and no Invoice data was found in MARC record");
-      responseMessage.put("PONumber", "~error~");
-      return responseMessage;
+      return "Invoice data configured to be required and no Invoice data was found in MARC record";
     } else if (vendorInvoiceNo != null || invoiceDate != null) { // if one of these is present both should be
       Map<String, String> requiredFields = new HashMap<>();
       requiredFields.put("Vendor invoice no", vendorInvoiceNo);
@@ -259,11 +235,7 @@ public class FolioData extends FolioAccess {
       // MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
       for (Map.Entry<String, String> entry : requiredFields.entrySet()) {
         if (entry.getValue() == null) {
-          JSONObject responseMessage = new JSONObject();
-          responseMessage.put("title", title);
-          responseMessage.put("error", entry.getKey() + " Missing");
-          responseMessage.put("PONumber", "~error~");
-          return responseMessage;
+          return entry.getKey() + " Missing";
         }
       }
     }

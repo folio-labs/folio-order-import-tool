@@ -45,7 +45,7 @@ public abstract class JsonDataObject {
     return json.getJSONObject(key);
   }
   protected JSONArray getArray (String key) {
-    return json.getJSONArray(key);
+    return (json.has(key) ? json.getJSONArray(key) : null);
   }
 
   public JSONObject asJson() {
@@ -56,7 +56,7 @@ public abstract class JsonDataObject {
     return getString(P_ID);
   }
 
-  protected boolean present(String val) {
+  protected static boolean present(String val) {
     return (val != null && !val.isEmpty());
   }
   protected boolean present(JSONArray array) {

@@ -60,17 +60,12 @@
 <%@ page import="java.util.Arrays" %>
 <body class="layout-default">
 	<!-- NAVIGATION -->
-	<nav class="navbar">
-		<div class="container">
-			<div class="navbar-brand"></div>
-		</div>
-	</nav>
+	<br>
 	<div class="container">
 		<div class="field">
-			<label class="label">Upload File:</label>
+			<label class="label">FOLIO Order Import Tool</label>
 		</div>
 	</div>
-	<br>
 	<!--CONTENTS-->
 	<div class="container">
 		<div class="tile is-ancestor">
@@ -83,6 +78,7 @@
 								<div class="tabs is-centered">
 									<ul>
 										<li><a>Upload Order</a></li>
+										<li><a>View Configuration</a></li>
 									</ul>
 								</div>
 								<div>
@@ -103,46 +99,47 @@
 										</div>
 									</section>
 								</div>
+								<div>
+									<section class="tab-content">
+									  <div id="config">
+									    <p class="title">Configuration<span style="color:#f5f5f5"></span></p>
+                                           <%
+                                              for (String key : Arrays.asList(
+                                                   "baseOkapiEndpoint",
+                                                   "baseOkapEndpoint",
+                                                   "okapi_username",
+                                                   "tenant",
+                                                   "permLocation",
+                                                   "permELocation",
+                                                   "permLocationWithInvoiceImport",
+                                                   "permELocationWithInvoiceImport",
+                                                   "fiscalYearCode",
+                                                   "textForElectronicResources",
+                                                   "noteType",
+                                                   "materialType",
+                                                   "paymentMethod",
+                                                   "objectCodeRequired",
+                                                   "onValidationErrors",
+                                                   "importInvoice",
+                                                   "failIfNoInvoiceData",
+                                                   "exitOnConfigErrors",
+                                                   "exitOnFailedIdLookups",
+                                                   "folioUiUrl",
+                                                   "folioUiInventoryPath",
+                                                   "folioUiOrdersPath",
+                                                   "uploadFilePath")) {
+                                                out.println(key + ": " + getServletContext().getAttribute(key)); %>
+                                                <br/>
+                                              <% }
+                                           %>
+									  </div>
+									</section>
+								</div>
 							</div>
 						</div>
 						<div class="tile is-parent">
 				            <article class="tile is-child notification is-light">
-					            <div class="content">
-						            <div id="logContent" class="content" style="font-family: 'Special Elite', cursive;">
-						               <p class="title">Configuration<span style="color:#f5f5f5"></span></p>
-						               <% String showConfig = (String) getServletContext().getAttribute("showConfig");
-                                    	  if (showConfig != null && !showConfig.equalsIgnoreCase("false")) {
-                                              for (String key : Arrays.asList(
-                                               "baseOkapiEndpoint",
-                                               "okapi_username",
-                                               "tenant",
-                                               "permLocation",
-                                               "permELocation",
-                                               "fiscalYearCode",
-                                               "loanType",
-                                               "textForElectronicResources",
-                                               "noteType",
-                                               "materialType",
-                                               "uploadFilePath",
-                                               "objectCodeRequired",
-                                               "importInvoice",
-                                               "failIfNoInvoiceData",
-                                               "paymentMethod",
-                                               "permLocationWithInvoiceImport",
-                                               "permELocationWithInvoiceImport",
-                                               "showConfig",
-                                               "exitOnConfigErrors",
-                                               "exitOnFailedIdLookups",
-                                               "onValidationErrors",
-                                               "folioUiUrl",
-                                               "folioUiInventoryPath",
-                                               "folioUiOrdersPath")) {
-                                                  out.println(key + ": " + getServletContext().getAttribute(key)); %>
-                                                  <br/>
-                                              <% }
-                                          } %>
-						            </div>
-					            </div>
+					            <div class="content"><div id="logContent" class="content"/></div>
 				            </article>
 			            </div>
 						<!-- left box end -->
@@ -200,7 +197,6 @@ function sendImportRequest() {
 function showImportResponse(response) {
 	//DISPLAY UPDATED LOG
 	$('#import').removeClass('is-loading');
-	$('#analyze').removeClass('is-loading');
 	var source = document.getElementById("importResponseTemplate").innerHTML;
 	var template = Handlebars.compile(source);
 	var context = response;
@@ -209,7 +205,6 @@ function showImportResponse(response) {
 }
 
 function sendAnalyzeRequest() {
-
 	$('#analyze').addClass('is-loading');
 	var form_data = new FormData();
 	form_data.append('order-file', $('#order-file').get(0).files[0]);
@@ -228,7 +223,6 @@ function sendAnalyzeRequest() {
 
 function showAnalyzeResponse(response) {
 	//DISPLAY UPDATED LOG
-	$('#import').removeClass('is-loading');
 	$('#analyze').removeClass('is-loading');
 	var source = document.getElementById("analyzeResponseTemplate").innerHTML;
 	var template = Handlebars.compile(source);
@@ -289,75 +283,29 @@ function showName() {
 	document.getElementById('file-name').innerHTML = name.files.item(0).name;
 }
 </script>
+
 <script id="importResponseTemplate" type="text/x-handlebars-template">
 <p class="title">Order import results<span style="color:#f5f5f5"></span></p>
-{{#each this}}
-  {{#if isHeader}}
-    {{#if isCancelled}}
-      <br> <h3>The import was cancelled due to one or more records failing validation</h3>
-    {{else}}
-      {{#if isError}}
-        <br> <h4>{{error}}</h4>
-      {{/if}}
-    {{/if}}
-
-  {{else}}
-      <br> Rec# {{recNo}}
-      {{#if isError}}
-        {{#if error}}
-          <br> <b>Error: {{PONumber}}</b>
-          <br> {{error}}
-        {{/if}}
-      {{else}}
-        {{#if ordersUrl}}
-            <br> <b>PO number: <a href="{{ordersUrl}}" target="orders">{{PONumber}}</a></b>
-        {{else}}
-            {{#if PONumber}}
-                <br> <b>PO number: {{PONumber}}</b>
-            {{/if}}
-        {{/if}}
-      {{/if}}
-      <br> Title: {{title}}
-      {{#if inventoryUrl}}
-            <br> Instance HRID: <a href="{{inventoryUrl}}" target="inventory">{{instanceHrid}}</a>
-      {{else}}
-            <br> Instance HRID: {{instanceHrid}}
-      {{/if}}
-      {{#if invalidIsbn}}
-        <br><b>Invalid ISBN: {{ISBN}}</b>
-      {{else if noIsbn}}
-        <br><b>ISBN: {{ISBN}}</b>
-      {{else}}
-        <br>ISBN: {{ISBN}}
-      {{/if}}
-      <br> Product identifiers: {{productIdentifiers}}
-      <br><pre><span class="inner-pre" style="font-size: 11px;">{{source}}</span></pre>
-   {{/if}}
-{{/each}}
 
 </script>
 
 <script id="analyzeResponseTemplate" type="text/x-handlebars-template">
 <p class="title">Validation results<span style="color:#f5f5f5"></span></p>
-{{#each this}}
-  <br> Rec# {{recNo}}
-  {{#if error}}
-	<br> <b>Problem</b>
-  {{else}}
-	<br> <b>Passed</b>
-  {{/if}}
-  <br> Title: {{title}}
-  {{#if invalidIsbn}}
-    <br><b>Invalid ISBN: {{ISBN}}</b>
-  {{else if noIsbn}}
-    <br><b>ISBN: {{ISBN}}</b>
-  {{else}}
-    <br>ISBN: {{ISBN}}
-  {{/if}}
-  <br> Product identifiers: {{productIdentifiers}}
-  <br><pre><span class="inner-pre" style="font-size: 11px;">{{source}}</span></pre>
-{{/each}}
-
+  <br>Records processed: {{summary.recordsProcessed}}
+  <br>Records passed: {{summary.validation.succeeded}}
+  <br>Records failed: {{summary.validation.failed}}
+  <br>
+  {{#each records}}
+    <br>Rec# {{recNo}}
+    {{#if hasValidationErrors}}<b>failed</b>
+      {{#each validationErrors}}
+        <br>Error {{this}}
+      {{/each}}
+    {{/if}}
+    <br>Title: {{data.title}}
+    <br>ISBN: {{data.isbn}}
+    <br><pre><div class="inner-pre" style="font-size: 11px; height: 100px; width: 1000px;" >{{data.source}}</div></pre>
+  {{/each}}
 </script>
 
 

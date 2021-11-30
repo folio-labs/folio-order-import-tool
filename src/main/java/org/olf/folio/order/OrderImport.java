@@ -1,6 +1,5 @@
 package org.olf.folio.order;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.UUID;
@@ -20,6 +19,9 @@ import org.olf.folio.order.dataobjects.Instance;
 import org.olf.folio.order.dataobjects.Item;
 import org.olf.folio.order.dataobjects.Link;
 import org.olf.folio.order.dataobjects.Note;
+import org.olf.folio.order.recordvalidation.RecordChecker;
+import org.olf.folio.order.recordvalidation.RecordResult;
+import org.olf.folio.order.recordvalidation.ServiceResponse;
 import org.olf.folio.order.storage.FolioAccess;
 import org.olf.folio.order.storage.FolioData;
 
@@ -29,70 +31,50 @@ public class OrderImport {
 	private ServletContext myContext;
 	public static Config config;
 
-	public  JSONArray upload(String fileName, boolean analyze) throws Exception {
+	public  JSONObject upload(String fileName, boolean analyze) throws Exception {
 
 		logger.info("...starting...");
 		if (config == null) {
 			config = new Config(myContext);
 		}
 		FolioAccess.initialize(config, logger);
-		JSONArray responseMessages = new JSONArray();
 
 		//GET THE UPLOADED FILE, EXIT IF NONE PROVIDED
 		if (fileName == null) {
 			JSONObject responseMessage = new JSONObject();
 			responseMessage.put("error", "no input file provided");
 			responseMessage.put("PONumber", "~error~");
-			responseMessages.put(responseMessage);
-			return responseMessages;
+			return responseMessage;
 		}
 
-		RecordChecker check = new RecordChecker(config);
-		if (analyze) {
-			return check.validateMarcRecords(fileName);
-		} else if (config.onValidationErrorsCancelAll) {
-			JSONArray result = check.validateMarcRecords(fileName);
-			if (check.errorsFound()) {
-				JSONObject message = new JSONObject();
-				message.put("isHeader", true);
-				message.put("isCancelled", true);
-				message.put("error", "The import was cancelled due to one or more validation errors");
-				JSONArray response = new JSONArray();
-				response.put(message);
-				for (Object msg : result) {
-					response.put(msg);
-				}
-				return response;
-			}
+		// If analyze-only or analyze-first
+		if (analyze || config.onValidationErrorsCancelAll) {
+			return new RecordChecker(config).validateMarcRecords(fileName);
 		}
 
 		InputStream in = new FileInputStream(config.uploadFilePath + fileName);
 		MarcReader reader = new MarcStreamReader(in);
-		ProcessCounters counters = new ProcessCounters();
+		ServiceResponse validationAndImportResults =  new ServiceResponse(true);
 		while (reader.hasNext()) {
-			JSONObject responseMessage = new JSONObject();
+			RecordResult recordResult = validationAndImportResults.nextResult();
 			try {
 				Record record = reader.next();
-				counters.recordsProcessed++;
 				MarcRecordMapping mappedMarc = new MarcRecordMapping(record);
 				if (config.onValidationErrorsSKipFailed) {
-					JSONObject result = check.validateMarcRecord(mappedMarc,counters.recordsProcessed);
-					if (result.has("error")) {
-						result.put("skipped", "record was not imported, due to validation errors");
-						responseMessages.put(result);
-						counters.recordsSkipped++;
-						continue;
-					}
+					new RecordChecker(config).validateMarcRecord(mappedMarc, recordResult);
 				}
-				responseMessage.put("source", record.toString());
-				responseMessage.put("recNo", counters.recordsProcessed);
-				responseMessage.put("title", mappedMarc.title());
-	  		responseMessage.put("ISBN", mappedMarc.hasISBN() ? mappedMarc.getISBN() : "No ISBN in this record");
-
 				// CREATE AND POST THE PURCHASE ORDER AND LINE
 				CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
 				setPreconfiguredValues(compositePo, mappedMarc);
+
+				logger.info("We create the Purchase Order JSON.");
 				FolioAccess.callApiPostWithUtf8(FolioData.COMPOSITE_ORDERS_PATH, compositePo);
+        logger.info("We posted the Purchase Order JSON to FOLIO.");
+				recordResult
+								.setPoNumber(compositePo.getPoNumber())
+								.setPoUiUrl(
+												config.folioUiUrl, config.folioUiOrdersPath,
+												compositePo.getId(), compositePo.getPoNumber());
 
 				//INSERT A NOTE IF THERE IS ONE IN THE MARC RECORD
 				if (mappedMarc.hasNotes()
@@ -105,42 +87,55 @@ public class OrderImport {
 									.putDomain(Note.V_ORDERS)
 									.putContent(mappedMarc.notes())
 									.putTitle(mappedMarc.notes());
+					logger.info("We created a Note JSON.");
 					FolioAccess.callApiPostWithUtf8(FolioData.NOTES_PATH,note.asJson());
+					logger.info("We posted the Note JSON to FOLIO.");
 				}
 
 				// GET THE UPDATED PURCHASE ORDER FROM FOLIO AND PULL OUT THE ID OF THE RELATED INSTANCE
 				CompositePurchaseOrder fetchedPo = CompositePurchaseOrder.fromJson(
 								FolioAccess.callApiGetById(FolioData.COMPOSITE_ORDERS_PATH, compositePo.getId()));
-
+				logger.info("We fetched the updated Purchase Order from FOLIO.");
 				// RETRIEVE, UPDATE, AND PUT THE RELATED INSTANCE
 				Instance fetchedInstance = Instance.fromJson(
 												FolioAccess.callApiGetById(FolioData.INSTANCES_PATH, fetchedPo.getInstanceId()));
+				logger.info("We fetched the linked Instance from FOLIO.");
 				fetchedInstance.putTitle(mappedMarc.title())
 								.putSource(Instance.V_FOLIO)
 								.putInstanceTypeId(FolioData.getInstanceTypeId("text"))
 								.putIdentifiers(mappedMarc.getInstanceIdentifiers())
 								.putContributors(mappedMarc.getContributorsForInstance())
 								.putDiscoverySuppress(false)
-								.putElectronicAccess(mappedMarc.getElectronicAccess())
+								.putElectronicAccess(mappedMarc.getElectronicAccess(config.textForElectronicResources))
 								.putNatureOfContentTermIds(new JSONArray())
 								.putPrecedingTitles(new JSONArray())
 								.putSucceedingTitles(new JSONArray());
+				logger.info("We updated the fetched Instance JSON.");
 				FolioAccess.callApiPut( FolioData.INSTANCES_PATH,  fetchedInstance);
+				logger.info("We posted the updated Instance JSON to FOLIO.");
         // END OF INSTANCE
+				recordResult
+								.setInstanceHrid(fetchedInstance.getHrid())
+								.setInstanceUiUrl(
+												config.folioUiUrl, config.folioUiInventoryPath,
+												fetchedInstance.getId(), fetchedInstance.getHrid());
 
 				// RETRIEVE, UPDATE, AND PUT THE RELATED HOLDINGS RECORD
 				HoldingsRecord fetchedHoldingsRecord = HoldingsRecord.fromJson(
 								FolioAccess.callApiGetFirstObjectOfArray(
 												FolioData.HOLDINGS_STORAGE_PATH
 																+ "?query=(instanceId==" + fetchedInstance.getId() + ")", FolioData.HOLDINGS_RECORDS_ARRAY)	);
-				fetchedHoldingsRecord.putElectronicAccess(mappedMarc.getElectronicAccess());
+				logger.info("We fetched the related Holdings Record from FOLIO.");
+				fetchedHoldingsRecord.putElectronicAccess(mappedMarc.getElectronicAccess(config.textForElectronicResources));
 				if (mappedMarc.electronic()) {
 					fetchedHoldingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName("Electronic"));
 					if (mappedMarc.hasDonor()) {
 						fetchedHoldingsRecord.addBookplateNote(BookplateNote.createElectronicBookplateNote(mappedMarc.donor()));
 					}
 				}
+				logger.info("We updated the fetched Holdings Record JSON.");
 				FolioAccess.callApiPut(FolioData.HOLDINGS_STORAGE_PATH, fetchedHoldingsRecord);
+				logger.info("We put the updated Holdings Record JSON to FOLIO.");
         // END OF HOLDINGS RECORD
 
 				// RETRIEVE, UPDATE, AND PUT THE RELATED ITEM IF THE MARC RECORD HAS A DONOR
@@ -149,8 +144,11 @@ public class OrderImport {
 					Item fetchedItem = Item.fromJson(
 									FolioAccess.callApiGetFirstObjectOfArray(
 													FolioData.ITEMS_PATH + "?query=(holdingsRecordId==" + fetchedHoldingsRecord.getId() + ")", FolioData.ITEMS_ARRAY));
+					logger.info("We fetched the related Item from FOLIO.");
 					fetchedItem.addBookplateNote(BookplateNote.createPhysicalBookplateNote(mappedMarc.donor()));
+					logger.info("We updated the fetched Item JSON.");
 					FolioAccess.callApiPut( FolioData.ITEMS_PATH, fetchedItem);
+					logger.info("We put the updated Item JSON to FOLIO.");
 				}
         // END OF ITEM
 
@@ -163,65 +161,17 @@ public class OrderImport {
 									mappedMarc,
 									config);
 				}
-
-				// REPORT RESULTS TO THE CLIENT
-				responseMessage.put("PONumber",  fetchedPo.getPoNumber());
-				responseMessage.put("instanceHrid", fetchedInstance.getHrid());
-				if (config.folioUiUrl != null) {
-					if (config.folioUiInventoryPath != null) {
-						responseMessage.put("inventoryUrl",
-										config.folioUiUrl	+ config.folioUiInventoryPath	+ "/"
-														+ fetchedInstance.getId()
-														+ "?qindex=hrid&query="	+ fetchedInstance.getHrid()
-														+ "&sort=title");
-					}
-					if (config.folioUiOrdersPath != null) {
-						responseMessage.put("ordersUrl",
-										config.folioUiUrl + config.folioUiOrdersPath + "/"
-														+ fetchedPo.getId()
-														+ "?qindex=poNumber&query=" + fetchedPo.getPoNumber());
-					}
-				}
-				responseMessages.put(responseMessage);
-				counters.recordsImported++;
+			} catch (JSONException je) {
+				recordResult.setImportError("Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
 			}	catch(Exception e) {
-				logger.error(e.toString());
-				counters.recordsFailed++;
-				try {
-					responseMessage.put("PONumber", "~error~");
-					JSONObject msg = new JSONObject(e.getMessage());
-					if (msg.has("errors") && msg.get("errors") instanceof JSONArray && !msg.getJSONArray("errors").isEmpty()) {
-						responseMessage.put("error", ((JSONObject) (msg.getJSONArray("errors").get(0))).getString("message"));
-					}
-				} catch (JSONException | ClassCastException je) {
-					// IGNORE
-				}
-				if (responseMessage.getString("error") == null || responseMessage.getString("error").isEmpty()) {
-					responseMessage.put("error", e.getMessage());
-				}
-				responseMessages.put(responseMessage);
+				recordResult.setImportError(e.getMessage() + " " + e.getCause());
 			}
 		}
-		if (counters.recordsSkipped>0 || counters.recordsFailed>0) {
-			JSONObject message = new JSONObject();
-			message.put("isHeader", true);
-			message.put("isError", true);
-			message.put("error", counters.recordsSkipped
-							+ " records where skipped due to validation errors. "
-							+ counters.recordsFailed + " records failed during import. "
-							+ counters.recordsImported + " records were imported ");
-			JSONArray response = new JSONArray();
-			response.put(message);
-			for (Object msg : responseMessages) {
-				response.put(msg);
-			}
-			responseMessages = response;
-		}
-		return responseMessages;
+		return validationAndImportResults.toJson();
 	}
 
 	private void setPreconfiguredValues(
-					CompositePurchaseOrder newCompositePurchaseOrder, MarcRecordMapping mappedMarc)
+					CompositePurchaseOrder compositePo, MarcRecordMapping mappedMarc)
 					throws Exception {
 
 		String permLocationName = (config.importInvoice && mappedMarc.hasInvoice()
@@ -232,14 +182,14 @@ public class OrderImport {
 		String permELocationId = FolioData.getLocationIdByName(permELocationName);
 
 		if (mappedMarc.electronic()) {
-			newCompositePurchaseOrder.setLocationIdOnPoLines(permELocationId);
+			compositePo.setLocationIdOnPoLines(permELocationId);
 		} else {
-			newCompositePurchaseOrder.setLocationIdOnPoLines(permLocationId);
+			compositePo.setLocationIdOnPoLines(permLocationId);
 		}
 
 		if (mappedMarc.physical()) {
 			String materialTypeId = Constants.MATERIAL_TYPES_MAP.get(config.materialType);
-			newCompositePurchaseOrder.setMaterialTypeOnPoLines(materialTypeId);
+			compositePo.setMaterialTypeOnPoLines(materialTypeId);
 		}
 	}
 

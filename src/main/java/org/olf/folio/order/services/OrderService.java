@@ -15,15 +15,19 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+
+import org.apache.log4j.Logger;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.olf.folio.order.OrderImport;
 
 
 @Path ("/upload")
 public class OrderService {
 
+	Logger logger = Logger.getLogger(OrderService.class);
 	@Context
 	private HttpServletRequest servletRequest;
 	private HttpServletResponse servletResponse;
@@ -47,7 +51,8 @@ public class OrderService {
 		OrderImport orderImport = new OrderImport();
 		orderImport.setMyContext(servletRequest.getServletContext());
 		try {
-			JSONArray message = orderImport.upload(fileName + ".mrc", analyze);
+			JSONObject message = orderImport.upload(fileName + ".mrc", analyze);
+			logger.info("Sending response to client: " + message.toString());
 			return Response.status(Response.Status.OK).entity(message.toString()).build();		
 		}
 		catch(Exception e) {
