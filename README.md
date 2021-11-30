@@ -165,7 +165,7 @@ container e.g.:
 |022 ($z $y $n)|Identifiers|instance.identifiers[].value /w type 'Invalid ISSN'|No| |
 |100, 700|Contributors|instance.contributors.name /w contributor name type 'Personal name" and contributor type from $4 or 'bkp'|No| |
 |245 $a ($b $c)|Instance title|instance.title, orderLine.titleOrPackage|Yes|
-|856 $u |URI|instance. electronicAccessUrl[]. uri, holdingsRecord.electronicAccessUrl[].uri|No|
+|856 $u |URI|instance. electronicAccessUrl[]. uri, holdingsRecord. electronicAccessUrl[]. uri|No|
 |856 $z |Link text|instance. electronicAccessUrl[]. linkText, holdingsRecord. electronicAccessUrl[]. linkText|No|Static config value text-For-Electronic-Resources (see separate table)||
 |980 $b |Fund code|orderLine. fundDistribution[]. fundCode and (resolved to) .fundId, | Yes| |Fund code must exist in FOLIO|
 |980 $c |Vendor item id|orderLine. vendorDetail. referenceNumbers[] .refNumber, refNumberType set to "Vendor internal number", but see 980$u|No|
