@@ -117,7 +117,7 @@ public class Config {
     if (context == null) {
       context = servletContext;
       // FOLIO access
-      baseOkapiEndpoint = getText(P_BASE_OKAP_ENDPOINT);
+      baseOkapiEndpoint = getText(P_BASE_OKAPI_ENDPOINT);
       if (baseOkapiEndpoint.isEmpty()) {
         baseOkapiEndpoint = getText(P_BASE_OKAP_ENDPOINT); //previous spelling
       }
