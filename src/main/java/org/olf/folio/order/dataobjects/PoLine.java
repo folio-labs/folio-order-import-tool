@@ -177,6 +177,19 @@ public class PoLine extends JsonDataObject {
   public PoLine putDetailsIfPresent(JSONObject details) {
     return present(details) ? putDetails(details) : this;
   }
+
+  public boolean hasDetails () {
+    return json.has(P_DETAILS);
+  }
+
+  public OrderLineDetails getDetails() {
+    if (json.has(P_DETAILS)) {
+      return OrderLineDetails.fromJson(getJSONObject(P_DETAILS));
+    } else {
+      return null;
+    }
+  }
+
   public PoLine putEdition (String edition) {
     return (PoLine) putString(P_EDITION, edition);
   }

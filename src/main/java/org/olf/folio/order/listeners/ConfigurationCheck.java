@@ -34,9 +34,9 @@ public class ConfigurationCheck {
   private boolean authenticationPassed = true;
   private boolean urlPassed = true;
   private boolean codesAndNamesExist = true;
-  private boolean validOnAnalysisErrorsSetting = true;
 
   public boolean validateConfiguration () {
+    boolean validOnAnalysisErrorsSetting;
     allMandatoryPresent = checkMissingMandatoryProperties();
     urlPassed = checkBaseOkapiEndpointUrl();
     if (allMandatoryPresent && urlPassed) {
@@ -159,9 +159,8 @@ public class ConfigurationCheck {
   }
 
   private boolean checkAccess () {
-    Config conf = new Config(context);
     try {
-      FolioAccess.initialize(conf, logger);
+      FolioAccess.initialize(logger);
     } catch (Exception e) {
       accessErrors.add(e.getMessage());
       return false;

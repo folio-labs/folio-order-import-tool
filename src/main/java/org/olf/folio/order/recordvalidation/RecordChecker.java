@@ -17,14 +17,9 @@ import java.util.Map;
 
 public class RecordChecker {
 
-  final Config config;
 
-  public RecordChecker (Config config) {
-    this.config = config;
-  }
-
-  public JSONObject validateMarcRecords(String fileName) throws FileNotFoundException {
-    InputStream in = new FileInputStream(config.uploadFilePath + fileName);
+  public static JSONObject validateMarcRecords(String fileName) throws FileNotFoundException {
+    InputStream in = new FileInputStream(Config.uploadFilePath + fileName);
     MarcReader reader = new MarcStreamReader(in);
     Record record;
     ServiceResponse validationResults = new ServiceResponse (false);
@@ -36,23 +31,23 @@ public class RecordChecker {
     return validationResults.toJson();
   }
 
-  public void validateMarcRecord (MarcRecordMapping mappedMarc, RecordResult outcome) {
+  public static void validateMarcRecord (MarcRecordMapping mappedMarc, RecordResult outcome) {
     try {
       outcome.setInputMarcData(mappedMarc);
 
       if (!mappedMarc.has980()) {
         outcome.addValidationMessageIfNotNull("Record is missing the 980 field")
-                .markSkipped(config.onValidationErrorsSKipFailed);
+                .markSkipped(Config.onValidationErrorsSKipFailed);
         return;
       }
 
-      if (mappedMarc.hasISBN() && !isValidIsbn(mappedMarc.getISBN())) {
+      if (mappedMarc.hasISBN() && isInvalidIsbn(mappedMarc.getISBN())) {
         outcome.addValidationMessageIfNotNull("ISBN is invalid")
-                .markSkipped(config.onValidationErrorsSKipFailed);
+                .markSkipped(Config.onValidationErrorsSKipFailed);
       }
 
       Map<String, String> requiredFields = new HashMap<>();
-      if (config.objectCodeRequired) {
+      if (Config.objectCodeRequired) {
         requiredFields.put("Object code", mappedMarc.objectCode());
       }
       requiredFields.put("Fund code", mappedMarc.fundCode());
@@ -63,7 +58,7 @@ public class RecordChecker {
       for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
         if (entry.getValue()==null || entry.getValue().isEmpty()) {
           outcome.addValidationMessageIfNotNull("Mandatory data element " + entry.getKey() + " missing.")
-                  .markSkipped(config.onValidationErrorsSKipFailed);
+                  .markSkipped(Config.onValidationErrorsSKipFailed);
         }
       }
 
@@ -72,30 +67,34 @@ public class RecordChecker {
       String orgValidationResult = FolioData.validateOrganization(mappedMarc.vendorCode(), mappedMarc.title());
       if (orgValidationResult != null) {
         outcome.addValidationMessageIfNotNull(orgValidationResult)
-                .markSkipped(config.onValidationErrorsSKipFailed);
+                .markSkipped(Config.onValidationErrorsSKipFailed);
       }
 
       if (mappedMarc.hasObjectCode()) {
         outcome.addValidationMessageIfNotNull(
                 FolioData.validateObjectCode(mappedMarc.objectCode(), mappedMarc.title()))
-                .markSkipped(config.onValidationErrorsSKipFailed);
+                .markSkipped(Config.onValidationErrorsSKipFailed);
       }
       if (mappedMarc.hasProjectCode()) {
         outcome.addValidationMessageIfNotNull(
                 FolioData.validateObjectCode(mappedMarc.projectCode(), mappedMarc.title()))
-                .markSkipped(config.onValidationErrorsSKipFailed);
+                .markSkipped(Config.onValidationErrorsSKipFailed);
       }
       //result.addErrorMessageIfNotNull(FolioData.validateFund(mappedMarc.fundCode()));
 
-      if (config.importInvoice) {
+      if (Config.importInvoice) {
         outcome.addValidationMessageIfNotNull(
                 FolioData.validateRequiredValuesForInvoice(mappedMarc.title(), mappedMarc.getRecord()))
-                .markSkipped(config.onValidationErrorsSKipFailed);
+                .markSkipped(Config.onValidationErrorsSKipFailed);
       }
 
     }	catch(Exception e) {
       outcome.addValidationMessageIfNotNull("Got exception when validating MARC record: " + e.getMessage() + " " + e.getClass());
     }
+  }
+
+  public static boolean isInvalidIsbn (String isbn) {
+    return !isValidIsbn(isbn);
   }
 
   public static boolean isValidIsbn (String isbn) {
@@ -107,10 +106,5 @@ public class RecordChecker {
       return false;
     }
   }
-
-  private String maybePlural (int count, String text) {
-    return count == 1 ? (count + " " + text) : (count + " " + text + "s");
-  }
-
 
 }

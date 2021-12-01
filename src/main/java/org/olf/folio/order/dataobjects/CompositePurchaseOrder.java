@@ -122,7 +122,7 @@ public class CompositePurchaseOrder extends JsonDataObject {
   }
 
   public boolean hasPoLines () {
-    return !getCompositePoLines().isEmpty();
+    return ! getArray(P_COMPOSITE_PO_LINES).isEmpty();
   }
 
   public List<PoLine> getCompositePoLines () {

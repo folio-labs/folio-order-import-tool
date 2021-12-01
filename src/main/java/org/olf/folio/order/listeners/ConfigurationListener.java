@@ -32,6 +32,8 @@ public class ConfigurationListener implements ServletContextListener {
 				context.setAttribute(key, config.getProperty(key));
 			}
 			ConfigurationCheck check = new ConfigurationCheck(config, context);
+			// Load to static configuration object used throughout the app
+			Config.load(context);
 			boolean passed = check.validateConfiguration();
 			keys = config.getKeys();
 			logger.info(" ");

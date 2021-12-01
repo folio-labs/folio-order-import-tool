@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.marc4j.marc.DataField;
 import org.marc4j.marc.Record;
+import org.olf.folio.order.Config;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -176,9 +177,9 @@ public class FolioData extends FolioAccess {
 
   public static String validateFund(String fundCode) throws Exception {
     //VALIDATE FISCAL YEAR CODE
-    String fiscalYearId = getFiscalYearId(config.fiscalYearCode);
+    String fiscalYearId = getFiscalYearId(Config.fiscalYearCode);
     if (fiscalYearId == null) {
-      return "Fiscal year code in file (" + config.fiscalYearCode + ") does not exist in FOLIO";
+      return "Fiscal year code in file (" + Config.fiscalYearCode + ") does not exist in FOLIO";
     }
      //VALIDATE FUND CODE
     String fundId = getFundId(fundCode);
@@ -187,7 +188,7 @@ public class FolioData extends FolioAccess {
     }
     //MAKE SURE THE FUND CODE EXISTS FOR THE CURRENT FISCAL YEAR
     if (getBudgetId(fundId, fiscalYearId) == null) {
-      return "Fund code in file (" + fundCode + ") does not have a budget for fiscal year code in file (" + config.fiscalYearCode +")";
+      return "Fund code in file (" + fundCode + ") does not have a budget for fiscal year code in file (" + Config.fiscalYearCode +")";
     }
     return null;
   }
@@ -225,7 +226,7 @@ public class FolioData extends FolioAccess {
     String vendorInvoiceNo = nineEighty.getSubfieldsAsString("h");
     String invoiceDate = nineEighty.getSubfieldsAsString("i");
 
-    if (vendorInvoiceNo == null && invoiceDate == null && config.failIfNoInvoiceData) {
+    if (vendorInvoiceNo == null && invoiceDate == null && Config.failIfNoInvoiceData) {
       return "Invoice data configured to be required and no Invoice data was found in MARC record";
     } else if (vendorInvoiceNo != null || invoiceDate != null) { // if one of these is present both should be
       Map<String, String> requiredFields = new HashMap<>();

@@ -21,6 +21,7 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.olf.folio.order.Config;
 import org.olf.folio.order.OrderImport;
 
 
@@ -40,18 +41,17 @@ public class OrderService {
 			@FormDataParam("order-file") FormDataContentDisposition fileDetails)  {
 
 		System.out.println(fileDetails.getFileName());
-		String filePath = (String) servletRequest.getServletContext().getAttribute("uploadFilePath");
+
 		String analyzeOnly = servletRequest.getParameter("analyzeOnly");
 		boolean analyze = "true".equalsIgnoreCase(analyzeOnly);
 		UUID fileName = UUID.randomUUID();
-		String uploadedFileLocation = filePath + fileName + ".mrc";
+		String uploadedFileLocation = Config.uploadFilePath + fileName + ".mrc";
 		// SAVE FILE TO DISK
 		writeFile(uploadedInputStream, uploadedFileLocation);
+
 		// PASS FILE INFO TO 'OrderImport' WHICH MAKES THE FOLIO API CALLS
-		OrderImport orderImport = new OrderImport();
-		orderImport.setMyContext(servletRequest.getServletContext());
 		try {
-			JSONObject message = orderImport.upload(fileName + ".mrc", analyze);
+			JSONObject message = new OrderImport().upload(fileName + ".mrc", analyze);
 			logger.info("Sending response to client: " + message.toString());
 			return Response.status(Response.Status.OK).entity(message.toString()).build();		
 		}

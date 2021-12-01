@@ -2,9 +2,9 @@ package org.olf.folio.order;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.List;
 import java.util.UUID;
 import javax.servlet.ServletContext;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -16,9 +16,11 @@ import org.olf.folio.order.dataobjects.BookplateNote;
 import org.olf.folio.order.dataobjects.CompositePurchaseOrder;
 import org.olf.folio.order.dataobjects.HoldingsRecord;
 import org.olf.folio.order.dataobjects.Instance;
+import org.olf.folio.order.dataobjects.InstanceIdentifier;
 import org.olf.folio.order.dataobjects.Item;
 import org.olf.folio.order.dataobjects.Link;
 import org.olf.folio.order.dataobjects.Note;
+import org.olf.folio.order.dataobjects.ProductIdentifier;
 import org.olf.folio.order.recordvalidation.RecordChecker;
 import org.olf.folio.order.recordvalidation.RecordResult;
 import org.olf.folio.order.recordvalidation.ServiceResponse;
@@ -28,16 +30,11 @@ import org.olf.folio.order.storage.FolioData;
 public class OrderImport {
 
 	private static final Logger logger = Logger.getLogger("OrderImport");
-	private ServletContext myContext;
-	public static Config config;
 
 	public  JSONObject upload(String fileName, boolean analyze) throws Exception {
 
 		logger.info("...starting...");
-		if (config == null) {
-			config = new Config(myContext);
-		}
-		FolioAccess.initialize(config, logger);
+		FolioAccess.initialize(logger);
 
 		//GET THE UPLOADED FILE, EXIT IF NONE PROVIDED
 		if (fileName == null) {
@@ -48,11 +45,11 @@ public class OrderImport {
 		}
 
 		// If analyze-only or analyze-first
-		if (analyze || config.onValidationErrorsCancelAll) {
-			return new RecordChecker(config).validateMarcRecords(fileName);
+		if (analyze || Config.onValidationErrorsCancelAll) {
+			return RecordChecker.validateMarcRecords(fileName);
 		}
 
-		InputStream in = new FileInputStream(config.uploadFilePath + fileName);
+		InputStream in = new FileInputStream(Config.uploadFilePath + fileName);
 		MarcReader reader = new MarcStreamReader(in);
 		ServiceResponse validationAndImportOutcomes =  new ServiceResponse(true);
 		while (reader.hasNext()) {
@@ -60,7 +57,7 @@ public class OrderImport {
 			try {
 				Record record = reader.next();
 				MarcRecordMapping mappedMarc = new MarcRecordMapping(record);
-  			new RecordChecker(config).validateMarcRecord(mappedMarc, outcome);
+  			RecordChecker.validateMarcRecord(mappedMarc, outcome);
 				if (!outcome.isSkipped()) {
 					// RECORD VALIDATION PASSED OR SERVICE IS CONFIGURED TO ATTEMPT IMPORT IN ANY CASE
 
@@ -71,7 +68,7 @@ public class OrderImport {
 					updateInventory(importedPo.getInstanceId(), mappedMarc, outcome);
 
 					// IMPORT INVOICE IF CONFIGURED FOR IT AND PRESENT
-					maybeImportInvoice(importedPo, mappedMarc, config);
+					maybeImportInvoice(importedPo, mappedMarc);
 				}
 			} catch (JSONException je) {
 				outcome.setImportError("Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
@@ -93,14 +90,14 @@ public class OrderImport {
 		FolioAccess.callApiPostWithUtf8(FolioData.COMPOSITE_ORDERS_PATH, compositePo);
 		logger.info("We posted the Purchase Order JSON to FOLIO.");
 		outcome.setPoNumber(compositePo.getPoNumber())
-						.setPoUiUrl(config.folioUiUrl, config.folioUiOrdersPath,
+						.setPoUiUrl(Config.folioUiUrl, Config.folioUiOrdersPath,
 						compositePo.getId(), compositePo.getPoNumber());
 
 		//INSERT A NOTE IF THERE IS ONE IN THE MARC RECORD
-		if (mappedMarc.hasNotes() && compositePo.hasPoLines() && config.noteTypeName != null) {
+		if (mappedMarc.hasNotes() && compositePo.hasPoLines() && Config.noteTypeName != null) {
 			Note note = new Note().addLink(new Link().putType(Link.V_PO_LINE)
 							.putId(compositePo.getCompositePoLines().get(0).getId()))
-							.putTypeId(FolioData.getNoteTypeIdByName(config.noteTypeName))
+							.putTypeId(FolioData.getNoteTypeIdByName(Config.noteTypeName))
 							.putDomain(Note.V_ORDERS)
 							.putContent(mappedMarc.notes())
 							.putTitle(mappedMarc.notes());
@@ -117,10 +114,10 @@ public class OrderImport {
 	private void setPreconfiguredValues(CompositePurchaseOrder compositePo, MarcRecordMapping mappedMarc)
 					throws Exception {
 
-		String permLocationName = (config.importInvoice && mappedMarc.hasInvoice()
-					? config.permLocationWithInvoiceImport : config.permLocationName);
-		String permELocationName = (config.importInvoice && mappedMarc.hasInvoice()
-					? config.permELocationWithInvoiceImport : config.permELocationName);
+		String permLocationName = (Config.importInvoice && mappedMarc.hasInvoice()
+					? Config.permLocationWithInvoiceImport : Config.permLocationName);
+		String permELocationName = (Config.importInvoice && mappedMarc.hasInvoice()
+					? Config.permELocationWithInvoiceImport : Config.permELocationName);
 		String permLocationId = FolioData.getLocationIdByName(permLocationName);
 		String permELocationId = FolioData.getLocationIdByName(permELocationName);
 
@@ -131,7 +128,7 @@ public class OrderImport {
 		}
 
 		if (mappedMarc.physical()) {
-			String materialTypeId = Constants.MATERIAL_TYPES_MAP.get(config.materialType);
+			String materialTypeId = Constants.MATERIAL_TYPES_MAP.get(Config.materialType);
 			compositePo.setMaterialTypeOnPoLines(materialTypeId);
 		}
 	}
@@ -145,10 +142,10 @@ public class OrderImport {
 		fetchedInstance.putTitle(mappedMarc.title())
 						.putSource(Instance.V_FOLIO)
 						.putInstanceTypeId(FolioData.getInstanceTypeId("text"))
-						.putIdentifiers(mappedMarc.getInstanceIdentifiers())
+						.putIdentifiers(InstanceIdentifier.createInstanceIdentifiersFromMarc(mappedMarc))
 						.putContributors(mappedMarc.getContributorsForInstance())
 						.putDiscoverySuppress(false)
-						.putElectronicAccess(mappedMarc.getElectronicAccess(config.textForElectronicResources))
+						.putElectronicAccess(mappedMarc.getElectronicAccess(Config.textForElectronicResources))
 						.putNatureOfContentTermIds(new JSONArray())
 						.putPrecedingTitles(new JSONArray())
 						.putSucceedingTitles(new JSONArray());
@@ -157,7 +154,7 @@ public class OrderImport {
 		logger.info("We posted the updated Instance JSON to FOLIO.");
 		// END OF INSTANCE
 		outcome.setInstanceHrid(fetchedInstance.getHrid())
-						.setInstanceUiUrl(config.folioUiUrl, config.folioUiInventoryPath,
+						.setInstanceUiUrl(Config.folioUiUrl, Config.folioUiInventoryPath,
 										fetchedInstance.getId(), fetchedInstance.getHrid());
 
 		// RETRIEVE, UPDATE, AND PUT THE RELATED HOLDINGS RECORD
@@ -166,7 +163,7 @@ public class OrderImport {
 										FolioData.HOLDINGS_STORAGE_PATH + "?query=(instanceId==" + fetchedInstance.getId() + ")",
 										FolioData.HOLDINGS_RECORDS_ARRAY));
 		logger.info("We fetched the related Holdings Record from FOLIO.");
-		fetchedHoldingsRecord.putElectronicAccess(mappedMarc.getElectronicAccess(config.textForElectronicResources));
+		fetchedHoldingsRecord.putElectronicAccess(mappedMarc.getElectronicAccess(Config.textForElectronicResources));
 		if (mappedMarc.electronic()) {
 			fetchedHoldingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName("Electronic"));
 			if (mappedMarc.hasDonor()) {
@@ -198,20 +195,15 @@ public class OrderImport {
 
 	public static void maybeImportInvoice(
 							   CompositePurchaseOrder po,
-							   MarcRecordMapping marc,
-	               Config config) throws Exception {
+							   MarcRecordMapping marc) throws Exception {
 
-		if (config.importInvoice && marc.hasInvoice()) {
+		if (Config.importInvoice && marc.hasInvoice()) {
 			UUID orderLineUUID = UUID.fromString(po.getCompositePoLines().get(0).getId());
-			JSONObject invoice = JsonObjectBuilder.createInvoiceJson(po.getPoNumber(), marc, config);
+			JSONObject invoice = JsonObjectBuilder.createInvoiceJson(po.getPoNumber(), marc);
 			JSONObject invoiceLine = JsonObjectBuilder.createInvoiceLineJson(orderLineUUID, marc, invoice);
 			logger.info(FolioAccess.callApiPostWithUtf8("invoice/invoices", invoice).toString());
 			logger.info(FolioAccess.callApiPostWithUtf8("invoice/invoice-lines", invoiceLine).toString());
 		}
-	}
-
-	public void setMyContext(ServletContext myContext) {
-		this.myContext = myContext;
 	}
 
 }

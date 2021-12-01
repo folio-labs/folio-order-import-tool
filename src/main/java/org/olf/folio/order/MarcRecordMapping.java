@@ -7,7 +7,6 @@ import org.marc4j.marc.Record;
 import org.marc4j.marc.Subfield;
 import org.marc4j.marc.VariableField;
 import org.olf.folio.order.dataobjects.ElectronicAccessUrl;
-import org.olf.folio.order.dataobjects.Identifier;
 import org.olf.folio.order.storage.FolioData;
 
 import java.util.ArrayList;
@@ -81,10 +80,6 @@ public class MarcRecordMapping {
 
   public Record getRecord() {
     return marcRecord;
-  }
-
-  public String controlNumber() {
-    return marcRecord.getControlNumber();
   }
 
   private DataField getFirst856 (Record record) {
@@ -441,33 +436,6 @@ public class MarcRecordMapping {
     return d980.getSubfieldsAsString(SUB_TOTAL);
   }
 
-  public JSONArray getInstanceIdentifiers(boolean includeQualifiers, String ...identifierTypeIds) {
-    return Identifier.createInstanceIdentifiersJson(this.marcRecord, includeQualifiers, identifierTypeIds);
-  }
-
-  public JSONArray getInstanceIdentifiers() {
-    return getInstanceIdentifiers(true, Constants.ISBN,
-            Constants.INVALID_ISBN,
-            Constants.ISSN,
-            Constants.INVALID_ISSN,
-            Constants.LINKING_ISSN,
-            Constants.OTHER_STANDARD_IDENTIFIER,
-            Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER,
-            Constants.SYSTEM_CONTROL_NUMBER);
-  }
-
-  public JSONArray getProductIdentifiers(boolean includeQualifiers, String ...identifierTypeIds) {
-    return Identifier.createProductIdentifiersJson(this.marcRecord, includeQualifiers, identifierTypeIds);
-  }
-
-  public JSONArray getProductIdentifiers() {
-    return getProductIdentifiers(false,
-            Constants.ISBN,
-            Constants.ISSN,
-            Constants.OTHER_STANDARD_IDENTIFIER,
-            Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER );
-  }
-
   public JSONArray getContributorsForOrderLine() throws Exception {
     return getContributors(true);
   }
@@ -545,16 +513,134 @@ public class MarcRecordMapping {
   }
 
   public boolean hasISBN() {
-    return !Identifier.getDataFieldsForIdentifierType(Constants.ISBN,this.marcRecord).isEmpty();
+    return !getDataFieldsForIdentifierType(Constants.ISBN).isEmpty();
   }
 
   public String getISBN() {
     List<DataField> isbnFields =
-            Identifier.getDataFieldsForIdentifierType(Constants.ISBN, this.marcRecord);
+            getDataFieldsForIdentifierType(Constants.ISBN);
     if (!isbnFields.isEmpty()) {
-      return Identifier.getIdentifierValue(Constants.ISBN, isbnFields.get(0), false);
+      return getIdentifierValue(Constants.ISBN, isbnFields.get(0), false);
     } else {
       return null;
     }
   }
+
+  /**
+   * Finds identifier fields in the provided MARC records by tag, subfield tag(s) and possibly indicator2 -- all
+   * dependent on the given identifier type
+   * @param requestedIdentifierType The Identifier type to find data fields for
+   * @return List of identifier fields matching the applicable criteria for the given identifier type
+   */
+  public List<DataField> getDataFieldsForIdentifierType( String requestedIdentifierType) {
+    List<DataField> identifierFields = new ArrayList<>();
+    switch(requestedIdentifierType)
+    {
+      case Constants.ISBN:
+        return findIdentifierFieldsByTagAndSubFields( "020", 'a' );
+      case Constants.INVALID_ISBN:
+        return findIdentifierFieldsByTagAndSubFields(  "020", 'z' );
+      case Constants.ISSN:
+        return findIdentifierFieldsByTagAndSubFields(  "022", 'a' );
+      case Constants.LINKING_ISSN:
+        return findIdentifierFieldsByTagAndSubFields(  "022", 'l' );
+      case Constants.INVALID_ISSN:
+        return findIdentifierFieldsByTagAndSubFields(  "022", "zym".toCharArray() );
+      case Constants.OTHER_STANDARD_IDENTIFIER:
+        identifierFields.addAll( findIdentifierFieldsByTagAndSubFields(  "024", 'a' ) );
+        identifierFields.addAll( findIdentifierFieldsByTagAndSubFields(  "025", 'a' ) );
+        return identifierFields;
+      case Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER:
+        return findIdentifierFieldsByTagAndSubFields(  "028", 'a' );
+      case Constants.SYSTEM_CONTROL_NUMBER:
+        List<DataField> fields035 = findIdentifierFieldsByTagAndSubFields(  "035", 'a' );
+        for ( DataField dataField : fields035 )
+        {
+          if ( dataField.getIndicator2() == '9' )
+          {
+            identifierFields.add( dataField );
+          }
+        }
+        return identifierFields;
+      default:
+        //logger.error("Requested identifier type not recognized when attempting to look up identifier field: " + requestedIdentifierType);
+        return identifierFields;
+    }
+  }
+
+  /**
+   * Finds data fields in the MARC record by their tag and filtered by the presence of given subfields
+   * @param tagToFind  The tag (field) to look for
+   * @param withAnyOfTheseSubFields One or more subfield codes, of which at least one must be present for the field to be included
+   * @return A list of Identifier fields matching the given tag and subfield code criteria
+   */
+  public List<DataField> findIdentifierFieldsByTagAndSubFields( String tagToFind, char ...withAnyOfTheseSubFields) {
+    List<DataField> fieldsFound = new ArrayList<>();
+    List<VariableField> fieldsFoundForTag = marcRecord.getVariableFields(tagToFind);
+    for (VariableField field : fieldsFoundForTag) {
+      DataField dataField = (DataField) field;
+      for (char subTag : withAnyOfTheseSubFields) {
+        if (dataField.getSubfield( subTag ) != null) {
+          fieldsFound.add(dataField);
+          break;
+        }
+      }
+    }
+    return fieldsFound;
+  }
+
+  /**
+   * Looks up the value of the identifier fields, optionally adding additional subfields to the value for given Identifier types
+   * Will strip colons and spaces from ISBN value when not including qualifiers.
+   * @param identifierType The type of identifier to find the identifier value for
+   * @param identifierField  The identifier field to look for the value in
+   * @param includeQualifiers Indication whether to add additional subfield(s) to the identifier value
+   * @return The resulting identifier value
+   */
+  public static String getIdentifierValue ( String identifierType, DataField identifierField, boolean includeQualifiers) {
+    String identifierValue;
+    switch ( identifierType ) {
+      case Constants.ISBN:                           // 020 using $a, extend with c,q
+      case Constants.ISSN:                           // 022 using $a, extend with c,q
+        identifierValue = identifierField.getSubfieldsAsString( "a" );
+        if ( includeQualifiers ) {
+          if ( identifierField.getSubfield( 'c' ) != null ) identifierValue += " " + identifierField.getSubfieldsAsString( "c" );
+          if ( identifierField.getSubfield( 'q' ) != null ) identifierValue += " " + identifierField.getSubfieldsAsString( "q" );
+        } else {
+          identifierValue = identifierValue.replaceAll("[: ]", "");
+        }
+        break;
+      case Constants.INVALID_ISBN:                   // 020 using $z, extend with c,q
+        identifierValue = identifierField.getSubfieldsAsString( "z" );
+        if ( includeQualifiers ) {
+          if ( identifierField.getSubfield( 'c' ) != null ) identifierValue += " " + identifierField.getSubfieldsAsString( "c" );
+          if ( identifierField.getSubfield( 'q' ) != null ) identifierValue += " " + identifierField.getSubfieldsAsString( "q" );
+        }
+        break;
+      case Constants.LINKING_ISSN:                   // 022 using $l, extend with c,q
+        identifierValue = identifierField.getSubfieldsAsString( "l" );
+        if ( includeQualifiers ) {
+          if ( identifierField.getSubfield( 'c' ) != null ) identifierValue += " " + identifierField.getSubfieldsAsString( "c" );
+          if ( identifierField.getSubfield( 'q' ) != null ) identifierValue += " " + identifierField.getSubfieldsAsString( "q" );
+        }
+        break;
+      case Constants.INVALID_ISSN:                   // 022 using $z,y,m
+        identifierValue = "";
+        if ( identifierField.getSubfield('z') != null) identifierValue += identifierField.getSubfieldsAsString("z");
+        if ( identifierField.getSubfield('y') != null) identifierValue += " " +  identifierField.getSubfieldsAsString("y");
+        if ( identifierField.getSubfield('m') != null) identifierValue += " " + identifierField.getSubfieldsAsString("m");
+        break;
+      case Constants.OTHER_STANDARD_IDENTIFIER:       // 024, 025 using $a
+      case Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER: // 028 using $a
+      case Constants.SYSTEM_CONTROL_NUMBER:           // 035 using $a
+        identifierValue = identifierField.getSubfieldsAsString("a");
+        break;
+      default:
+        //logger.error("Requested identifier type not recognized when attempting to retrieve identifier value: " + identifierType);
+        identifierValue = null;
+        break;
+    }
+    return identifierValue;
+  }
+
 }

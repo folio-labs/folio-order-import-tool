@@ -3,6 +3,7 @@ package org.olf.folio.order;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.olf.folio.order.dataobjects.ProductIdentifier;
 import org.olf.folio.order.storage.FolioData;
 
 import java.util.UUID;
@@ -44,17 +45,17 @@ public class JsonObjectBuilder {
       cost.put("quantityElectronic", 1);
       cost.put("listUnitPriceElectronic", mappedMarc.price());
       location.put("quantityElectronic",1);
-      location.put("locationId", FolioData.getLocationIdByName(config.permELocationName));
+      location.put("locationId", FolioData.getLocationIdByName(Config.permELocationName));
     }	else {
       JSONObject physical = new JSONObject();
       physical.put("createInventory", "Instance, Holding, Item");
-      physical.put("materialType", getMaterialTypeId(config.materialType));
+      physical.put("materialType", getMaterialTypeId(Config.materialType));
       orderLine.put("physical", physical);
       orderLine.put("orderFormat", "Physical Resource");
       cost.put("listUnitPrice", mappedMarc.price());
       cost.put("quantityPhysical", 1);
       location.put("quantityPhysical",1);
-      location.put("locationId", FolioData.getLocationIdByName(config.permLocationName));
+      location.put("locationId", FolioData.getLocationIdByName(Config.permLocationName));
     }
     locations.put(location);
 
@@ -119,8 +120,8 @@ public class JsonObjectBuilder {
       orderLine.put("donor", mappedMarc.donor());
 
     orderLine.put("contributors", mappedMarc.getContributorsForOrderLine());
-    if (!mappedMarc.getProductIdentifiers().isEmpty()) {
-      orderLineDetails.put("productIds", mappedMarc.getProductIdentifiers());
+    if (!ProductIdentifier.createProductIdentifiersFromMarc(mappedMarc).isEmpty()) {
+      orderLineDetails.put("productIds", ProductIdentifier.createProductIdentifiersFromMarc(mappedMarc));
     }
     if (!orderLineDetails.isEmpty())
       orderLine.put("details", orderLineDetails);
@@ -163,14 +164,14 @@ public class JsonObjectBuilder {
   final static String INVOICE_LINE_STATUS = "Open";
   final static boolean RELEASE_ENCUMBRANCE = true;
 
-  static JSONObject createInvoiceJson(String poNumber, MarcRecordMapping marc, Config config) throws Exception {
+  static JSONObject createInvoiceJson(String poNumber, MarcRecordMapping marc) throws Exception {
     JSONObject invoice = new JSONObject();
     invoice.put("id", UUID.randomUUID());
     invoice.put("poNumbers", (new JSONArray()).put(poNumber)); // optional
     invoice.put("batchGroupId", BATCH_GROUP_ID); // required
     invoice.put("currency", marc.currency()); // required
     invoice.put("invoiceDate", marc.invoiceDate()); // required
-    invoice.put("paymentMethod", config.paymentMethod); // required
+    invoice.put("paymentMethod", Config.paymentMethod); // required
     invoice.put("status", STATUS); // required
     invoice.put("source", SOURCE); // required
     invoice.put("vendorInvoiceNo", marc.vendorInvoiceNo()); // required

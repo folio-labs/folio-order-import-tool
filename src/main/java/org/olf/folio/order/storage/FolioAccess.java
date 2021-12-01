@@ -21,19 +21,16 @@ import java.nio.charset.Charset;
 
 public class FolioAccess {
 
-  protected static Config config;
   protected static String token;
   protected static Logger logger;
 
   /**
    * Capture configuration from import.properties, authenticate to FOLIO and retrieve reference data
-   * @param config Static configuration from import.properties
    * @param logger Logger.
    * @throws Exception If FOLIO back-end request fails.
    */
-  public static void initialize(Config config, Logger logger) throws Exception {
+  public static void initialize(Logger logger) throws Exception {
     //GET THE FOLIO TOKEN
-    FolioAccess.config = config;
     FolioAccess.logger = logger;
     token = authenticate();
   }
@@ -41,15 +38,15 @@ public class FolioAccess {
   private static String authenticate()
           throws Exception {
     JSONObject authObject = new JSONObject();
-    authObject.put("username", config.apiUsername);
-    authObject.put("password", config.apiPassword);
-    authObject.put("tenant", config.tenant);
+    authObject.put("username", Config.apiUsername);
+    authObject.put("password", Config.apiPassword);
+    authObject.put("tenant", Config.tenant);
     CloseableHttpClient client = HttpClients.custom().build();
-    String authUrl = config.baseOkapiEndpoint + "authn/login";
+    String authUrl = Config.baseOkapiEndpoint + "authn/login";
     HttpUriRequest request = RequestBuilder.post()
             .setUri(authUrl)
             .setEntity(new StringEntity(authObject.toString()))
-            .setHeader("x-okapi-tenant",config.tenant)
+            .setHeader("x-okapi-tenant",Config.tenant)
             .setHeader("Accept", "application/json").setVersion(HttpVersion.HTTP_1_1)
             .setHeader("content-type","application/json")
             .build();
@@ -86,8 +83,8 @@ public class FolioAccess {
 
   public static JSONObject callApiGet(String apiPath) throws Exception {
     CloseableHttpClient client = HttpClients.custom().build();
-    HttpUriRequest request = RequestBuilder.get().setUri(config.baseOkapiEndpoint + apiPath)
-            .setHeader("x-okapi-tenant", config.tenant)
+    HttpUriRequest request = RequestBuilder.get().setUri(Config.baseOkapiEndpoint + apiPath)
+            .setHeader("x-okapi-tenant", Config.tenant)
             .setHeader("x-okapi-token", token)
             .setHeader("Accept", "application/json")
             .setHeader("content-type","application/json")
@@ -140,10 +137,10 @@ public class FolioAccess {
           throws Exception {
     CloseableHttpClient client = HttpClients.custom().build();
     HttpUriRequest request = RequestBuilder.put()
-            .setUri(config.baseOkapiEndpoint + uri)
+            .setUri(Config.baseOkapiEndpoint + uri)
             .setCharset(Charset.defaultCharset())
             .setEntity(new StringEntity(body.toString(),"UTF8"))
-            .setHeader("x-okapi-tenant", config.tenant)
+            .setHeader("x-okapi-tenant", Config.tenant)
             .setHeader("x-okapi-token", token)
             .setHeader("Accept", "application/json")
             .setHeader("Content-type","application/json")
@@ -182,8 +179,8 @@ public class FolioAccess {
           throws Exception {
     CloseableHttpClient client = HttpClients.custom().build();
     HttpUriRequest request = RequestBuilder.post()
-            .setUri(config.baseOkapiEndpoint + apiPath)
-            .setHeader("x-okapi-tenant", config.tenant)
+            .setUri(Config.baseOkapiEndpoint + apiPath)
+            .setHeader("x-okapi-tenant", Config.tenant)
             .setHeader("x-okapi-token", token)
             .setEntity(new StringEntity(body.toString(),"UTF-8"))
             .setHeader("Accept", "application/json")

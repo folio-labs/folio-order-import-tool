@@ -1,7 +1,11 @@
 package org.olf.folio.order.dataobjects;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.olf.folio.order.MarcRecordMapping;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class OrderLineDetails extends JsonDataObject{
   public static final String P_RECEIVING_NOTE = "receivingNote";
@@ -10,7 +14,13 @@ public class OrderLineDetails extends JsonDataObject{
   public static OrderLineDetails fromMarcRecord(MarcRecordMapping mappedMarc) {
     return new OrderLineDetails()
             .putReceivingNoteIfPresent(mappedMarc.receivingNote())
-            .putProductIdsIfPresent(mappedMarc.getProductIdentifiers());
+            .putProductIdsIfPresent(ProductIdentifier.createProductIdentifiersFromMarc(mappedMarc));
+  }
+
+  public static OrderLineDetails fromJson (JSONObject json) {
+    OrderLineDetails details = new OrderLineDetails();
+    details.json = json;
+    return details;
   }
 
   public OrderLineDetails putReceivingNote (String receivingNote) {
@@ -25,6 +35,24 @@ public class OrderLineDetails extends JsonDataObject{
   }
   public OrderLineDetails putProductIdsIfPresent (JSONArray productIds) {
     return present(productIds) ? putProductIds(productIds) : this;
+  }
+
+  public boolean hasProductIdentifiers () {
+    return json.has(P_PRODUCT_IDS);
+  }
+
+  public List<ProductIdentifier> getProductIdentifiers () {
+    List<ProductIdentifier> list = new ArrayList<>();
+    JSONArray ids = getArray(P_PRODUCT_IDS);
+    if (ids != null) {
+      for (Object o : ids) {
+        list.add(ProductIdentifier.fromJson((JSONObject) o));
+      }
+    }
+    return list;
+  }
+  public JSONArray getProductIdentifiersAsJson () {
+    return getArray(P_PRODUCT_IDS);
   }
 
 }
