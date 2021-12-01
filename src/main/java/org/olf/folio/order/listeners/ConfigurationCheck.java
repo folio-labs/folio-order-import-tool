@@ -155,7 +155,7 @@ public class ConfigurationCheck {
         return false;
       }
       logger.info(" ");
-      logger.info("The URL for Okapi is a valid URL.");
+      logger.info(String.format("The URL for Okapi [%s] is a valid URL", baseOkapiEndpoint));
       return true;
     } else {
       return false;

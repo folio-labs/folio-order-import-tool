@@ -57,8 +57,7 @@
 	display: block;
 }
 </style>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="org.olf.folio.order.Config" %>
+<%@ page import="java.util.Arrays, org.olf.folio.order.Config" %>
 <body class="layout-default">
 	<!-- NAVIGATION -->
 	<br>

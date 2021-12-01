@@ -40,8 +40,6 @@ public class OrderService {
 			@FormDataParam("order-file") InputStream uploadedInputStream,
 			@FormDataParam("order-file") FormDataContentDisposition fileDetails)  {
 
-		System.out.println(fileDetails.getFileName());
-
 		String analyzeOnly = servletRequest.getParameter("analyzeOnly");
 		boolean analyze = "true".equalsIgnoreCase(analyzeOnly);
 		UUID fileName = UUID.randomUUID();
