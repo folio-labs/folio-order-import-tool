@@ -20,7 +20,7 @@ public class Config {
   public static final String P_MATERIAL_TYPE = "materialType";
   public static final String P_PERM_LOCATION = "permLocation";
   public static final String P_PERM_E_LOCATION = "permELocation";
-  public static final String P_PERM_LOCATION_WITH_INVOICE_IMPORT = "permLocationWithInvoice";
+  public static final String P_PERM_LOCATION_WITH_INVOICE_IMPORT = "permLocationWithInvoiceImport";
   public static final String P_PERM_E_LOCATION_WITH_INVOICE_IMPORT = "permELocationWithInvoiceImport";
   public static final String P_TEXT_FOR_ELECTRONIC_RESOURCES = "textForElectronicResources";
   public static final String P_PAYMENT_METHOD = "paymentMethod";
@@ -29,6 +29,7 @@ public class Config {
   public static final String P_IMPORT_INVOICE = "importInvoice";
   public static final String P_FAIL_IF_NO_INVOICE_DATA = "failIfNoInvoiceData";
   public static final String P_EXIT_ON_CONFIG_ERRORS = "exitOnConfigErrors";
+  public static final String P_EXIT_ON_ACCESS_ERRORS = "exitOnAccessErrors";
   public static final String P_EXIT_ON_FAILED_ID_LOOKUPS = "exitOnFailedIdLookups";
   public static final String P_ON_VALIDATION_ERRORS = "onValidationErrors";
   public static final String V_ON_VALIDATION_ERRORS_CANCEL_ALL = "cancelAll";
@@ -42,6 +43,35 @@ public class Config {
   public static final String P_FOLIO_UI_URL = "folioUiUrl";
   public static final String P_FOLIO_UI_INVENTORY_PATH = "folioUiInventoryPath";
   public static final String P_FOLIO_UI_ORDERS_PATH = "folioUiOrdersPath";
+
+  public static final List<String> KNOWN_PROPERTIES = Arrays.asList(
+          P_BASE_OKAP_ENDPOINT,
+          P_BASE_OKAPI_ENDPOINT,
+          P_EXIT_ON_ACCESS_ERRORS,
+          P_EXIT_ON_CONFIG_ERRORS,
+          P_EXIT_ON_FAILED_ID_LOOKUPS,
+          P_FAIL_IF_NO_INVOICE_DATA,
+          P_FISCAL_YEAR_CODE,
+          P_FOLIO_UI_INVENTORY_PATH,
+          P_FOLIO_UI_ORDERS_PATH,
+          P_FOLIO_UI_URL,
+          P_IMPORT_INVOICE,
+          P_MATERIAL_TYPE,
+          P_NOTE_TYPE,
+          P_OBJECT_CODE_REQUIRED,
+          P_OKAPI_PASSWORD,
+          P_OKAPI_USERNAME,
+          P_ON_ISBN_INVALID,
+          P_ON_VALIDATION_ERRORS,
+          P_PAYMENT_METHOD,
+          P_PERM_E_LOCATION,
+          P_PERM_LOCATION,
+          P_PERM_E_LOCATION_WITH_INVOICE_IMPORT,
+          P_PERM_LOCATION_WITH_INVOICE_IMPORT,
+          P_TENANT,
+          P_TEXT_FOR_ELECTRONIC_RESOURCES,
+          P_UPLOAD_FILE_PATH
+  );
 
   public static String baseOkapiEndpoint;
   public static String folioUiUrl;
@@ -64,6 +94,7 @@ public class Config {
   public static String permLocationWithInvoiceImport;
   public static String permELocationWithInvoiceImport;
   public static boolean exitOnConfigErrors;
+  public static boolean exitOnAccessErrors;
   public static boolean exitOnFailedIdLookups;
   public static String onValidationErrors;
   public static String onIsbnInvalid;
@@ -108,6 +139,7 @@ public class Config {
       textForElectronicResources = getText(P_TEXT_FOR_ELECTRONIC_RESOURCES);
       // Processing instructions
       exitOnConfigErrors = getBoolean(P_EXIT_ON_CONFIG_ERRORS,true);
+      exitOnAccessErrors = getBoolean(P_EXIT_ON_ACCESS_ERRORS, true);
       exitOnFailedIdLookups = getBoolean(P_EXIT_ON_FAILED_ID_LOOKUPS,true);
       objectCodeRequired = getBoolean(P_OBJECT_CODE_REQUIRED, true);
       importInvoice = getBoolean(P_IMPORT_INVOICE,false);

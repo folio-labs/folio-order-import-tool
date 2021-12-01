@@ -67,6 +67,35 @@ values  `true`, `TRUE`, `yes`, `YES`, `y`, `Y`, `1` will resolve to **true** and
 | folioUiInventoryPath      | Path to the Inventory UI                                                  | inventory/view | Used for a link in the import log to the Instance in UI Inventory.                                                                                                                                                                                                                                                    |
 | folioUiOrdersPath         | Path to the Orders UI                                                     | orders/view    | Used for a link in the import log to the order in UI Orders.                                                                                                                                                                                                                                                          |
 
+This is a complete example of import properties
+
+```baseOkapiEndpoint: https://folio-snapshot.dev.folio.org/
+exitOnAccessErrors: no
+exitOnConfigErrors: no
+exitOnFailedIdLookups: no
+failIfNoInvoiceData: no
+fiscalYearCode: FY2021
+folioUiInventoryPath: inventory/view
+folioUiOrdersPath: orders/view
+folioUiUrl: https://uchicago-test.folio.indexdata.com/
+importInvoice: no
+materialType: unspecified
+noteType: General note
+objectCodeRequired: no
+okapi_username: diku_admin
+onIsbnInvalid: skipRecord
+onValidationErrors: attemptImport
+paymentMethod: EFT
+permELocation: On Order - Order
+permLocation: On Order - Order
+permELocationWithInvoiceImport: invoice import disabled
+permLocationWithInvoiceImport: invoice import disabled
+tenant: diku
+textForElectronicResources: Available to snapshot users
+uploadFilePath: /var/tmp/
+```
+
+
 #### User permissions
 
 To access the APIs, the FOLIO user defined in the `import.properties` file needs the following permissions:

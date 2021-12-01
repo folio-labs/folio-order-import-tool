@@ -2,9 +2,7 @@ package org.olf.folio.order;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.List;
 import java.util.UUID;
-import javax.servlet.ServletContext;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -20,7 +18,6 @@ import org.olf.folio.order.dataobjects.InstanceIdentifier;
 import org.olf.folio.order.dataobjects.Item;
 import org.olf.folio.order.dataobjects.Link;
 import org.olf.folio.order.dataobjects.Note;
-import org.olf.folio.order.dataobjects.ProductIdentifier;
 import org.olf.folio.order.recordvalidation.RecordChecker;
 import org.olf.folio.order.recordvalidation.RecordResult;
 import org.olf.folio.order.recordvalidation.ServiceResponse;

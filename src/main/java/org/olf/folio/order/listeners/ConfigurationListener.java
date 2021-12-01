@@ -23,44 +23,54 @@ public class ConfigurationListener implements ServletContextListener {
 		try {
 			path += (configFileSysProp.startsWith( "/" ) ?
 							configFileSysProp : userHomeSysProp + "/" + configFileSysProp);
-			CompositeConfiguration config = new CompositeConfiguration();
-			config.addConfiguration( new PropertiesConfiguration( path ) );
+			CompositeConfiguration compositeConfiguration = new CompositeConfiguration();
+			compositeConfiguration.addConfiguration( new PropertiesConfiguration( path ) );
 			logger.info("Initializing properties using " + path);
-			Iterator<String> keys = config.getKeys();
+			Iterator<String> keys = compositeConfiguration.getKeys();
 			while (keys.hasNext()) {
 				String key = keys.next();
-				context.setAttribute(key, config.getProperty(key));
+				context.setAttribute(key, compositeConfiguration.getProperty(key));
 			}
-			ConfigurationCheck check = new ConfigurationCheck(config, context);
+			ConfigurationCheck check = new ConfigurationCheck(compositeConfiguration, context);
 			// Load to static configuration object used throughout the app
 			Config.load(context);
 			boolean passed = check.validateConfiguration();
-			keys = config.getKeys();
+			keys = compositeConfiguration.getKeys();
 			logger.info(" ");
 			while (keys.hasNext()) {
 				String key = keys.next();
 				if (!key.contains("password")) {
-					logger.info(String.format("%-31s: %-23s", key, config.getProperty(key)));
+					if (Config.KNOWN_PROPERTIES.contains(key)) {
+						logger.info(String.format("%-31s: %-23s", key, compositeConfiguration.getProperty(key)));
+					} else {
+						logger.info(String.format( "%-31s: %-40s   <-- UNRECOGNIZED SETTING", key, compositeConfiguration.getProperty(key)));
+					}
 				}
 			}
 			logger.info(" ");
 			check.report();
 			if (!passed) {
-				if (Config.exitOnConfigErrors) {
+				if (check.isMissingMandatoryProperties() && Config.exitOnConfigErrors) {
 					throw new ConfigurationException(
-									"SOME CONFIGURATION PROBLEMS ENCOUNTERED - SEE PREVIOUS LOG LINES");
+									"MISSING MANDATORY PROPERTIES: " + check.getMissingMandatoryProperties());
+				} else if (check.authenticationFailed() && Config.exitOnAccessErrors) {
+					throw new ConfigurationException(
+									String.format("COULD NOT AUTHENTICATE [%s] TO FOLIO.", Config.apiUsername));
+				}	else if (Config.exitOnConfigErrors) {
+					throw new ConfigurationException(
+									"FOUND PROBLEMS WITH ONE OR MORE CONFIGURATION SETTINGS.");
 				}
 			}
 			if (!check.resolvedCodesAndNames()) {
 				if (Config.exitOnFailedIdLookups) {
 					throw new ConfigurationException(
-									"ONE OR MORE CODES/NAMES WHERE NOT FOUND"
+									"ONE OR MORE LOOKUPS OF UUIDS FOR CODES/NAMES FAILED."
 					);
 				}
 			}
 
 		} catch (ConfigurationException e) {
-			logger.error("FAILED TO START SERVICE: " + e.getMessage() + System.lineSeparator());
+			logger.error(String.format("FAILED TO START SERVICE: %s%n", e.getMessage()));
 			System.exit(-1);
 		}
 	}

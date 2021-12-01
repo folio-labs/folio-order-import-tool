@@ -58,6 +58,7 @@
 }
 </style>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="org.olf.folio.order.Config" %>
 <body class="layout-default">
 	<!-- NAVIGATION -->
 	<br>
@@ -104,33 +105,15 @@
 									  <div id="config">
 									    <p class="title">Configuration<span style="color:#f5f5f5"></span></p>
                                            <%
-                                              for (String key : Arrays.asList(
-                                                   "baseOkapiEndpoint",
-                                                   "baseOkapEndpoint",
-                                                   "okapi_username",
-                                                   "tenant",
-                                                   "permLocation",
-                                                   "permELocation",
-                                                   "permLocationWithInvoiceImport",
-                                                   "permELocationWithInvoiceImport",
-                                                   "fiscalYearCode",
-                                                   "textForElectronicResources",
-                                                   "noteType",
-                                                   "materialType",
-                                                   "paymentMethod",
-                                                   "objectCodeRequired",
-                                                   "onValidationErrors",
-                                                   "importInvoice",
-                                                   "failIfNoInvoiceData",
-                                                   "exitOnConfigErrors",
-                                                   "exitOnFailedIdLookups",
-                                                   "folioUiUrl",
-                                                   "folioUiInventoryPath",
-                                                   "folioUiOrdersPath",
-                                                   "uploadFilePath")) {
-                                                out.println(key + ": " + getServletContext().getAttribute(key)); %>
+                                              for (String key : Config.KNOWN_PROPERTIES) {
+                                                if (!key.contains("password")) {
+                                                    String val = (String) getServletContext().getAttribute(key);
+                                                    if (val == null) val = "&lt;not specified in properties file&gt;";
+                                                    out.println(key + ": " + val);
+                                           %>
                                                 <br/>
-                                              <% }
+                                           <%   }
+                                              }
                                            %>
 									  </div>
 									</section>

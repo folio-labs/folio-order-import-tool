@@ -18,15 +18,15 @@ import java.util.Map;
 
 public class ConfigurationCheck {
 
-  private final CompositeConfiguration config;
+  private final CompositeConfiguration compositeConfiguration;
   private final Map<String,String> propertyErrors = new HashMap<>();
   private final List<String> missingMandatoryProperties = new ArrayList<>();
   private final List<String> accessErrors = new ArrayList<>();
 
   private static final Logger logger = Logger.getLogger(ConfigurationCheck.class);
 
-  public ConfigurationCheck (CompositeConfiguration config, ServletContext context) {
-    this.config = config;
+  public ConfigurationCheck (CompositeConfiguration compositeConfiguration, ServletContext context) {
+    this.compositeConfiguration = compositeConfiguration;
   }
   private boolean allMandatoryPresent = true;
   private boolean authenticationPassed = true;
@@ -48,7 +48,7 @@ public class ConfigurationCheck {
   }
 
   public boolean configOnValidationErrorsIsValid() {
-    if (config.containsKey(Config.P_ON_VALIDATION_ERRORS)) {
+    if (compositeConfiguration.containsKey(Config.P_ON_VALIDATION_ERRORS)) {
       List<String> validValues = Arrays.asList(
               Config.V_ON_VALIDATION_ERRORS_CANCEL_ALL,
               Config.V_ON_VALIDATION_ERRORS_SKIP_FAILED,
@@ -68,8 +68,15 @@ public class ConfigurationCheck {
   public List<String> getMissingMandatoryProperties () {
     return missingMandatoryProperties;
   }
+  public boolean isMissingMandatoryProperties () {
+    return !allMandatoryPresent;
+  }
+
   public List<String> getAccessErrors () {
     return accessErrors;
+  }
+  public boolean authenticationFailed () {
+    return !authenticationPassed;
   }
   public Map<String,String> getPropertyErrors () {
     return propertyErrors;
@@ -88,7 +95,7 @@ public class ConfigurationCheck {
       logger.error(" ");
       logger.error ("One or more missing, mandatory properties: ");
       for (String prop : getMissingMandatoryProperties()) {
-        logger.error(prop);
+        logger.error("   " + prop);
       }
       logger.error(" ");
     } else if (!urlPassed) {
@@ -118,12 +125,12 @@ public class ConfigurationCheck {
             Config.P_TENANT,
             Config.P_FISCAL_YEAR_CODE,
             Config.P_NOTE_TYPE)) {
-      if (!config.containsKey(prop)) {
+      if (!compositeConfiguration.containsKey(prop)) {
         passed = false;
         addMissingMandatoryProperty(prop);
       }
     }
-    if (!config.containsKey(Config.P_BASE_OKAPI_ENDPOINT) && !config.containsKey(
+    if (!compositeConfiguration.containsKey(Config.P_BASE_OKAPI_ENDPOINT) && !compositeConfiguration.containsKey(
             Config.P_BASE_OKAP_ENDPOINT)) {
       passed = false;
       addMissingMandatoryProperty(Config.P_BASE_OKAPI_ENDPOINT);
@@ -136,11 +143,11 @@ public class ConfigurationCheck {
   }
 
   private boolean checkBaseOkapiEndpointUrl () {
-    if (config.containsKey(Config.P_BASE_OKAPI_ENDPOINT) || config.containsKey(
+    if (compositeConfiguration.containsKey(Config.P_BASE_OKAPI_ENDPOINT) || compositeConfiguration.containsKey(
             Config.P_BASE_OKAP_ENDPOINT)) {
-      String baseOkapiEndpoint = config.containsKey(Config.P_BASE_OKAPI_ENDPOINT)
-              ? config.getString(Config.P_BASE_OKAPI_ENDPOINT)
-              : config.getString(Config.P_BASE_OKAP_ENDPOINT);
+      String baseOkapiEndpoint = compositeConfiguration.containsKey(Config.P_BASE_OKAPI_ENDPOINT)
+              ? compositeConfiguration.getString(Config.P_BASE_OKAPI_ENDPOINT)
+              : compositeConfiguration.getString(Config.P_BASE_OKAP_ENDPOINT);
       try {
         new URL(baseOkapiEndpoint);
       } catch (MalformedURLException mue) {
@@ -148,7 +155,7 @@ public class ConfigurationCheck {
         return false;
       }
       logger.info(" ");
-      logger.info("The URL for Okapi is valid");
+      logger.info("The URL for Okapi is a valid URL.");
       return true;
     } else {
       return false;
@@ -170,7 +177,7 @@ public class ConfigurationCheck {
   private boolean validateCodesAndNames () {
     boolean allCodesAndNamesResolved = true;
     try {
-      String fiscalYearCode = config.getString(Config.P_FISCAL_YEAR_CODE);
+      String fiscalYearCode = compositeConfiguration.getString(Config.P_FISCAL_YEAR_CODE);
       String fiscalYearId = FolioData.getFiscalYearId(fiscalYearCode);
       logger.info(" ");
       if (fiscalYearId == null) {
@@ -179,7 +186,7 @@ public class ConfigurationCheck {
       } else {
         logger.info("Found ID [" + fiscalYearId + "] for fiscal year code [" + fiscalYearCode + "]");
       }
-      String permLocation = config.getString(Config.P_PERM_LOCATION);
+      String permLocation = compositeConfiguration.getString(Config.P_PERM_LOCATION);
       if (permLocation != null && !permLocation.equalsIgnoreCase("NA")) {
         String permLocationId = FolioData.getLocationIdByName(permLocation);
         if (permLocationId == null) {
@@ -189,7 +196,7 @@ public class ConfigurationCheck {
           logger.info("Found ID [" + permLocationId + "] for location name [" + permLocation + "]");
         }
       }
-      String permELocation = config.getString(Config.P_PERM_E_LOCATION);
+      String permELocation = compositeConfiguration.getString(Config.P_PERM_E_LOCATION);
       if (permELocation != null && !permELocation.equalsIgnoreCase("NA")) {
         String permELocationId = FolioData.getLocationIdByName(permELocation);
         if (permELocationId == null) {
@@ -199,7 +206,7 @@ public class ConfigurationCheck {
           logger.info("Found ID [" + permELocationId + "] for location name [" + permLocation + "]");
         }
       }
-      String noteType = config.getString(Config.P_NOTE_TYPE);
+      String noteType = compositeConfiguration.getString(Config.P_NOTE_TYPE);
       if (noteType != null && !noteType.isEmpty()) {
         String noteTypeId = FolioData.getNoteTypeIdByName(noteType);
         if (noteTypeId == null) {
@@ -209,7 +216,7 @@ public class ConfigurationCheck {
           logger.info("Found ID [" + noteTypeId + "] for note type name [" + noteType + "]");
         }
       }
-      String materialType = config.getString(Config.P_MATERIAL_TYPE);
+      String materialType = compositeConfiguration.getString(Config.P_MATERIAL_TYPE);
       if (materialType != null && !materialType.isEmpty() && !materialType.equalsIgnoreCase("NA")) {
         String materialTypeId = Constants.MATERIAL_TYPES_MAP.get(materialType);
         if (materialTypeId == null) {
