@@ -1,8 +1,8 @@
 package org.olf.folio.order;
 
-import org.apache.log4j.Logger;
-
 import javax.servlet.ServletContext;
+import java.util.Arrays;
+import java.util.List;
 
 public class Config {
 
@@ -74,57 +74,86 @@ public class Config {
   public static boolean onValidationErrorsSKipFailed;
   public static boolean onValidationErrorsAttemptImport;
 
-  private static boolean loaded = false;
+  private static final String EMPTY = "";
+  private static final String NOT_APPLICABLE = "NA";
+  private static ServletContext context;
 
-  public static void load (ServletContext context) {
-    if (!loaded) {
-      loaded = true;
+  private static final String V_DEFAULT_UI_INVENTORY_PATH = "inventory/view";
+  private static final String V_DEFAULT_UI_ORDERS_PATH = "orders/view";
+  private static final String V_DEFAULT_MATERIAL_TYPE = "unspecified";
+
+  public static void load (ServletContext servletContext) {
+    if (context == null) {
+      context = servletContext;
       // FOLIO access
-      baseOkapiEndpoint = (String) context.getAttribute(P_BASE_OKAPI_ENDPOINT);
-      if (baseOkapiEndpoint == null || baseOkapiEndpoint.isEmpty()) {
-        baseOkapiEndpoint = (String) context.getAttribute(P_BASE_OKAP_ENDPOINT); //previous spelling
+      baseOkapiEndpoint = getText(P_BASE_OKAP_ENDPOINT);
+      if (baseOkapiEndpoint.isEmpty()) {
+        baseOkapiEndpoint = getText(P_BASE_OKAP_ENDPOINT); //previous spelling
       }
-      folioUiUrl = (String) context.getAttribute(P_FOLIO_UI_URL);
-      folioUiInventoryPath = (String) context.getAttribute(P_FOLIO_UI_INVENTORY_PATH);
-      folioUiOrdersPath = (String) context.getAttribute(P_FOLIO_UI_ORDERS_PATH);
-      apiUsername = (String) context.getAttribute(P_OKAPI_USERNAME);
-      apiPassword = (String) context.getAttribute(P_OKAPI_PASSWORD);
-      tenant = (String) context.getAttribute(P_TENANT);
+      folioUiUrl = getText(P_FOLIO_UI_URL);
+      folioUiInventoryPath = getText(P_FOLIO_UI_INVENTORY_PATH,V_DEFAULT_UI_INVENTORY_PATH);
+      folioUiOrdersPath = getText(P_FOLIO_UI_ORDERS_PATH, V_DEFAULT_UI_ORDERS_PATH);
+      apiUsername = getText(P_OKAPI_USERNAME);
+      apiPassword = getText(P_OKAPI_PASSWORD);
+      tenant = getText(P_TENANT);
       // Operations
-      uploadFilePath = (String) context.getAttribute(P_UPLOAD_FILE_PATH);
+      uploadFilePath = getText(P_UPLOAD_FILE_PATH);
       // Default values
-      permLocationName = (String) context.getAttribute(P_PERM_LOCATION); // Default, could change with invoice
-      permELocationName = (String) context.getAttribute(P_PERM_E_LOCATION); // Default, could change with invoice
-      fiscalYearCode = (String) context.getAttribute(P_FISCAL_YEAR_CODE);
-      noteTypeName = (String) context.getAttribute(P_NOTE_TYPE);
-      materialType = (String) context.getAttribute(P_MATERIAL_TYPE);
-      paymentMethod = (String) context.getAttribute(P_PAYMENT_METHOD);
-      textForElectronicResources = (String) context.getAttribute(P_TEXT_FOR_ELECTRONIC_RESOURCES);
+      permLocationName = getText(P_PERM_LOCATION); // Default, could change with invoice
+      permELocationName = getText(P_PERM_E_LOCATION); // Default, could change with invoice
+      fiscalYearCode = getText(P_FISCAL_YEAR_CODE);
+      noteTypeName = getText(P_NOTE_TYPE);
+      materialType = getText(P_MATERIAL_TYPE, Constants.MATERIAL_TYPES_MAP.get(V_DEFAULT_MATERIAL_TYPE));
+      paymentMethod = getText(P_PAYMENT_METHOD);
+      textForElectronicResources = getText(P_TEXT_FOR_ELECTRONIC_RESOURCES);
       // Processing instructions
-      // objectCode is required unless objectCodeRequired is explicitly set to false in import.properties
-      exitOnConfigErrors = "true".equalsIgnoreCase((String) context.getAttribute(P_EXIT_ON_CONFIG_ERRORS));
-      exitOnFailedIdLookups = "true".equalsIgnoreCase((String) context.getAttribute(P_EXIT_ON_FAILED_ID_LOOKUPS));
-      objectCodeRequired = !( "false".equalsIgnoreCase(
-              (String) context.getAttribute(P_OBJECT_CODE_REQUIRED)) );
-      failIfNoInvoiceData = "true".equalsIgnoreCase((String) context.getAttribute(P_FAIL_IF_NO_INVOICE_DATA));
-      importInvoice = "true".equalsIgnoreCase((String) context.getAttribute(P_IMPORT_INVOICE));
-      onValidationErrors = (String) context.getAttribute(P_ON_VALIDATION_ERRORS);
-      onValidationErrorsCancelAll = onValidationErrors.equalsIgnoreCase(
-              V_ON_VALIDATION_ERRORS_CANCEL_ALL);
-      onValidationErrorsAttemptImport = onValidationErrors.equalsIgnoreCase(
-              V_ON_VALIDATION_ERRORS_ATTEMPT_IMPORT);
-      onValidationErrorsSKipFailed = onValidationErrors.equalsIgnoreCase(
-              V_ON_VALIDATION_ERRORS_SKIP_FAILED);
-      onIsbnInvalid = (String) context.getAttribute(P_ON_ISBN_INVALID);
+      exitOnConfigErrors = getBoolean(P_EXIT_ON_CONFIG_ERRORS,true);
+      exitOnFailedIdLookups = getBoolean(P_EXIT_ON_FAILED_ID_LOOKUPS,true);
+      objectCodeRequired = getBoolean(P_OBJECT_CODE_REQUIRED, true);
+      importInvoice = getBoolean(P_IMPORT_INVOICE,false);
+      failIfNoInvoiceData = getBoolean(P_FAIL_IF_NO_INVOICE_DATA, importInvoice);
+      onValidationErrors = getText(P_ON_VALIDATION_ERRORS, V_ON_VALIDATION_ERRORS_CANCEL_ALL);
+      onValidationErrorsCancelAll = V_ON_VALIDATION_ERRORS_CANCEL_ALL.equalsIgnoreCase(onValidationErrors);
+      onValidationErrorsAttemptImport = V_ON_VALIDATION_ERRORS_ATTEMPT_IMPORT.equalsIgnoreCase(onValidationErrors);
+      onValidationErrorsSKipFailed = V_ON_VALIDATION_ERRORS_SKIP_FAILED.equalsIgnoreCase(onValidationErrors);
+      onIsbnInvalid = getText(P_ON_ISBN_INVALID, V_ON_ISBN_INVALID_FLAG_ERROR);
       onIsbnInvalidFlagError = V_ON_ISBN_INVALID_FLAG_ERROR.equalsIgnoreCase(onIsbnInvalid);
       onIsbnInvalidRemoveIsbn = V_ON_ISBN_INVALID_REMOVE_ISBN.equalsIgnoreCase(onIsbnInvalid);
       onIsbnInvalidDoNothing = V_ON_ISBN_INVALID_DO_NOTHING.equalsIgnoreCase(onIsbnInvalid);
 
-      permLocationWithInvoiceImport = (String) context.getAttribute(
-              P_PERM_LOCATION_WITH_INVOICE_IMPORT);
-      permELocationWithInvoiceImport = (String) context.getAttribute(
-              P_PERM_E_LOCATION_WITH_INVOICE_IMPORT);
+      permLocationWithInvoiceImport = getText(P_PERM_LOCATION_WITH_INVOICE_IMPORT,
+              (importInvoice ? EMPTY : NOT_APPLICABLE));
+      permELocationWithInvoiceImport = getText(P_PERM_E_LOCATION_WITH_INVOICE_IMPORT,
+              (importInvoice ? EMPTY : NOT_APPLICABLE));
     }
+  }
+
+  public static String getText (String key, String defaultStr) {
+    String prop = (String) context.getAttribute(key);
+    if (prop == null || prop.isEmpty()) {
+      return defaultStr;
+    } else {
+      return prop;
+    }
+  }
+
+  public static String getText (String key) {
+    String prop = (String) context.getAttribute(key);
+    return prop == null ? EMPTY : prop;
+  }
+
+  public static boolean getBoolean (String key, boolean defaultsTo) {
+    List<String> trueStrings = Arrays.asList("true","TRUE","1","yes","YES","Y");
+    List<String> falseStrings = Arrays.asList("false","FALSE","0","NO","no");
+    String prop = (String) context.getAttribute(key);
+    if (trueStrings.contains(prop)) {
+      return true;
+    } else if (falseStrings.contains(prop)) {
+      return false;
+    } else {
+      return defaultsTo;
+    }
+
   }
 
 }

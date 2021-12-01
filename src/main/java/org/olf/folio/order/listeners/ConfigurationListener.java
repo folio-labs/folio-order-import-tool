@@ -46,13 +46,13 @@ public class ConfigurationListener implements ServletContextListener {
 			logger.info(" ");
 			check.report();
 			if (!passed) {
-				if ("true".equalsIgnoreCase(config.getString(Config.P_EXIT_ON_CONFIG_ERRORS))) {
+				if (Config.exitOnConfigErrors) {
 					throw new ConfigurationException(
 									"SOME CONFIGURATION PROBLEMS ENCOUNTERED - SEE PREVIOUS LOG LINES");
 				}
 			}
 			if (!check.resolvedCodesAndNames()) {
-				if ("true".equalsIgnoreCase(config.getString(Config.P_EXIT_ON_FAILED_ID_LOOKUPS))) {
+				if (Config.exitOnFailedIdLookups) {
 					throw new ConfigurationException(
 									"ONE OR MORE CODES/NAMES WHERE NOT FOUND"
 					);

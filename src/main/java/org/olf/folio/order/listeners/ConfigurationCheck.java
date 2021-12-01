@@ -19,7 +19,6 @@ import java.util.Map;
 public class ConfigurationCheck {
 
   private final CompositeConfiguration config;
-  private final ServletContext context;
   private final Map<String,String> propertyErrors = new HashMap<>();
   private final List<String> missingMandatoryProperties = new ArrayList<>();
   private final List<String> accessErrors = new ArrayList<>();
@@ -28,7 +27,6 @@ public class ConfigurationCheck {
 
   public ConfigurationCheck (CompositeConfiguration config, ServletContext context) {
     this.config = config;
-    this.context = context;
   }
   private boolean allMandatoryPresent = true;
   private boolean authenticationPassed = true;
@@ -55,12 +53,11 @@ public class ConfigurationCheck {
               Config.V_ON_VALIDATION_ERRORS_CANCEL_ALL,
               Config.V_ON_VALIDATION_ERRORS_SKIP_FAILED,
               Config.V_ON_VALIDATION_ERRORS_ATTEMPT_IMPORT);
-      String val = config.getString(Config.P_ON_VALIDATION_ERRORS);
-      if (validValues.contains(val)) {
+      if (validValues.contains(Config.onValidationErrors)) {
         return true;
       } else {
         addPropertyError(Config.P_ON_VALIDATION_ERRORS,
-                "The value [" + val + "] not valid for this config property, " +
+                "The value [" + Config.onValidationErrors + "] not valid for this config property, " +
                         "should be one of " + validValues);
         return false;
       }
