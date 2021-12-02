@@ -56,7 +56,7 @@ public class RecordResult {
   }
 
   public RecordResult setPoUiUrl (String url) {
-    data.put(P_UI_URL_PO, "");
+    data.put(P_UI_URL_PO, url);
     return this;
   }
 

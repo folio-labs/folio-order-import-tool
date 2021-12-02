@@ -61,6 +61,10 @@ public class OrderImport {
 					// CREATE AND POST THE PURCHASE ORDER AND LINE
 					CompositePurchaseOrder importedPo = importPurchaseOrderAndNote(mappedMarc, outcome);
 
+					outcome.setPoNumber(importedPo.getPoNumber())
+									.setPoUiUrl(Config.folioUiUrl, Config.folioUiOrdersPath,
+													importedPo.getId(), importedPo.getPoNumber());
+
 					// FETCH, UPDATE, AND PUT SELECT INVENTORY INSTANCE/HOLDINGS RECORD/ITEM
 					updateInventory(importedPo.getInstanceId(), mappedMarc, outcome);
 
@@ -83,9 +87,6 @@ public class OrderImport {
 		CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
 
 		FolioAccess.callApiPostWithUtf8(FolioData.COMPOSITE_ORDERS_PATH, compositePo);
-		outcome.setPoNumber(compositePo.getPoNumber())
-						.setPoUiUrl(Config.folioUiUrl, Config.folioUiOrdersPath,
-						compositePo.getId(), compositePo.getPoNumber());
 
 		//INSERT A NOTE IF THERE IS ONE IN THE MARC RECORD
 		if (mappedMarc.hasNotes() && compositePo.hasPoLines() && Config.noteTypeName != null) {
@@ -112,7 +113,12 @@ public class OrderImport {
 			String feedback = String.format("Purchase order and line were created and linked to records in " +
 											"Inventory but cannot update the Instance %s because it has 'source' set to %s",
 							fetchedInstance.getHrid(), fetchedInstance.getSource());
-			outcome.setFlagIfNotNull(feedback);
+
+			outcome.setFlagIfNotNull(feedback)
+							.setInstanceHrid(fetchedInstance.getHrid())
+							.setInstanceUiUrl(Config.folioUiUrl, Config.folioUiInventoryPath,
+											fetchedInstance.getId(), fetchedInstance.getHrid());
+
 			return;
 		}
 

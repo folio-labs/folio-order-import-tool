@@ -283,7 +283,7 @@ function showName() {
   {{/if}}
   {{#each records}}
     <br>
-    <br>Rec# {{recNo}} PO number <a href={{poUrl}} target=orders>{{poNumber}}</a>
+    <br>Rec# {{recNo}} PO number <a href={{data.uiUrlPo}} target=orders>{{data.poNumber}}</a>
     {{#if hasValidationErrors}}<b>failed</b>
       {{#each validationErrors}}
         <br>Error {{this}}
@@ -293,7 +293,7 @@ function showName() {
       <br>Error: {{importError}}
     {{/if}}
     <br>Title: {{data.title}}
-    <br>HRID: <a href={{instanceUrl}} target=inventory>{{instanceHrid}}</a>
+    <br>Instance HRID:  <a href={{data.uiUrlInstance}} target=inventory>{{data.instanceHrid}}</a>
     <br>ISBN: {{data.isbn}}
     {{#each flags}}
       <br> <b>Note</b>: {{this}}
