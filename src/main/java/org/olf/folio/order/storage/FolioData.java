@@ -170,7 +170,7 @@ public class FolioData extends FolioAccess {
           throws Exception {
     if (key == null || key.isEmpty()) return null;
     if (!map.containsKey(key)) {
-      map.put(key, getFirstId(callApiGetArray(url,nameOfArray)));
+      map.put(key, getFirstId(callApiGetArray(url, nameOfArray)));
     }
     return map.get(key);
   }
@@ -193,15 +193,14 @@ public class FolioData extends FolioAccess {
     return null;
   }
 
-  public static String validateObjectCode(String objectCode, String title) throws Exception {
+  public static String validateObjectCode(String objectCode) throws Exception {
     if (getTags(objectCode).length() < 1) {
       return "Object code in the record (" + objectCode + ") does not exist in FOLIO";
     }
     return null;
   }
 
-  public static String validateOrganization(String orgCode, String title) throws Exception {
-    JSONObject responseMessage = new JSONObject();
+  public static String validateOrganization(String orgCode) throws Exception {
     if (getOrganizationId(orgCode) == null) {
       return "Organization code in file (" + orgCode + ") does not exist in FOLIO";
     }

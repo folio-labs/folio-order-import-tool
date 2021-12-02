@@ -72,7 +72,7 @@ public class OrderImport {
 			} catch (NullPointerException npe) {
 				outcome.setImportError("Application error. Null pointer encountered. " + npe.getMessage());
 			}	catch(Exception e) {
-				outcome.setImportError(e.getMessage() + " " + e.getCause());
+				outcome.setImportError(e.getMessage() + (e.getCause() != null ? " " + e.getCause() : ""));
 			}
 		}
 		return validationAndImportOutcomes.toJson();
@@ -81,11 +81,8 @@ public class OrderImport {
 	private CompositePurchaseOrder importPurchaseOrderAndNote(MarcRecordMapping mappedMarc, RecordResult outcome)
 					throws Exception {
 		CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
-		setPreconfiguredValues(compositePo, mappedMarc);
-		logger.info("We created the Purchase Order JSON from MARC etc.");
 
 		FolioAccess.callApiPostWithUtf8(FolioData.COMPOSITE_ORDERS_PATH, compositePo);
-		logger.info("We posted the Purchase Order JSON to FOLIO.");
 		outcome.setPoNumber(compositePo.getPoNumber())
 						.setPoUiUrl(Config.folioUiUrl, Config.folioUiOrdersPath,
 						compositePo.getId(), compositePo.getPoNumber());
@@ -98,9 +95,7 @@ public class OrderImport {
 							.putDomain(Note.V_ORDERS)
 							.putContent(mappedMarc.notes())
 							.putTitle(mappedMarc.notes());
-			logger.info("We created a Note JSON.");
 			FolioAccess.callApiPostWithUtf8(FolioData.NOTES_PATH, note.asJson());
-			logger.info("We posted the Note JSON to FOLIO.");
 		}
 
 		// GET THE UPDATED PURCHASE ORDER FROM FOLIO (TO RETRIEVE THE INSTANCE ID FOR INVENTORY UPDATES)
@@ -108,34 +103,19 @@ public class OrderImport {
 						FolioAccess.callApiGetById(FolioData.COMPOSITE_ORDERS_PATH, compositePo.getId()));
 	}
 
-	private void setPreconfiguredValues(CompositePurchaseOrder compositePo, MarcRecordMapping mappedMarc)
-					throws Exception {
-
-		String permLocationName = (Config.importInvoice && mappedMarc.hasInvoice()
-					? Config.permLocationWithInvoiceImport : Config.permLocationName);
-		String permELocationName = (Config.importInvoice && mappedMarc.hasInvoice()
-					? Config.permELocationWithInvoiceImport : Config.permELocationName);
-		String permLocationId = FolioData.getLocationIdByName(permLocationName);
-		String permELocationId = FolioData.getLocationIdByName(permELocationName);
-
-		if (mappedMarc.electronic()) {
-			compositePo.setLocationIdOnPoLines(permELocationId);
-		} else {
-			compositePo.setLocationIdOnPoLines(permLocationId);
-		}
-
-		if (mappedMarc.physical()) {
-			String materialTypeId = Constants.MATERIAL_TYPES_MAP.get(Config.materialType);
-			compositePo.setMaterialTypeOnPoLines(materialTypeId);
-		}
-	}
-
 	private void updateInventory(String instanceId, MarcRecordMapping mappedMarc, RecordResult outcome)
 					throws Exception {
 		// RETRIEVE, UPDATE, AND PUT THE RELATED INSTANCE
 		Instance fetchedInstance = Instance.fromJson(
 						FolioAccess.callApiGetById(FolioData.INSTANCES_PATH, instanceId));
-		logger.info("We fetched the linked Instance from FOLIO.");
+		if (fetchedInstance.getSource().equals(Instance.V_MARC)) {
+			String feedback = String.format("Purchase order and line were created and linked to records in " +
+											"Inventory but cannot update the Instance %s because it has 'source' set to %s",
+							fetchedInstance.getHrid(), fetchedInstance.getSource());
+			outcome.setFlagIfNotNull(feedback);
+			return;
+		}
+
 		fetchedInstance.putTitle(mappedMarc.title())
 						.putSource(Instance.V_FOLIO)
 						.putInstanceTypeId(FolioData.getInstanceTypeId("text"))
@@ -146,9 +126,7 @@ public class OrderImport {
 						.putNatureOfContentTermIds(new JSONArray())
 						.putPrecedingTitles(new JSONArray())
 						.putSucceedingTitles(new JSONArray());
-		logger.info("We updated the fetched Instance JSON.");
 		FolioAccess.callApiPut(FolioData.INSTANCES_PATH, fetchedInstance);
-		logger.info("We posted the updated Instance JSON to FOLIO.");
 		// END OF INSTANCE
 		outcome.setInstanceHrid(fetchedInstance.getHrid())
 						.setInstanceUiUrl(Config.folioUiUrl, Config.folioUiInventoryPath,
@@ -159,7 +137,6 @@ public class OrderImport {
 						FolioAccess.callApiGetFirstObjectOfArray(
 										FolioData.HOLDINGS_STORAGE_PATH + "?query=(instanceId==" + fetchedInstance.getId() + ")",
 										FolioData.HOLDINGS_RECORDS_ARRAY));
-		logger.info("We fetched the related Holdings Record from FOLIO.");
 		fetchedHoldingsRecord.putElectronicAccess(mappedMarc.getElectronicAccess(Config.textForElectronicResources));
 		if (mappedMarc.electronic()) {
 			fetchedHoldingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName("Electronic"));
@@ -168,9 +145,7 @@ public class OrderImport {
 								BookplateNote.createElectronicBookplateNote(mappedMarc.donor()));
 			}
 		}
-		logger.info("We updated the fetched Holdings Record JSON.");
 		FolioAccess.callApiPut(FolioData.HOLDINGS_STORAGE_PATH, fetchedHoldingsRecord);
-		logger.info("We put the updated Holdings Record JSON to FOLIO.");
 		// END OF HOLDINGS RECORD
 
 		// RETRIEVE, UPDATE, AND PUT THE RELATED ITEM IF THE MARC RECORD HAS A DONOR
@@ -182,11 +157,8 @@ public class OrderImport {
 															FolioData.ITEMS_PATH + "?query=(holdingsRecordId=="
 																			+ fetchedHoldingsRecord.getId() + ")",
 															FolioData.ITEMS_ARRAY));
-			logger.info("We fetched the related Item from FOLIO.");
 			fetchedItem.addBookplateNote(BookplateNote.createPhysicalBookplateNote(mappedMarc.donor()));
-			logger.info("We updated the fetched Item JSON.");
 			FolioAccess.callApiPut(FolioData.ITEMS_PATH, fetchedItem);
-			logger.info("We put the updated Item JSON to FOLIO.");
 		}
 	}
 

@@ -1,6 +1,5 @@
 package org.olf.folio.order.dataobjects;
 
-import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.olf.folio.order.MarcRecordMapping;
@@ -22,8 +21,6 @@ public class CompositePurchaseOrder extends JsonDataObject {
   public static final String V_OPEN = "Open";
   public static final String P_BILL_TO = "billTo";
   public static final String P_COMPOSITE_PO_LINES = "compositePoLines";
-
-  private static final Logger logger = Logger.getLogger(CompositePurchaseOrder.class);
 
   public static CompositePurchaseOrder fromJson(JSONObject object) {
     CompositePurchaseOrder po = new CompositePurchaseOrder();
@@ -81,16 +78,6 @@ public class CompositePurchaseOrder extends JsonDataObject {
     return (CompositePurchaseOrder) putArray(P_COMPOSITE_PO_LINES, poLines);
   }
 
-  public CompositePurchaseOrder putCompositePoLines (List<PoLine> poLines) {
-    if (getCompositePoLinesJsonArray() == null) {
-      putCompositePoLines(new JSONArray());
-    }
-    for (PoLine line : poLines) {
-      getCompositePoLinesJsonArray().put(line.asJson());
-    }
-    return this;
-  }
-
   public String getPoNumber() {
     return getString(P_PO_NUMBER);
   }
@@ -132,22 +119,6 @@ public class CompositePurchaseOrder extends JsonDataObject {
       poLines.add(PoLine.fromJson(poLine));
     }
     return poLines;
-  }
-
-  public CompositePurchaseOrder setMaterialTypeOnPoLines (String materialType) {
-    for (PoLine line : getCompositePoLines()) {
-      line.getPhysical().putMaterialType(materialType);
-    }
-    return this;
-  }
-
-  public CompositePurchaseOrder setLocationIdOnPoLines (String locationId) {
-    for (PoLine line : getCompositePoLines()) {
-      for (PoLineLocation location : line.getLocations()) {
-        location.putLocationId(locationId);
-      }
-    }
-    return this;
   }
 
 }

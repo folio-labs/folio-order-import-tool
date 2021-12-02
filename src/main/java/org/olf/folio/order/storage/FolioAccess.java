@@ -158,11 +158,12 @@ public class FolioAccess {
     logger.info("PUT:");
     logger.info(body.toString());
     logger.info(uri);
-    logger.info(responseCode);
-    //logger.info(responseString);
+    String feedback = String.format("API %s responded with %s, response body %s",
+            uri, responseCode, body);
+    logger.info(feedback);
 
     if (responseCode > 399) {
-      throw new Exception("Response: " + responseCode);
+      throw new Exception(feedback);
     }
 
     return "ok";

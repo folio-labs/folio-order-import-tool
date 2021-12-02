@@ -278,8 +278,12 @@ function showName() {
     <br> <b> {{summary.import.failed}} record(s) failed to import (fully or partially) </b>
   {{/if}}
   <br> {{summary.import.succeeded}} record(s) imported
+  {{#if summary.hasFlags}}
+    <br> {{summary.flagged}} record(s) with notes/warnings
+  {{/if}}
   {{#each records}}
-    <br>Rec# {{recNo}}
+    <br>
+    <br>Rec# {{recNo}} PO number <a href={{poUrl}} target=orders>{{poNumber}}</a>
     {{#if hasValidationErrors}}<b>failed</b>
       {{#each validationErrors}}
         <br>Error {{this}}
@@ -289,9 +293,13 @@ function showName() {
       <br>Error: {{importError}}
     {{/if}}
     <br>Title: {{data.title}}
+    <br>HRID: <a href={{instanceUrl}} target=inventory>{{instanceHrid}}</a>
     <br>ISBN: {{data.isbn}}
-    {{#if hasValidationErrors}}
-      <br><pre><div class="inner-pre" style="font-size: 11px; height: 100px; width: 1000px;" >{{data.source}}</div></pre>
+    {{#each flags}}
+      <br> <b>Note</b>: {{this}}
+    {{/each}}
+    {{#if hasImportError}}
+       <br><pre><div class="inner-pre" style="font-size: 11px; height: 100px; width: 1000px;" >{{data.source}}</div></pre>
     {{/if}}
   {{/each}}
 
@@ -303,6 +311,9 @@ function showName() {
   <br>Records processed: {{summary.recordsProcessed}}
   <br>Records passed: {{summary.validation.succeeded}}
   <br>Records failed: {{summary.validation.failed}}
+  {{#if summary.hasFlags}}
+    <br> {{summary.flagged}} record(s) with notes/warnings
+  {{/if}}
   <br>
   {{#each records}}
     <br>Rec# {{recNo}}
@@ -313,6 +324,9 @@ function showName() {
     {{/if}}
     <br>Title: {{data.title}}
     <br>ISBN: {{data.isbn}}
+    {{#each flags}}
+      <br> <b>Note</b>: {{this}}
+    {{/each}}
     <br><pre><div class="inner-pre" style="font-size: 11px; height: 100px; width: 1000px;" >{{data.source}}</div></pre>
   {{/each}}
 </script>

@@ -57,9 +57,7 @@ public class ProductIdentifier extends JsonDataObject {
   private static boolean isNotInvalidIsbnThatShouldBeRemoved (String identifierTypeId, String value) {
     if (identifierTypeId.equals(Constants.ISBN)) {
       if (RecordChecker.isInvalidIsbn(value)) {
-        if (Config.onIsbnInvalidRemoveIsbn) {
-          return false;
-        }
+        return !Config.onIsbnInvalidRemoveIsbn;
       }
     }
     return true;

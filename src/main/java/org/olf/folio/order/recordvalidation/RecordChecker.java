@@ -42,8 +42,19 @@ public class RecordChecker {
       }
 
       if (mappedMarc.hasISBN() && isInvalidIsbn(mappedMarc.getISBN())) {
-        outcome.addValidationMessageIfNotNull("ISBN is invalid")
-                .markSkipped(Config.onValidationErrorsSKipFailed);
+        if (Config.V_ON_ISBN_INVALID_REMOVE_ISBN.equalsIgnoreCase(Config.onIsbnInvalid)) {
+          outcome.setFlagIfNotNull(
+                  String.format(
+                          "ISBN %s is not valid. Will remove the ISBN to continue",
+                          mappedMarc.getISBN())
+          );
+        } else if (Config.V_ON_ISBN_INVALID_REPORT_ERROR.equalsIgnoreCase(Config.onIsbnInvalid)) {
+          outcome.addValidationMessageIfNotNull("ISBN is invalid")
+                  .markSkipped(Config.onValidationErrorsSKipFailed);
+        }
+      } else if (!mappedMarc.hasISBN()) {
+        outcome.setFlagIfNotNull("No ISBN found. " +
+                "This order import will trigger creation of a new Instance in FOLIO.");
       }
 
       Map<String, String> requiredFields = new HashMap<>();
@@ -64,20 +75,22 @@ public class RecordChecker {
 
       //VALIDATE THE ORGANIZATION, OBJECT CODE AND FUND
       //STOP THE PROCESS IF ANY ERRORS WERE FOUND
-      String orgValidationResult = FolioData.validateOrganization(mappedMarc.vendorCode(), mappedMarc.title());
+      String orgValidationResult = FolioData.validateOrganization(mappedMarc.vendorCode());
       if (orgValidationResult != null) {
+System.out.println("Putting error on org validation");
         outcome.addValidationMessageIfNotNull(orgValidationResult)
                 .markSkipped(Config.onValidationErrorsSKipFailed);
       }
-
+System.out.println("Validate object code for outcome " + outcome.asJson());
       if (mappedMarc.hasObjectCode()) {
+        System.out.println("Validating object code? ");
         outcome.addValidationMessageIfNotNull(
-                FolioData.validateObjectCode(mappedMarc.objectCode(), mappedMarc.title()))
+                FolioData.validateObjectCode(mappedMarc.objectCode()))
                 .markSkipped(Config.onValidationErrorsSKipFailed);
       }
       if (mappedMarc.hasProjectCode()) {
         outcome.addValidationMessageIfNotNull(
-                FolioData.validateObjectCode(mappedMarc.projectCode(), mappedMarc.title()))
+                FolioData.validateObjectCode(mappedMarc.projectCode()))
                 .markSkipped(Config.onValidationErrorsSKipFailed);
       }
       //result.addErrorMessageIfNotNull(FolioData.validateFund(mappedMarc.fundCode()));

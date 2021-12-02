@@ -21,9 +21,12 @@ public class RecordResult {
   private static final String P_RECORD_IMPORTED = "imported";
   private static final String P_RECORD_SKIPPED = "skipped";
   private static final String P_VALIDATION_ERRORS = "validationErrors";
+  private static final String P_FLAGS = "flags";
+  private static final String P_HAS_FLAGS = "hasFlags";
 
   private final JSONObject record = new JSONObject();
   private final JSONArray validationErrors = new JSONArray();
+  private final JSONArray flags = new JSONArray();
   private final JSONObject data = new JSONObject();
 
   public RecordResult (int recNo, boolean importing) {
@@ -35,6 +38,8 @@ public class RecordResult {
     }
     record.put(P_HAS_VALIDATION_ERRORS, false);
     record.put(P_VALIDATION_ERRORS,validationErrors);
+    record.put(P_FLAGS,flags);
+    record.put(P_HAS_FLAGS, false);
     record.put(P_DATA, data);
   }
 
@@ -100,6 +105,14 @@ public class RecordResult {
     return this;
   }
 
+  public RecordResult setFlagIfNotNull (String message) {
+    if (message != null) {
+      flags.put(message);
+      record.put(P_HAS_FLAGS,true);
+    }
+    return this;
+  }
+
   public boolean failedValidation() {
     return record.getBoolean(P_HAS_VALIDATION_ERRORS);
   }
@@ -108,6 +121,9 @@ public class RecordResult {
     return record.getBoolean(P_HAS_IMPORT_ERROR);
   }
 
+  public boolean hasFlags () {
+    return record.getJSONArray(P_FLAGS).length()>0;
+  }
   public boolean isSkipped() {
     return record.getBoolean(P_RECORD_SKIPPED);
   }

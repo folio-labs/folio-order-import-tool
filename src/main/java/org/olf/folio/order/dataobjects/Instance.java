@@ -58,4 +58,7 @@ public class Instance extends JsonDataObject {
   public Instance putSucceedingTitles (JSONArray succeedingTitles) {
     return (Instance) putArray(P_SUCCEEDING_TITLES, succeedingTitles);
   }
+  public String getSource () {
+    return getString(P_SOURCE);
+  }
 }

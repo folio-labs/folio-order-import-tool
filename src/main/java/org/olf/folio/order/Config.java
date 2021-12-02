@@ -36,7 +36,7 @@ public class Config {
   public static final String V_ON_VALIDATION_ERRORS_SKIP_FAILED = "skipFailed";
   public static final String V_ON_VALIDATION_ERRORS_ATTEMPT_IMPORT = "attemptImport";
   public static final String P_ON_ISBN_INVALID = "onIsbnInvalid";
-  public static final String V_ON_ISBN_INVALID_FLAG_ERROR = "flagError";
+  public static final String V_ON_ISBN_INVALID_REPORT_ERROR = "reportError";
   public static final String V_ON_ISBN_INVALID_REMOVE_ISBN = "removeIsbn";
   public static final String V_ON_ISBN_INVALID_DO_NOTHING = "doNothing";
   // OPTIONAL FEEDBACK SETTINGS
@@ -148,8 +148,8 @@ public class Config {
       onValidationErrorsCancelAll = V_ON_VALIDATION_ERRORS_CANCEL_ALL.equalsIgnoreCase(onValidationErrors);
       onValidationErrorsAttemptImport = V_ON_VALIDATION_ERRORS_ATTEMPT_IMPORT.equalsIgnoreCase(onValidationErrors);
       onValidationErrorsSKipFailed = V_ON_VALIDATION_ERRORS_SKIP_FAILED.equalsIgnoreCase(onValidationErrors);
-      onIsbnInvalid = getText(P_ON_ISBN_INVALID, V_ON_ISBN_INVALID_FLAG_ERROR);
-      onIsbnInvalidFlagError = V_ON_ISBN_INVALID_FLAG_ERROR.equalsIgnoreCase(onIsbnInvalid);
+      onIsbnInvalid = getText(P_ON_ISBN_INVALID, V_ON_ISBN_INVALID_REPORT_ERROR);
+      onIsbnInvalidFlagError = V_ON_ISBN_INVALID_REPORT_ERROR.equalsIgnoreCase(onIsbnInvalid);
       onIsbnInvalidRemoveIsbn = V_ON_ISBN_INVALID_REMOVE_ISBN.equalsIgnoreCase(onIsbnInvalid);
       onIsbnInvalidDoNothing = V_ON_ISBN_INVALID_DO_NOTHING.equalsIgnoreCase(onIsbnInvalid);
 

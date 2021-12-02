@@ -16,7 +16,10 @@ public class ServiceResponse {
   private static final String P_RECORDS_PROCESSED = "recordsProcessed";
   private static final String P_SUCCEEDED_COUNT = "succeeded";
   private static final String P_FAILED_COUNT = "failed";
+  private static final String P_HAS_FLAGS = "hasFlags";
+  private static final String P_FLAGGED = "flagged";
   private static final String P_RECORDS = "records";
+
 
   JSONObject response = new JSONObject();
   JSONObject summary = new JSONObject();
@@ -56,6 +59,21 @@ public class ServiceResponse {
       if (result.hasImportError()) return true;
     }
     return false;
+  }
+
+  public boolean hasFlags () {
+    for (RecordResult outcome : recordResults) {
+      if (outcome.hasFlags()) return true;
+    }
+    return false;
+  }
+
+  public int getFlagsCount () {
+    int flags = 0;
+    for (RecordResult outcome : recordResults) {
+      if (outcome.hasFlags()) flags++;
+    }
+    return flags;
   }
 
   private int getRecordCount () {
@@ -106,6 +124,9 @@ public class ServiceResponse {
       _import.put(P_SUCCEEDED_COUNT, getSuccessfulImportsCount());
       _import.put(P_FAILED_COUNT, getImportExceptionsCount());
     }
+    summary.put(P_HAS_FLAGS, hasFlags());
+    summary.put(P_FLAGGED, getFlagsCount());
+
     for (RecordResult result : recordResults) {
       records.put(result.asJson());
     }
