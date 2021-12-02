@@ -11,8 +11,10 @@ import org.olf.folio.order.storage.FolioData;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static org.olf.folio.order.Constants.CONTRIBUTOR_NAME_TYPES_MAP;
 
@@ -67,8 +69,22 @@ public class MarcRecordMapping {
   // Mappings 856
   private static final String USER_LIMIT           = "x";
 
+  // For reporting missing mandatory mappings in 980
+  public static final Map<String, String> FOLIO_TO_MARC_FIELD_MAP = new HashMap<>();
+  public static final String FUND_CODE_LABEL = "Fund code";
+  public static final String PRICE_LABEL = "Price";
+  public static final String VENDOR_CODE_LABEL = "Vendor code";
+  public static final String MARC_980_B = "980$b";
+  public static final String MARC_980_V = "980$v";
+  public static final String MARC_980_M = "980$m";
+
   public MarcRecordMapping(Record marcRecord) {
     this.marcRecord = marcRecord;
+    if (FOLIO_TO_MARC_FIELD_MAP.isEmpty()) {
+      FOLIO_TO_MARC_FIELD_MAP.put(PRICE_LABEL, MARC_980_M);
+      FOLIO_TO_MARC_FIELD_MAP.put(FUND_CODE_LABEL, MARC_980_B);
+      FOLIO_TO_MARC_FIELD_MAP.put(VENDOR_CODE_LABEL, MARC_980_V);
+    }
     d245 = (DataField) marcRecord.getVariableField("245");
     d250 = (DataField) marcRecord.getVariableField("250");
     d260 = (DataField) marcRecord.getVariableField("260");
@@ -589,6 +605,18 @@ public class MarcRecordMapping {
     return fieldsFound;
   }
 
+  private static String getInitialDigits(String s) {
+    String trimmed = s.trim();
+    StringBuilder f = new StringBuilder();
+    for (int i = 0; i < trimmed.length(); i++)
+      if (Character.isDigit(trimmed.charAt(i))) {
+        f.append(trimmed.charAt(i));
+      } else {
+        break;
+      }
+    return f.length()>0 ? f.toString() : s;
+  }
+
   /**
    * Looks up the value of the identifier fields, optionally adding additional subfields to the value for given Identifier types
    * Will strip colons and spaces from ISBN value when not including qualifiers.
@@ -607,7 +635,9 @@ public class MarcRecordMapping {
           if ( identifierField.getSubfield( 'c' ) != null ) identifierValue += " " + identifierField.getSubfieldsAsString( "c" );
           if ( identifierField.getSubfield( 'q' ) != null ) identifierValue += " " + identifierField.getSubfieldsAsString( "q" );
         } else {
-          identifierValue = identifierValue.replaceAll("[: ]", "");
+          if (Constants.ISBN.equals(identifierType)) {
+            identifierValue = getInitialDigits(identifierValue);
+          }
         }
         break;
       case Constants.INVALID_ISBN:                   // 020 using $z, extend with c,q

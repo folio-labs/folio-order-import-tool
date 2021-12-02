@@ -31,6 +31,7 @@ public class RecordChecker {
     return validationResults.toJson();
   }
 
+
   public static void validateMarcRecord (MarcRecordMapping mappedMarc, RecordResult outcome) {
     try {
       outcome.setInputMarcData(mappedMarc);
@@ -61,14 +62,16 @@ public class RecordChecker {
       if (Config.objectCodeRequired) {
         requiredFields.put("Object code", mappedMarc.objectCode());
       }
-      requiredFields.put("Fund code", mappedMarc.fundCode());
-      requiredFields.put("Vendor Code", mappedMarc.vendorCode());
-      requiredFields.put("Price" , mappedMarc.price());
+      requiredFields.put(MarcRecordMapping.FUND_CODE_LABEL, mappedMarc.fundCode());
+      requiredFields.put(MarcRecordMapping.VENDOR_CODE_LABEL, mappedMarc.vendorCode());
+      requiredFields.put(MarcRecordMapping.PRICE_LABEL, mappedMarc.price());
 
       // MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
       for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
         if (entry.getValue()==null || entry.getValue().isEmpty()) {
-          outcome.addValidationMessageIfNotNull("Mandatory data element " + entry.getKey() + " missing.")
+          String message = String.format("Mandatory data element %s missing (looked in %s).",
+                  entry.getKey(), MarcRecordMapping.FOLIO_TO_MARC_FIELD_MAP.get(entry.getKey()));
+          outcome.addValidationMessageIfNotNull(message)
                   .markSkipped(Config.onValidationErrorsSKipFailed);
         }
       }
