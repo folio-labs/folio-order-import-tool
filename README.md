@@ -62,6 +62,7 @@ values  `true`, `TRUE`, `yes`, `YES`, `y`, `Y`, `1` will resolve to **true** and
 | objectCodeRequired        | boolean                                                                   | true           | If true, the validation will fail if no object code is found in the incoming MARC.                                                                                                                                                                                                                                    |
 | importInvoice             | boolean                                                                   | false          | Will look for invoice data to import if `true`.                                                                                                                                                                                                                                                                       |
 | failIfNoInvoiceData       | boolean                                                                   | (true)         | If importInvoice is `true` and this setting is `true` the service will report an error if input is missing invoice data.                                                                                                                                                                                              |
+| onIsbnInvalid             | removeIsbn, reportError, doNothing                                        | reportError    | Controls if the tool should report error and perhaps skip the record, or remove the ISBN to ingest, or do nothing (which should cause the import to error out later)                                                                                                                                         | 
 | **Tool UI**               |||
 | folioUiUrl                | Protocol and domain of FOLIO UI, ie https://folio-snapshot.dev.folio.org/ | none           | If provided, links to FOLIO's UI will be displayed for records in the import log.                                                                                                                                                                                                                                     |
 | folioUiInventoryPath      | Path to the Inventory UI                                                  | inventory/view | Used for a link in the import log to the Instance in UI Inventory.                                                                                                                                                                                                                                                    |
@@ -83,7 +84,7 @@ materialType: unspecified
 noteType: General note
 objectCodeRequired: no
 okapi_username: diku_admin
-onIsbnInvalid: skipRecord
+onIsbnInvalid: reportError
 onValidationErrors: attemptImport
 paymentMethod: EFT
 permELocation: On Order - Order
