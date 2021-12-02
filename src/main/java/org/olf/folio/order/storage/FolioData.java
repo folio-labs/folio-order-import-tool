@@ -242,6 +242,10 @@ public class FolioData extends FolioAccess {
     return null;
   }
 
+  public static JSONObject getInstancesByQuery (String query) throws Exception {
+    return callApiGet(INSTANCES_PATH + "?query=(" + URLEncoder.encode(query, StandardCharsets.UTF_8) + ")");
+  }
+
   private static String getFirstId(JSONArray array) {
     if (array == null || array.isEmpty()) {
       return null;

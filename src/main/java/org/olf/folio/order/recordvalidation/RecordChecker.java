@@ -7,6 +7,7 @@ import org.marc4j.MarcStreamReader;
 import org.marc4j.marc.Record;
 import org.olf.folio.order.Config;
 import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.dataobjects.Instance;
 import org.olf.folio.order.storage.FolioData;
 
 import java.io.FileInputStream;
@@ -31,7 +32,6 @@ public class RecordChecker {
     return validationResults.toJson();
   }
 
-
   public static void validateMarcRecord (MarcRecordMapping mappedMarc, RecordResult outcome) {
     try {
       outcome.setInputMarcData(mappedMarc);
@@ -53,9 +53,29 @@ public class RecordChecker {
           outcome.addValidationMessageIfNotNull("ISBN is invalid")
                   .markSkipped(Config.onValidationErrorsSKipFailed);
         }
-      } else if (!mappedMarc.hasISBN()) {
-        outcome.setFlagIfNotNull("No ISBN found. " +
-                "This order import will trigger creation of a new Instance in FOLIO.");
+      } else if (!mappedMarc.hasISBN() &&
+                 !mappedMarc.hasISSN() &&
+                 !mappedMarc.hasPublisherOrDistributorNumber() &&
+                 !mappedMarc.hasSystemControlNumber() &&
+                 !mappedMarc.hasOtherStandardIdentifier()) {
+        String existingInstancesMessage;
+        JSONObject instances = FolioData.getInstancesByQuery("title=\"" + mappedMarc.title() + "\"");
+        int totalRecords = instances.getInt("totalRecords");
+        if (totalRecords > 0) {
+          Instance firstExistingInstance  = Instance.fromJson((JSONObject) instances.getJSONArray(FolioData.INSTANCES_ARRAY).get(0));
+          existingInstancesMessage = String.format(
+                  "%s in Inventory with the same title%sHRID %s",
+                  (totalRecords>1 ? " There are already " + totalRecords + " instances" : " There is already an Instance"),
+                  (totalRecords>1 ? ", for example one with " : " and "),
+                  firstExistingInstance.getHrid());
+        } else {
+          existingInstancesMessage = "Found no existing Instances with that exact title";
+        }
+        outcome.setFlagIfNotNull(
+                "No ISBN, ISSN, Publisher number or distributor number, system control number," +
+                        " or other standard identifier found in the record." +
+                        " This order import might trigger the creation of a new Instance in FOLIO."
+                + existingInstancesMessage);
       }
 
       Map<String, String> requiredFields = new HashMap<>();
@@ -80,13 +100,10 @@ public class RecordChecker {
       //STOP THE PROCESS IF ANY ERRORS WERE FOUND
       String orgValidationResult = FolioData.validateOrganization(mappedMarc.vendorCode());
       if (orgValidationResult != null) {
-System.out.println("Putting error on org validation");
         outcome.addValidationMessageIfNotNull(orgValidationResult)
                 .markSkipped(Config.onValidationErrorsSKipFailed);
       }
-System.out.println("Validate object code for outcome " + outcome.asJson());
       if (mappedMarc.hasObjectCode()) {
-        System.out.println("Validating object code? ");
         outcome.addValidationMessageIfNotNull(
                 FolioData.validateObjectCode(mappedMarc.objectCode()))
                 .markSkipped(Config.onValidationErrorsSKipFailed);
@@ -96,7 +113,6 @@ System.out.println("Validate object code for outcome " + outcome.asJson());
                 FolioData.validateObjectCode(mappedMarc.projectCode()))
                 .markSkipped(Config.onValidationErrorsSKipFailed);
       }
-      //result.addErrorMessageIfNotNull(FolioData.validateFund(mappedMarc.fundCode()));
 
       if (Config.importInvoice) {
         outcome.addValidationMessageIfNotNull(

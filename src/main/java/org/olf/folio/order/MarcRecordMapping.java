@@ -532,6 +532,23 @@ public class MarcRecordMapping {
     return !getDataFieldsForIdentifierType(Constants.ISBN).isEmpty();
   }
 
+  public boolean hasISSN() {
+    return !getDataFieldsForIdentifierType(Constants.ISSN).isEmpty();
+  }
+
+  public boolean hasOtherStandardIdentifier() {
+    return !getDataFieldsForIdentifierType(Constants.OTHER_STANDARD_IDENTIFIER).isEmpty();
+  }
+
+  public boolean hasPublisherOrDistributorNumber() {
+    return !getDataFieldsForIdentifierType(Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER).isEmpty();
+  }
+
+  public boolean hasSystemControlNumber () {
+    return !getDataFieldsForIdentifierType(Constants.SYSTEM_CONTROL_NUMBER).isEmpty();
+  }
+
+
   public String getISBN() {
     List<DataField> isbnFields =
             getDataFieldsForIdentifierType(Constants.ISBN);
