@@ -121,6 +121,9 @@ public class Config {
       if (baseOkapiEndpoint.isEmpty()) {
         baseOkapiEndpoint = getText(P_BASE_OKAP_ENDPOINT); //previous spelling
       }
+      if (!baseOkapiEndpoint.endsWith("/")) {
+        baseOkapiEndpoint = baseOkapiEndpoint + "/";
+      }
       folioUiUrl = getText(P_FOLIO_UI_URL);
       folioUiInventoryPath = getText(P_FOLIO_UI_INVENTORY_PATH,V_DEFAULT_UI_INVENTORY_PATH);
       folioUiOrdersPath = getText(P_FOLIO_UI_ORDERS_PATH, V_DEFAULT_UI_ORDERS_PATH);
