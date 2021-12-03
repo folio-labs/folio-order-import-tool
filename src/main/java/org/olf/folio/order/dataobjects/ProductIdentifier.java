@@ -6,7 +6,7 @@ import org.marc4j.marc.DataField;
 import org.olf.folio.order.Config;
 import org.olf.folio.order.Constants;
 import org.olf.folio.order.MarcRecordMapping;
-import org.olf.folio.order.recordvalidation.RecordChecker;
+import org.olf.folio.order.utils.Utils;
 
 import java.util.List;
 
@@ -54,9 +54,9 @@ public class ProductIdentifier extends JsonDataObject {
       return identifiersJson;
   }
 
-  private static boolean isNotInvalidIsbnThatShouldBeRemoved (String identifierTypeId, String value) {
+  public static boolean isNotInvalidIsbnThatShouldBeRemoved (String identifierTypeId, String value) {
     if (identifierTypeId.equals(Constants.ISBN)) {
-      if (RecordChecker.isInvalidIsbn(value)) {
+      if (Utils.isInvalidIsbn(value)) {
         return !Config.onIsbnInvalidRemoveIsbn;
       }
     }

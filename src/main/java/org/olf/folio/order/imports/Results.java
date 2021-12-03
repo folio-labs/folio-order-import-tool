@@ -1,4 +1,4 @@
-package org.olf.folio.order.recordvalidation;
+package org.olf.folio.order.imports;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class ServiceResponse {
+public class Results {
 
   private static final String P_SUMMARY = "summary";
   private static final String P_VALIDATION = "validation";
@@ -31,7 +31,7 @@ public class ServiceResponse {
   int recNo = 0;
   boolean importing;
 
-  public ServiceResponse(boolean importing) {
+  public Results(boolean importing) {
     this.importing = importing;
     response.put(P_SUMMARY, summary);
     summary.put(P_VALIDATION, validation);

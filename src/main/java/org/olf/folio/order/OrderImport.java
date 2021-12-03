@@ -18,9 +18,9 @@ import org.olf.folio.order.dataobjects.InstanceIdentifier;
 import org.olf.folio.order.dataobjects.Item;
 import org.olf.folio.order.dataobjects.Link;
 import org.olf.folio.order.dataobjects.Note;
-import org.olf.folio.order.recordvalidation.RecordChecker;
-import org.olf.folio.order.recordvalidation.RecordResult;
-import org.olf.folio.order.recordvalidation.ServiceResponse;
+import org.olf.folio.order.validation.RecordChecker;
+import org.olf.folio.order.imports.RecordResult;
+import org.olf.folio.order.imports.Results;
 import org.olf.folio.order.storage.FolioAccess;
 import org.olf.folio.order.storage.FolioData;
 
@@ -48,7 +48,7 @@ public class OrderImport {
 
 		InputStream in = new FileInputStream(Config.uploadFilePath + fileName);
 		MarcReader reader = new MarcStreamReader(in);
-		ServiceResponse validationAndImportOutcomes =  new ServiceResponse(true);
+		Results validationAndImportOutcomes =  new Results(true);
 		while (reader.hasNext()) {
 			RecordResult outcome = validationAndImportOutcomes.nextResult();
 			try {
