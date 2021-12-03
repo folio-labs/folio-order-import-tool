@@ -50,13 +50,13 @@ public class OrderService {
 		String responseFileLocation =
 						Config.uploadFilePath + fileName + (analyze ? "-analyze" : "-import") + ".json";
 		// SAVE FILE TO DISK
-		writeFile(uploadedInputStream, uploadedFileLocation);
+		writeMarcFile(uploadedInputStream, uploadedFileLocation);
 
 		// PASS FILE INFO TO 'OrderImport' WHICH MAKES THE FOLIO API CALLS
 		try {
 			JSONObject message = new OrderImport().upload(fileName + ".mrc", analyze);
 			logger.info("Writing response to log file");
-			writeLog(responseFileLocation, message);
+			writeLogFile(responseFileLocation, message);
 			logger.info("Sending response to client: " + message.toString(2));
 			return Response.status(Response.Status.OK).entity(message.toString(2)).build();
 		}
@@ -71,8 +71,8 @@ public class OrderService {
 		return Response.status(Response.Status.OK).entity("OK").build();
 	}
 
-	private void writeFile(InputStream uploadedInputStream,
-			String uploadedFileLocation) {
+	private void writeMarcFile(InputStream uploadedInputStream,
+														 String uploadedFileLocation) {
 		try {
 			int read;
 			byte[] bytes = new byte[1024];
@@ -87,7 +87,7 @@ public class OrderService {
 		}
 	}
 
-	private void writeLog(String fileName, JSONObject importResults) throws IOException {
+	private void writeLogFile(String fileName, JSONObject importResults) throws IOException {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
 		writer.write(importResults.toString(2));
 		writer.close();

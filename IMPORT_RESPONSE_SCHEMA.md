@@ -20,7 +20,9 @@ This is the format of the output to be rendered (when running `analyze`, the ele
       "hasErrors": true/false,
       "succeeded": count,
       "failed": count
-    }
+    },
+    "hasFlags": true/false,
+    "flagged": count
   },
   "records": [
      {
@@ -35,6 +37,11 @@ This is the format of the output to be rendered (when running `analyze`, the ele
           "msg"
        ],
        "importError": message,
+       "hasFlags": true/false,
+       "flags": [
+          "msg",
+          "msg"
+       ]
        "data": {
          "title": title,
          "isbn":  isbn,
