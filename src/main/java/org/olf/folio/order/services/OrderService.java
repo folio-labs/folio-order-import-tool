@@ -1,7 +1,9 @@
 package org.olf.folio.order.services;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -15,11 +17,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-
+import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.olf.folio.order.Config;
 import org.olf.folio.order.OrderImport;
@@ -42,16 +43,22 @@ public class OrderService {
 
 		String analyzeOnly = servletRequest.getParameter("analyzeOnly");
 		boolean analyze = "true".equalsIgnoreCase(analyzeOnly);
-		UUID fileName = UUID.randomUUID();
+		String fileNameExclType = FilenameUtils.removeExtension(fileDetails.getFileName());
+		String fileName = fileNameExclType + "-" + UUID.randomUUID();
+		new File(Config.uploadFilePath).mkdir();
 		String uploadedFileLocation = Config.uploadFilePath + fileName + ".mrc";
+		String responseFileLocation =
+						Config.uploadFilePath + fileName + (analyze ? "-analyze" : "-import") + ".json";
 		// SAVE FILE TO DISK
 		writeFile(uploadedInputStream, uploadedFileLocation);
 
 		// PASS FILE INFO TO 'OrderImport' WHICH MAKES THE FOLIO API CALLS
 		try {
 			JSONObject message = new OrderImport().upload(fileName + ".mrc", analyze);
-			logger.info("Sending response to client: " + message.toString());
-			return Response.status(Response.Status.OK).entity(message.toString()).build();		
+			logger.info("Writing response to log file");
+			writeLog(responseFileLocation, message);
+			logger.info("Sending response to client: " + message.toString(2));
+			return Response.status(Response.Status.OK).entity(message.toString(2)).build();
 		}
 		catch(Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getLocalizedMessage()).build();		
@@ -78,5 +85,12 @@ public class OrderService {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void writeLog(String fileName, JSONObject importResults) throws IOException {
+		BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+		writer.write(importResults.toString(2));
+		writer.close();
+		logger.info("Wrote log to " + fileName);
 	}
 }

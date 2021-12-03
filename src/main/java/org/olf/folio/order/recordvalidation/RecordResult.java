@@ -61,7 +61,7 @@ public class RecordResult {
   }
 
   public RecordResult setPoUiUrl (String folioUiUrl, String path, String poId, String poNumber ) {
-    setPoUiUrl(String.format("%s%s/%s?qindex=poNumber&query=%s", folioUiUrl, path, poId, poNumber));
+    setPoUiUrl(String.format("%s%s%s?qindex=poNumber&query=%s", folioUiUrl, path, poId, poNumber));
     return this;
   }
 
@@ -78,7 +78,7 @@ public class RecordResult {
   public RecordResult setInstanceUiUrl(String folioUiUrl, String path, String instanceId, String hrid) {
     if (folioUiUrl != null && path != null) {
       setInstanceUiUrl(
-              String.format("%s%s/%s?qindex=hrid&query=%s&sort=title", folioUiUrl, path,instanceId, hrid));
+              String.format("%s%s%s?qindex=hrid&query=%s&sort=title", folioUiUrl, path, instanceId, hrid));
     }
     return this;
   }

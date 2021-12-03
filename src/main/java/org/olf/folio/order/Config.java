@@ -1,6 +1,7 @@
 package org.olf.folio.order;
 
 import javax.servlet.ServletContext;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -113,31 +114,30 @@ public class Config {
   private static final String V_DEFAULT_UI_ORDERS_PATH = "orders/view";
   private static final String V_DEFAULT_MATERIAL_TYPE = "unspecified";
 
+  public static List<Object> allSettings = new ArrayList<>();
+
   public static void load (ServletContext servletContext) {
     if (context == null) {
       context = servletContext;
       // FOLIO access
-      baseOkapiEndpoint = getText(P_BASE_OKAPI_ENDPOINT);
+      baseOkapiEndpoint = withEndingSlash(getText(P_BASE_OKAPI_ENDPOINT));
       if (baseOkapiEndpoint.isEmpty()) {
-        baseOkapiEndpoint = getText(P_BASE_OKAP_ENDPOINT); //previous spelling
+        baseOkapiEndpoint = withEndingSlash(getText(P_BASE_OKAP_ENDPOINT)); //previous spelling
       }
-      if (!baseOkapiEndpoint.endsWith("/")) {
-        baseOkapiEndpoint = baseOkapiEndpoint + "/";
-      }
-      folioUiUrl = getText(P_FOLIO_UI_URL);
-      folioUiInventoryPath = getText(P_FOLIO_UI_INVENTORY_PATH,V_DEFAULT_UI_INVENTORY_PATH);
-      folioUiOrdersPath = getText(P_FOLIO_UI_ORDERS_PATH, V_DEFAULT_UI_ORDERS_PATH);
+      folioUiUrl = withEndingSlash(getText(P_FOLIO_UI_URL));
+      folioUiInventoryPath = withEndingSlash(getText(P_FOLIO_UI_INVENTORY_PATH,V_DEFAULT_UI_INVENTORY_PATH));
+      folioUiOrdersPath = withEndingSlash(getText(P_FOLIO_UI_ORDERS_PATH, V_DEFAULT_UI_ORDERS_PATH));
       apiUsername = getText(P_OKAPI_USERNAME);
       apiPassword = getText(P_OKAPI_PASSWORD);
       tenant = getText(P_TENANT);
       // Operations
-      uploadFilePath = getText(P_UPLOAD_FILE_PATH);
+      uploadFilePath = withEndingSlash(getText(P_UPLOAD_FILE_PATH));
       // Default values
       permLocationName = getText(P_PERM_LOCATION); // Default, could change with invoice
       permELocationName = getText(P_PERM_E_LOCATION); // Default, could change with invoice
       fiscalYearCode = getText(P_FISCAL_YEAR_CODE);
       noteTypeName = getText(P_NOTE_TYPE);
-      materialType = getText(P_MATERIAL_TYPE, Constants.MATERIAL_TYPES_MAP.get(V_DEFAULT_MATERIAL_TYPE));
+      materialType = getText(P_MATERIAL_TYPE, V_DEFAULT_MATERIAL_TYPE);
       paymentMethod = getText(P_PAYMENT_METHOD);
       textForElectronicResources = getText(P_TEXT_FOR_ELECTRONIC_RESOURCES);
       // Processing instructions
@@ -188,7 +188,14 @@ public class Config {
     } else {
       return defaultsTo;
     }
+  }
 
+  public static String withEndingSlash(String str) {
+    if (str == null || str.isEmpty()) {
+      return str;
+    } else {
+      return str.endsWith("/") ? str : str + "/";
+    }
   }
 
 }
