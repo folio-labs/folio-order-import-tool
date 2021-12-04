@@ -9,6 +9,7 @@ import org.olf.folio.order.MarcRecordMapping;
 import java.util.List;
 
 import static org.olf.folio.order.MarcRecordMapping.getIdentifierValue;
+import static org.olf.folio.order.dataobjects.ProductIdentifier.isNotInvalidIsbnThatShouldBeRemoved;
 
 public class InstanceIdentifier extends JsonDataObject {
   public static final String P_IDENTIFIER_TYPE_ID = "identifierTypeId";
@@ -41,10 +42,10 @@ public class InstanceIdentifier extends JsonDataObject {
               String value = getIdentifierValue( identifierTypeId, identifierField, includeQualifiers );
               if (value != null && ! value.isEmpty())
               {
-                  identifiersJson.put(new InstanceIdentifier()
-                          .putValue(value)
-                          .putIdentifierTypeId(identifierTypeId)
-                          .asJson());
+                if (isNotInvalidIsbnThatShouldBeRemoved(identifierTypeId, value)) {
+                  identifiersJson.put(new InstanceIdentifier().putValue(value).putIdentifierTypeId(
+                          identifierTypeId).asJson());
+                }
               }
           }
       }
