@@ -193,7 +193,7 @@ public class FolioAccess {
     int responseCode = response.getStatusLine().getStatusCode();
 
     logger.info("POST:");
-    logger.info(body.toString(2));
+    logger.debug(body.toString(2));
     logger.info(apiPath);
     logger.info(responseCode);
 
