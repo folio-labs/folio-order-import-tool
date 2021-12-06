@@ -1,7 +1,8 @@
-## 1.1.0-SNAPSHOT
+## 1.1.0 SNAPSHOT
 
+* Runs import jobs asynchronously and provides UI mechanisms to follow progress
+* Stores import JSON logs at the file upload path, UI provides listing of import history
 * Properly sets default materialType if not provided in properties
 * Allows all paths in properties to be with our without the ending slash
-* Stores import logs JSON at file upload path 
 
 ## 1.0.0 2021-12-02

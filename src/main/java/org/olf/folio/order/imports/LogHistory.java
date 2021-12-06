@@ -36,7 +36,7 @@ public class LogHistory {
             JSONObject resultsJson = loadJson(file);
             purgeAgedResultsFiles(resultsJson, file, Config.daysToKeepResults);
             if (hasCompatibleSchema(resultsJson)) {
-              if (getAgeOfFileInHours(file) < Config.daysToShowResults) {
+              if (getAgeOfFileInDays(file) < Config.daysToShowResults) {
                 addHistoryEntry(file, resultsJson, logEntries);
               } else {
                 logger.info(String.format(
@@ -84,13 +84,6 @@ public class LogHistory {
     Duration age = Duration.between(fileInstant, Instant.now());
     logger.info("File is " + age.toDays() + " days old");
     return age.toDays();
-  }
-
-  private static long getAgeOfFileInHours(File file) {
-    Instant fileInstant = Instant.ofEpochMilli(file.lastModified());
-    Duration age = Duration.between(fileInstant, Instant.now());
-    logger.info("File is " + age.toHours() + " hours old");
-    return age.toHours();
   }
 
   private static void addHistoryEntry (File file, JSONObject resultsJson, JSONArray logEntries) {

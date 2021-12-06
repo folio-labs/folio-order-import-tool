@@ -331,8 +331,8 @@ function showName() {
        <a href="javascript:requestImportResults('{{summary.resultsBaseName}}'); requestImportHistory();" title="{{summary.resultsBaseName}}">refresh</a>
      </div>
   {{/if}}
-  <p class="title">Order import results  ({{summary.status}})<span style="color:#f5f5f5"></span></p>
-  <br>MARC records: {{summary.marcRecords}}
+  <h4>Import {{summary.inputBaseName}}  ({{summary.status}})</h4>
+  MARC records: {{summary.marcRecords}}
   <br>Records processed: {{summary.recordsProcessed}}
   {{#if summary.validation.hasErrors}}
     <br> Records passed validation: {{summary.validation.succeeded}}
@@ -371,6 +371,7 @@ function showName() {
 <!-- See project''s README for documentation about the schema for the JSON data received here: -->
 <script id="analyzeResponseTemplate" type="text/x-handlebars-template">
 <p class="title">Validation results<span style="color:#f5f5f5"></span></p>
+  <h4>{{summary.inputBaseName}}</h4>
   <br>Records processed: {{summary.recordsProcessed}}
   <br>Records passed: {{summary.validation.succeeded}}
   <br>Records failed: {{summary.validation.failed}}
