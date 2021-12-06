@@ -63,17 +63,19 @@ A number of configuration parameters control the startup and operation of the se
 | failIfNoInvoiceData       | boolean ¹                                                                                                                              | (true)                       | If importInvoice is `true` and this setting is `true` the service will report an error if input is missing invoice data.                                                                                                                                                                                              |
 | onIsbnInvalid             | removeIsbn, reportError, doNothing                                                                                                     | reportError                  | Controls if the tool should report error and perhaps skip the record, or remove the ISBN to ingest, or do nothing (which should cause the import to error out later)                                                                                                                                                  | 
 | **Tool UI**               |||
-| daysToShowResults         | number of days ³                                                                                                                       | 14                           | Results are listed in the UI for this number of days after first created. After that they will be skipped (but not delete from the server until after `daysToKeepResults` days)                                                                                                                                       |
+| daysToShowResults         | number of days ³                                                                                                                       | 14                           | Results are listed in the UI for this number of days after first created. After that they will be skipped (but not deleted)                                                                                                                                       |
 | folioUiUrl                | Protocol and domain of FOLIO UI, ie https://folio-snapshot.dev.folio.org/ ²                                                            | none                         | If provided, links to FOLIO's UI will be displayed for records in the import log.                                                                                                                                                                                                                                     |
 | folioUiInventoryPath      | Path to the Inventory UI ²                                                                                                             | inventory/view               | Used for a link in the import log to the Instance in UI Inventory.                                                                                                                                                                                                                                                    |
 | folioUiOrdersPath         | Path to the Orders UI ²                                                                                                                | orders/view                  | Used for a link in the import log to the order in UI Orders.                                                                                                                                                                                                                                                          |
+
 [1] Boolean settings: `true`, `TRUE`, `yes`, `YES`, `y`, `Y`, and `1` will resolve to **true**, while `false`, `FALSE`, `no`, `NO`, `n`, `N`
 , and `0` will resolve to **false**
 
 [2] file paths, URLs and API paths can be with our without the ending slash (`/`) 
 
 [3] if the provided config value is not a valid number, the default will apply
-This is a complete example of import properties
+
+Example import.properties:
 
 ```
 baseOkapiEndpoint: https://folio-snapshot.dev.folio.org/
