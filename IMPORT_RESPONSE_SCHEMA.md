@@ -9,8 +9,23 @@ This is the format of the output to be rendered (when running `analyze`, the ele
 
 ```
 {
+  "schema": {
+    "name": "importResults",
+    "version": "1.0"
+  },
   "summary": {
+    "type": import or analyze,
+    "filesIdentifier": uuid for unique file names,
+    "inputBaseName": the base name of the MARC file,
+    "resultsBaseName": the base name of the results filed,
+    "startInstantUtc": start time of the job, UTC
+    "startTime": start time localized,
+    "endInstantUtc": finish time for the job, UTC,
+    "endTime": finish time localized,
     "recordsProcessed": count 
+    "status": partial, done or error,
+    "isNotDone": true/false, 
+    "fatalError":  message,
     "validation": {
       "hasErrors": true/false,
       "succeeded": count,
