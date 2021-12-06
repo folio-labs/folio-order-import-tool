@@ -58,7 +58,7 @@
 }
 </style>
 <%@ page import="java.util.Arrays, org.olf.folio.order.Config" %>
-<body class="layout-default">
+<body class="layout-default" onLoad="javascript:requestImportHistory();">
 	<!-- NAVIGATION -->
 	<br>
 	<div class="container">
@@ -75,9 +75,10 @@
 						<div class="box">
 							<!--  left box start -->
 							<div id="tabs-with-content">
-								<div class="tabs is-centered">
+								<div class="tabs is-left">
 									<ul>
 										<li><a>Upload Orders</a></li>
+										<li><a>Import History</a></li>
 										<li><a>View Configuration</a></li>
 									</ul>
 								</div>
@@ -98,6 +99,13 @@
 											<button class="button is-primary" id="import" name="import" onclick="return sendImportRequest()">Import MARC records</button>
 										</div>
 									</section>
+								</div>
+								<div>
+								  <section class="tab-content">
+								    <div style="text-align:right;"><h3><a href="javascript:requestImportHistory()">Refresh</a></h3></div>
+								    <div id="historyEntries" name="historyEntries">
+								    </div>
+								  </section>
 								</div>
 								<div>
 									<section class="tab-content">
@@ -163,6 +171,7 @@ function sendImportRequest() {
 	$('#import').addClass('is-loading');
 	var form_data = new FormData();
 	form_data.append('order-file', $('#order-file').get(0).files[0]);
+	document.getElementById("logContent").innerHTML = "";
 	$.ajax({
 		type: "POST",
 		processData: false,
@@ -184,12 +193,14 @@ function showImportResponse(response) {
 	var context = response;
 	var output = template(context);
 	document.getElementById("logContent").innerHTML = output;
+	requestImportHistory();
 }
 
 function sendAnalyzeRequest() {
 	$('#analyze').addClass('is-loading');
 	var form_data = new FormData();
 	form_data.append('order-file', $('#order-file').get(0).files[0]);
+	document.getElementById("logContent").innerHTML = "";
 	$.ajax({
 		type: "POST",
 		processData: false,
@@ -211,14 +222,61 @@ function showAnalyzeResponse(response) {
 	var context = response;
 	var output = template(context);
 	document.getElementById("logContent").innerHTML = output;
+	requestImportHistory();
 }
-
 
 function updateFailed(response) {
 	$('#import').removeClass('is-loading');
 	$('#analyze').removeClass('is-loading');
 	alert(response.responseText);
 }
+
+function requestImportHistory () {
+	$.ajax({
+		type: "GET",
+		processData: false,
+		contentType: false,
+		url: "/import/service/upload/history",
+		success: showHistoryResponse,
+		error: updateFailed
+	});
+	return false;
+}
+
+function showHistoryResponse (historyJson) {
+  var source = document.getElementById("importHistoryTemplate").innerHTML;
+  var template = Handlebars.compile(source);
+  var context = historyJson;
+  var output = template(context);
+  document.getElementById("historyEntries").innerHTML = output;
+}
+
+function requestImportResults (importName) {
+	$.ajax({
+		type: "GET",
+		processData: false,
+		contentType: false,
+		url: "/import/service/upload/results?name="+importName,
+		success: showImportResultsResponse,
+		error: updateFailed
+	});
+	return false;
+}
+
+function showImportResultsResponse(resultsJson) {
+    var source;
+    if (resultsJson.summary.import) {
+      source = document.getElementById("importResponseTemplate").innerHTML;
+    } else {
+      source = document.getElementById("analyzeResponseTemplate").innerHTML;
+    }
+    var template = Handlebars.compile(source);
+    var context = resultsJson;
+    var output = template(context);
+    document.getElementById("logContent").innerHTML = output;
+    requestImportHistory();
+}
+
 </script>
 <script src="js/handlebars-v4.0.2.js"></script>
 <script src="js/moment.js"></script>
@@ -268,7 +326,13 @@ function showName() {
 
 <!-- See project''s README for documentation about the schema for the JSON data received here : -->
 <script id="importResponseTemplate" type="text/x-handlebars-template">
-<p class="title">Order import results<span style="color:#f5f5f5"></span></p>
+  {{#if summary.isNotDone}}
+     <div style="text-align:right;">
+       <a href="javascript:requestImportResults('{{summary.resultsBaseName}}'); requestImportHistory();" title="{{summary.resultsBaseName}}">refresh</a>
+     </div>
+  {{/if}}
+  <p class="title">Order import results  ({{summary.status}})<span style="color:#f5f5f5"></span></p>
+  <br>MARC records: {{summary.marcRecords}}
   <br>Records processed: {{summary.recordsProcessed}}
   {{#if summary.validation.hasErrors}}
     <br> Records passed validation: {{summary.validation.succeeded}}
@@ -302,7 +366,6 @@ function showName() {
        <br><pre><div class="inner-pre" style="font-size: 11px; height: 100px; width: 1000px;" >{{data.source}}</div></pre>
     {{/if}}
   {{/each}}
-
 </script>
 
 <!-- See project''s README for documentation about the schema for the JSON data received here: -->
@@ -331,5 +394,26 @@ function showName() {
   {{/each}}
 </script>
 
-
+<script id="importHistoryTemplate" type="text/x-handlebars-template">
+<table class="table-look">
+  <tr>
+    <th style="padding:5px;">Type of<br>request</th>
+    <th style="padding:5px;">Name</th>
+    <th style="padding:5px;">Started</th>
+    <th style="padding:5px;">Ended</th>
+    <th style="padding:5px;">Marc<br>records</th>
+    <th style="padding:5px;">Records<br>processed</th>
+  </tr>
+  {{#each entries}}
+    <tr>
+      <td style="padding:5px;">{{requestType}}</td>
+      <td style="padding:5px;"><a href="javascript:requestImportResults('{{resultsBaseName}}')" title="{{resultsBaseName}}">{{inputBaseName}}</a></td>
+      <td style="padding:5px;">{{startTime}}</td>
+      <td style="padding:5px;">{{endTime}}</td>
+      <td style="padding:5px; text-align:right;">{{marcRecordCount}}</td>
+      <td style="padding:5px; text-align:right;">{{recordsProcessedText}}</td>
+    </tr>
+  {{/each}}
+</table>
+</script>
 </html>

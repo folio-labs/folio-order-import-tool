@@ -1,6 +1,7 @@
 package org.olf.folio.order.listeners;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 import org.olf.folio.order.Config;
 import org.olf.folio.order.Constants;
@@ -8,8 +9,11 @@ import org.olf.folio.order.storage.FolioAccess;
 import org.olf.folio.order.storage.FolioData;
 
 import javax.servlet.ServletContext;
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,19 +36,21 @@ public class ConfigurationCheck {
   private boolean authenticationPassed = true;
   private boolean urlPassed = true;
   private boolean codesAndNamesExist = true;
+  private boolean fileSystemPathIsWriteable = true;
 
   public boolean validateConfiguration () {
     boolean validOnAnalysisErrorsSetting;
     allMandatoryPresent = checkMissingMandatoryProperties();
     urlPassed = checkBaseOkapiEndpointUrl();
     if (allMandatoryPresent && urlPassed) {
-      authenticationPassed = checkAccess ();
+      authenticationPassed = checkFolioAccess();
       if (authenticationPassed) {
         codesAndNamesExist = validateCodesAndNames ();
       }
+      fileSystemPathIsWriteable = checkUploadFilePath();
     }
     validOnAnalysisErrorsSetting = configOnValidationErrorsIsValid();
-    return (allMandatoryPresent && authenticationPassed && urlPassed && validOnAnalysisErrorsSetting);
+    return (allMandatoryPresent && authenticationPassed && urlPassed && validOnAnalysisErrorsSetting && fileSystemPathIsWriteable);
   }
 
   public boolean configOnValidationErrorsIsValid() {
@@ -162,7 +168,7 @@ public class ConfigurationCheck {
     }
   }
 
-  private boolean checkAccess () {
+  private boolean checkFolioAccess() {
     try {
       FolioAccess.initialize(logger);
     } catch (Exception e) {
@@ -172,6 +178,38 @@ public class ConfigurationCheck {
     logger.info(" ");
     logger.info("Access to FOLIO works with the provided authentication configuration");
     return true;
+  }
+
+  private boolean checkUploadFilePath () {
+    if (compositeConfiguration.containsKey(Config.P_UPLOAD_FILE_PATH)) {
+      String pathString = compositeConfiguration.getString(Config.P_UPLOAD_FILE_PATH);
+      Path path = Path.of(pathString);
+      if (Files.exists(path)) {
+        if (Files.isWritable(path)) {
+          return true;
+        } else {
+          addPropertyError(Config.P_UPLOAD_FILE_PATH,
+                  String.format("Path '%s' exists but is not writeable.", pathString));
+          return false;
+        }
+      } else if (Files.exists(path.getParent())) {
+        boolean directoryCreated = new File(pathString).mkdir();
+        if (directoryCreated) {
+          logger.info(String.format("File upload path '%s' was created. ", pathString));
+          return true;
+        } else {
+          addPropertyError(Config.P_UPLOAD_FILE_PATH,
+                  String.format("The directory '%s' does not exist and could not be created.", pathString));
+          return false;
+        }
+      } else {
+        addPropertyError(Config.P_UPLOAD_FILE_PATH,
+                String.format("Neither the directory '%s' or the parent '%s' exists on this server.", pathString, path.getParent()));
+        return false;
+      }
+    } else {
+      return true;
+    }
   }
 
   private boolean validateCodesAndNames () {

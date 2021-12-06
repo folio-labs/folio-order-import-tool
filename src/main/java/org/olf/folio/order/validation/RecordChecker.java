@@ -1,6 +1,5 @@
-package org.olf.folio.order.recordvalidation;
+package org.olf.folio.order.validation;
 
-import org.folio.isbn.IsbnUtil;
 import org.json.JSONObject;
 import org.marc4j.MarcReader;
 import org.marc4j.MarcStreamReader;
@@ -8,28 +7,32 @@ import org.marc4j.marc.Record;
 import org.olf.folio.order.Config;
 import org.olf.folio.order.MarcRecordMapping;
 import org.olf.folio.order.dataobjects.Instance;
+import org.olf.folio.order.imports.FileStorageHelper;
+import org.olf.folio.order.imports.RecordResult;
+import org.olf.folio.order.imports.Results;
 import org.olf.folio.order.storage.FolioData;
+import org.olf.folio.order.utils.Utils;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
 public class RecordChecker {
 
 
-  public static JSONObject validateMarcRecords(String fileName) throws FileNotFoundException {
-    InputStream in = new FileInputStream(Config.uploadFilePath + fileName);
-    MarcReader reader = new MarcStreamReader(in);
+  public static Results validateMarcRecords(FileStorageHelper fileStore) throws FileNotFoundException {
+    MarcReader reader = new MarcStreamReader(fileStore.getMarcInputStream());
     Record record;
-    ServiceResponse validationResults = new ServiceResponse (false);
+    Results validationResults = new Results(false, fileStore);
+    int recordCount = 0;
     while(reader.hasNext()) {
+      recordCount++;
       record = reader.next();
       MarcRecordMapping marc = new MarcRecordMapping(record);
       validateMarcRecord(marc, validationResults.nextResult());
     }
-    return validationResults.toJson();
+    validationResults.setMarcRecordCount(recordCount).markDone();
+    return validationResults;
   }
 
   public static void validateMarcRecord (MarcRecordMapping mappedMarc, RecordResult outcome) {
@@ -42,7 +45,7 @@ public class RecordChecker {
         return;
       }
 
-      if (mappedMarc.hasISBN() && isInvalidIsbn(mappedMarc.getISBN())) {
+      if (mappedMarc.hasISBN() && Utils.isInvalidIsbn(mappedMarc.getISBN())) {
         if (Config.V_ON_ISBN_INVALID_REMOVE_ISBN.equalsIgnoreCase(Config.onIsbnInvalid)) {
           outcome.setFlagIfNotNull(
                   String.format(
@@ -122,20 +125,6 @@ public class RecordChecker {
 
     }	catch(Exception e) {
       outcome.addValidationMessageIfNotNull("Got exception when validating MARC record: " + e.getMessage() + " " + e.getClass());
-    }
-  }
-
-  public static boolean isInvalidIsbn (String isbn) {
-    return !isValidIsbn(isbn);
-  }
-
-  public static boolean isValidIsbn (String isbn) {
-    if (isbn.length() == 10) {
-      return IsbnUtil.isValid10DigitNumber(isbn);
-    } else if (isbn.length() == 13) {
-      return IsbnUtil.isValid13DigitNumber(isbn);
-    } else {
-      return false;
     }
   }
 

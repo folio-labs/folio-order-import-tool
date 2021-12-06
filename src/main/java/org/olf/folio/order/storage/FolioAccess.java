@@ -98,12 +98,13 @@ public class FolioAccess {
     logger.debug("GET:");
     logger.debug(apiPath);
     logger.debug(responseCode);
-    logger.debug(responseString);
 
     if (responseCode > 399) {
       throw new Exception(responseString);
     }
-    return new JSONObject(responseString);
+    JSONObject responseJson = new JSONObject(responseString);
+    logger.debug(responseJson.toString(2));
+    return responseJson;
   }
 
   public static JSONArray callApiGetArray (String url, String nameOfArray) throws Exception {
@@ -155,11 +156,9 @@ public class FolioAccess {
     HttpResponse response = client.execute(request);
     int responseCode = response.getStatusLine().getStatusCode();
 
-    logger.info("PUT:");
-    logger.info(body.toString());
-    logger.info(uri);
-    String feedback = String.format("API %s responded with %s, response body %s",
-            uri, responseCode, body);
+    String feedback = String.format(
+            "PUT to %s. Response %s%n response body %s",
+            uri, responseCode, body.toString(2));
     logger.info(feedback);
 
     if (responseCode > 399) {
@@ -194,10 +193,9 @@ public class FolioAccess {
     int responseCode = response.getStatusLine().getStatusCode();
 
     logger.info("POST:");
-    logger.info(body.toString());
+    logger.debug(body.toString(2));
     logger.info(apiPath);
     logger.info(responseCode);
-    logger.info(responseString);
 
     if (responseCode > 399) {
       throw new Exception(responseString);
