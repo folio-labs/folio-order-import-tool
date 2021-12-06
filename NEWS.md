@@ -1,4 +1,4 @@
-## 1.1.0 SNAPSHOT
+## 1.1.0 2021-12-06
 
 * Runs import jobs asynchronously and provides UI mechanisms to follow progress
 * Stores import JSON logs at the file upload path, UI provides listing of import history
