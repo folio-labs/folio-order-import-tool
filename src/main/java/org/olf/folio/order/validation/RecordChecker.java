@@ -7,31 +7,32 @@ import org.marc4j.marc.Record;
 import org.olf.folio.order.Config;
 import org.olf.folio.order.MarcRecordMapping;
 import org.olf.folio.order.dataobjects.Instance;
+import org.olf.folio.order.imports.FileStorageHelper;
 import org.olf.folio.order.imports.RecordResult;
 import org.olf.folio.order.imports.Results;
 import org.olf.folio.order.storage.FolioData;
 import org.olf.folio.order.utils.Utils;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
 public class RecordChecker {
 
 
-  public static JSONObject validateMarcRecords(String fileName) throws FileNotFoundException {
-    InputStream in = new FileInputStream(Config.uploadFilePath + fileName);
-    MarcReader reader = new MarcStreamReader(in);
+  public static Results validateMarcRecords(FileStorageHelper fileStore) throws FileNotFoundException {
+    MarcReader reader = new MarcStreamReader(fileStore.getMarcInputStream());
     Record record;
-    Results validationResults = new Results(false);
+    Results validationResults = new Results(false, fileStore);
+    int recordCount = 0;
     while(reader.hasNext()) {
+      recordCount++;
       record = reader.next();
       MarcRecordMapping marc = new MarcRecordMapping(record);
       validateMarcRecord(marc, validationResults.nextResult());
     }
-    return validationResults.toJson();
+    validationResults.setMarcRecordCount(recordCount).markDone();
+    return validationResults;
   }
 
   public static void validateMarcRecord (MarcRecordMapping mappedMarc, RecordResult outcome) {

@@ -1,7 +1,6 @@
 package org.olf.folio.order;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.FileNotFoundException;
 import java.util.UUID;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,6 +17,7 @@ import org.olf.folio.order.dataobjects.InstanceIdentifier;
 import org.olf.folio.order.dataobjects.Item;
 import org.olf.folio.order.dataobjects.Link;
 import org.olf.folio.order.dataobjects.Note;
+import org.olf.folio.order.imports.FileStorageHelper;
 import org.olf.folio.order.validation.RecordChecker;
 import org.olf.folio.order.imports.RecordResult;
 import org.olf.folio.order.imports.Results;
@@ -28,29 +28,42 @@ public class OrderImport {
 
 	private static final Logger logger = Logger.getLogger("OrderImport");
 
-	public  JSONObject upload(String fileName, boolean analyze) throws Exception {
+	public Results runAnalyzeJob(FileStorageHelper fileStore) throws Exception {
+		logger.info("...starting...");
+		FolioAccess.initialize(logger);
+
+		//GET THE UPLOADED FILE, EXIT IF NONE PROVIDED
+		if (fileStore.fullPathToMarcFile() == null) {
+			return new Results(false, fileStore)
+							.setFatalError("No input MARC file provided")
+							.markEndedWithError();
+		}
+		return RecordChecker.validateMarcRecords(fileStore);
+	}
+
+	public Results runImportJob(FileStorageHelper fileStore, Results results) throws Exception {
 
 		logger.info("...starting...");
 		FolioAccess.initialize(logger);
 
 		//GET THE UPLOADED FILE, EXIT IF NONE PROVIDED
-		if (fileName == null) {
-			JSONObject responseMessage = new JSONObject();
-			responseMessage.put("error", "no input file provided");
-			responseMessage.put("PONumber", "~error~");
-			return responseMessage;
+		if (fileStore.fullPathToMarcFile() == null) {
+			return new Results( true, fileStore)
+							.setFatalError("No input MARC file provided")
+							.markEndedWithError();
 		}
 
 		// If analyze-only or analyze-first
-		if (analyze || Config.onValidationErrorsCancelAll) {
-			return RecordChecker.validateMarcRecords(fileName);
+		if (Config.onValidationErrorsCancelAll) {
+			Results validationResults = RecordChecker.validateMarcRecords(fileStore);
+			if (validationResults.hasValidationErrors()) {
+				return validationResults;
+			}
 		}
 
-		InputStream in = new FileInputStream(Config.uploadFilePath + fileName);
-		MarcReader reader = new MarcStreamReader(in);
-		Results validationAndImportOutcomes =  new Results(true);
+		MarcReader reader = new MarcStreamReader(fileStore.getMarcInputStream());
 		while (reader.hasNext()) {
-			RecordResult outcome = validationAndImportOutcomes.nextResult();
+			RecordResult outcome = results.nextResult();
 			try {
 				Record record = reader.next();
 				MarcRecordMapping mappedMarc = new MarcRecordMapping(record);
@@ -71,6 +84,7 @@ public class OrderImport {
 					// IMPORT INVOICE IF CONFIGURED FOR IT AND PRESENT
 					maybeImportInvoice(importedPo, mappedMarc);
 				}
+
 			} catch (JSONException je) {
 				outcome.setImportError("Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
 			} catch (NullPointerException npe) {
@@ -78,8 +92,9 @@ public class OrderImport {
 			}	catch(Exception e) {
 				outcome.setImportError(e.getMessage() + (e.getCause() != null ? " " + e.getCause() : ""));
 			}
+			fileStore.storeResults(results);
 		}
-		return validationAndImportOutcomes.toJson();
+		return results.markDone();
 	}
 
 	private CompositePurchaseOrder importPurchaseOrderAndNote(MarcRecordMapping mappedMarc, RecordResult outcome)
@@ -181,4 +196,13 @@ public class OrderImport {
 		}
 	}
 
+	public static int countMarcRecords (FileStorageHelper store) throws FileNotFoundException {
+		MarcStreamReader reader = new MarcStreamReader(store.getMarcInputStream());
+		int records = 0;
+		while (reader.hasNext()) {
+			reader.next();
+			records++;
+		}
+		return records;
+	}
 }

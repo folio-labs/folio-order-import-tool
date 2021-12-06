@@ -15,6 +15,9 @@ public class Config {
   public static final String P_OKAPI_PASSWORD = "okapi_password";
   // OPERATIONS
   public static final String P_UPLOAD_FILE_PATH = "uploadFilePath";
+  public static final String P_DAYS_TO_KEEP_RESULTS = "daysToKeepResults";
+  public static final String P_DAYS_TO_SHOW_RESULTS = "daysToShowResults";
+  public static final String P_MAX_SECONDS_UNTIL_RESPONSE = "maxSecondsUntilResponse";
   // STATIC VALUES
   public static final String P_FISCAL_YEAR_CODE = "fiscalYearCode";
   public static final String P_NOTE_TYPE = "noteType";
@@ -47,7 +50,8 @@ public class Config {
 
   public static final List<String> KNOWN_PROPERTIES = Arrays.asList(
           P_BASE_OKAP_ENDPOINT,
-          P_BASE_OKAPI_ENDPOINT,
+          P_BASE_OKAPI_ENDPOINT, P_DAYS_TO_SHOW_RESULTS,
+          P_DAYS_TO_KEEP_RESULTS,
           P_EXIT_ON_ACCESS_ERRORS,
           P_EXIT_ON_CONFIG_ERRORS,
           P_EXIT_ON_FAILED_ID_LOOKUPS,
@@ -82,6 +86,8 @@ public class Config {
   public static String apiPassword;
   public static String tenant;
   public static String uploadFilePath;
+  public static int daysToKeepResults;
+  public static int daysToShowResults;
   public static String fiscalYearCode;
   public static String permLocationName;
   public static String permELocationName;
@@ -113,6 +119,9 @@ public class Config {
   private static final String V_DEFAULT_UI_INVENTORY_PATH = "inventory/view";
   private static final String V_DEFAULT_UI_ORDERS_PATH = "orders/view";
   private static final String V_DEFAULT_MATERIAL_TYPE = "unspecified";
+  private static final String V_DEFAULT_FILE_STORAGE_PATH = "/tmp/folio-order-import/";
+  private static final int V_DEFAULT_DAYS_TO_KEEP_RESULTS = 365;
+  private static final int V_DEFAULT_DAYS_TO_DISPLAY_RESULTS = 14;
 
   public static List<Object> allSettings = new ArrayList<>();
 
@@ -131,7 +140,9 @@ public class Config {
       apiPassword = getText(P_OKAPI_PASSWORD);
       tenant = getText(P_TENANT);
       // Operations
-      uploadFilePath = withEndingSlash(getText(P_UPLOAD_FILE_PATH));
+      uploadFilePath = withEndingSlash(getText(P_UPLOAD_FILE_PATH, V_DEFAULT_FILE_STORAGE_PATH));
+      daysToKeepResults = getInt(P_DAYS_TO_KEEP_RESULTS, V_DEFAULT_DAYS_TO_KEEP_RESULTS);
+      daysToShowResults = getInt(P_DAYS_TO_SHOW_RESULTS, V_DEFAULT_DAYS_TO_DISPLAY_RESULTS);
       // Default values
       permLocationName = getText(P_PERM_LOCATION); // Default, could change with invoice
       permELocationName = getText(P_PERM_E_LOCATION); // Default, could change with invoice
@@ -187,6 +198,19 @@ public class Config {
       return false;
     } else {
       return defaultsTo;
+    }
+  }
+
+  public static int getInt (String key, int defaultsTo) {
+    if (key == null || key.isEmpty()) {
+      return defaultsTo;
+    } else {
+      try {
+        return Integer.parseInt((String) context.getAttribute(key));
+      }
+      catch (NumberFormatException nfe) {
+        return defaultsTo;
+      }
     }
   }
 
