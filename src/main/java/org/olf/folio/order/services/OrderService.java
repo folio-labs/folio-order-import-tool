@@ -61,7 +61,7 @@ public class OrderService {
 				return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
 			}
 		} else {
-			Results importResults = new Results(true, storage);
+			Results importResults = new Results(true, storage).markStarted();
 			try {
 				importResults.setMarcRecordCount(OrderImport.countMarcRecords(storage));
 			} catch (FileNotFoundException fnf) {

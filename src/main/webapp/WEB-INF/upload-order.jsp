@@ -328,7 +328,7 @@ function showName() {
 <script id="importResponseTemplate" type="text/x-handlebars-template">
   {{#if summary.isNotDone}}
      <div style="text-align:right;">
-       <a href="javascript:requestImportResults('{{summary.resultsBaseName}}'); requestImportHistory();" title="{{summary.resultsBaseName}}">refresh</a>
+       <a href="javascript:requestImportResults('{{summary.resultsBaseName}}'); requestImportHistory();" title="{{summary.resultsBaseName}}">Refresh</a>
      </div>
   {{/if}}
   <p class="title">Import</p>

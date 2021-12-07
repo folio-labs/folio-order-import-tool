@@ -62,6 +62,7 @@ public class OrderImport {
 		}
 
 		MarcReader reader = new MarcStreamReader(fileStore.getMarcInputStream());
+		results.markPartial();
 		while (reader.hasNext()) {
 			RecordResult outcome = results.nextResult();
 			try {

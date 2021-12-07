@@ -32,6 +32,7 @@ public class Results {
   public static final String P_END_TIME = "endTime";
   public static final String P_STATUS = "status";
   public static final String V_STATUS_PARTIAL = "partial";
+  public static final String V_STATUS_STARTED = "started";
   public static final String V_STATUS_DONE = "done";
   public static final String V_STATUS_ERROR = "error";
   public static final String P_IS_NOT_DONE = "isNotDone";
@@ -49,14 +50,10 @@ public class Results {
   public static final String P_RECORDS = "records";
 
   // To be configurable
-  DateTimeFormatter formatTime =
-          DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT )
-                  .withLocale(Config.locale)
-                  .withZone( Config.zoneId);
-  DateTimeFormatter formatDateTime =
-          DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT )
-                  .withLocale(Config.locale)
-                  .withZone( Config.zoneId);
+  DateTimeFormatter formatTime = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT )
+                  .withLocale(Config.locale).withZone(Config.zoneId);
+  DateTimeFormatter formatDateTime = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT )
+                  .withLocale(Config.locale).withZone(Config.zoneId);
 
   JSONObject resultsJson = new JSONObject();
 
@@ -96,7 +93,7 @@ public class Results {
     summary().put(P_START_TIME, getStartTime());
     summary().put(P_END_INSTANT_UTC,"");
     summary().put(P_END_TIME, "");
-    summary().put(P_STATUS,V_STATUS_PARTIAL);
+    summary().put(P_STATUS,V_STATUS_STARTED);
     summary().put(P_IS_NOT_DONE, true);
     summary().put(P_VALIDATION, new JSONObject());
     summary().put(P_USER, Config.apiUsername);
@@ -268,7 +265,13 @@ public class Results {
     return passed;
   }
 
-  public Results markDone () {
+  public Results markStarted() {
+    summary().put(P_STATUS, V_STATUS_STARTED);
+    summary().put(P_IS_NOT_DONE, true);
+    return this;
+  }
+
+  public Results markDone() {
     summary().put(P_STATUS, V_STATUS_DONE);
     summary().put(P_IS_NOT_DONE, false);
     summary().put(P_END_INSTANT_UTC, Instant.now().toString());
@@ -279,6 +282,12 @@ public class Results {
     summary().put(P_STATUS, V_STATUS_ERROR);
     summary().put(P_IS_NOT_DONE, false);
     summary().put(P_END_INSTANT_UTC, Instant.now().toString());
+    return this;
+  }
+
+  public Results markPartial() {
+    summary().put(P_STATUS, V_STATUS_PARTIAL);
+    summary().put(P_IS_NOT_DONE, true);
     return this;
   }
 
