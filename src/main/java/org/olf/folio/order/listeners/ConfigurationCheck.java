@@ -14,6 +14,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.ZoneId;
+import java.time.zone.ZoneRulesException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -49,8 +51,14 @@ public class ConfigurationCheck {
       }
       fileSystemPathIsWriteable = checkUploadFilePath();
     }
+    boolean timeZoneValid = checkTimeZone();
     validOnAnalysisErrorsSetting = configOnValidationErrorsIsValid();
-    return (allMandatoryPresent && authenticationPassed && urlPassed && validOnAnalysisErrorsSetting && fileSystemPathIsWriteable);
+    return (allMandatoryPresent
+            && authenticationPassed
+            && urlPassed
+            && validOnAnalysisErrorsSetting
+            && fileSystemPathIsWriteable
+            && timeZoneValid );
   }
 
   public boolean configOnValidationErrorsIsValid() {
@@ -65,6 +73,18 @@ public class ConfigurationCheck {
         addPropertyError(Config.P_ON_VALIDATION_ERRORS,
                 "The value [" + Config.onValidationErrors + "] not valid for this config property, " +
                         "should be one of " + validValues);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public boolean checkTimeZone () {
+    if (compositeConfiguration.containsKey(Config.P_TZ_TIME_ZONE)) {
+      try {
+        ZoneId.of(compositeConfiguration.getString(Config.P_TZ_TIME_ZONE));
+      } catch (ZoneRulesException zre) {
+        addPropertyError(Config.P_TZ_TIME_ZONE, zre.getMessage());
         return false;
       }
     }

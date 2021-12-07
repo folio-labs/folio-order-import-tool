@@ -1,9 +1,12 @@
 package org.olf.folio.order;
 
 import javax.servlet.ServletContext;
+import java.time.ZoneId;
+import java.time.zone.ZoneRulesException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public class Config {
 
@@ -16,8 +19,10 @@ public class Config {
   // OPERATIONS
   public static final String P_UPLOAD_FILE_PATH = "uploadFilePath";
   public static final String P_DAYS_TO_KEEP_RESULTS = "daysToKeepResults";
+  // UI
   public static final String P_DAYS_TO_SHOW_RESULTS = "daysToShowResults";
-  public static final String P_MAX_SECONDS_UNTIL_RESPONSE = "maxSecondsUntilResponse";
+  public static final String P_TZ_TIME_ZONE = "tzTimeZone";
+  public static final String P_LOCALE = "locale";
   // STATIC VALUES
   public static final String P_FISCAL_YEAR_CODE = "fiscalYearCode";
   public static final String P_NOTE_TYPE = "noteType";
@@ -61,6 +66,7 @@ public class Config {
           P_FOLIO_UI_ORDERS_PATH,
           P_FOLIO_UI_URL,
           P_IMPORT_INVOICE,
+          P_LOCALE,
           P_MATERIAL_TYPE,
           P_NOTE_TYPE,
           P_OBJECT_CODE_REQUIRED,
@@ -75,6 +81,7 @@ public class Config {
           P_PERM_LOCATION_WITH_INVOICE_IMPORT,
           P_TENANT,
           P_TEXT_FOR_ELECTRONIC_RESOURCES,
+          P_TZ_TIME_ZONE,
           P_UPLOAD_FILE_PATH
   );
 
@@ -88,6 +95,10 @@ public class Config {
   public static String uploadFilePath;
   public static int daysToKeepResults;
   public static int daysToShowResults;
+  public static String tzTimeZone;
+  public static ZoneId zoneId;
+  public static String language_country;
+  public static Locale locale;
   public static String fiscalYearCode;
   public static String permLocationName;
   public static String permELocationName;
@@ -122,6 +133,8 @@ public class Config {
   private static final String V_DEFAULT_FILE_STORAGE_PATH = "/tmp/folio-order-import/";
   private static final int V_DEFAULT_DAYS_TO_KEEP_RESULTS = 365;
   private static final int V_DEFAULT_DAYS_TO_DISPLAY_RESULTS = 14;
+  private static final String V_DEFAULT_TIME_ZONE = "Europe/Stockholm";
+  private static final String V_DEFAULT_LOCALE = "sv-SE";
 
   public static List<Object> allSettings = new ArrayList<>();
 
@@ -133,16 +146,21 @@ public class Config {
       if (baseOkapiEndpoint.isEmpty()) {
         baseOkapiEndpoint = withEndingSlash(getText(P_BASE_OKAP_ENDPOINT)); //previous spelling
       }
-      folioUiUrl = withEndingSlash(getText(P_FOLIO_UI_URL));
-      folioUiInventoryPath = withEndingSlash(getText(P_FOLIO_UI_INVENTORY_PATH,V_DEFAULT_UI_INVENTORY_PATH));
-      folioUiOrdersPath = withEndingSlash(getText(P_FOLIO_UI_ORDERS_PATH, V_DEFAULT_UI_ORDERS_PATH));
       apiUsername = getText(P_OKAPI_USERNAME);
       apiPassword = getText(P_OKAPI_PASSWORD);
       tenant = getText(P_TENANT);
       // Operations
       uploadFilePath = withEndingSlash(getText(P_UPLOAD_FILE_PATH, V_DEFAULT_FILE_STORAGE_PATH));
       daysToKeepResults = getInt(P_DAYS_TO_KEEP_RESULTS, V_DEFAULT_DAYS_TO_KEEP_RESULTS);
+      // UI
       daysToShowResults = getInt(P_DAYS_TO_SHOW_RESULTS, V_DEFAULT_DAYS_TO_DISPLAY_RESULTS);
+      folioUiUrl = withEndingSlash(getText(P_FOLIO_UI_URL));
+      folioUiInventoryPath = withEndingSlash(getText(P_FOLIO_UI_INVENTORY_PATH,V_DEFAULT_UI_INVENTORY_PATH));
+      folioUiOrdersPath = withEndingSlash(getText(P_FOLIO_UI_ORDERS_PATH, V_DEFAULT_UI_ORDERS_PATH));
+      tzTimeZone = getText(P_TZ_TIME_ZONE, V_DEFAULT_TIME_ZONE);
+      language_country = getText(P_LOCALE, V_DEFAULT_LOCALE);
+      locale = Locale.forLanguageTag(getText(P_LOCALE, V_DEFAULT_LOCALE));
+      zoneId = getZoneId();
       // Default values
       permLocationName = getText(P_PERM_LOCATION); // Default, could change with invoice
       permELocationName = getText(P_PERM_E_LOCATION); // Default, could change with invoice
@@ -219,6 +237,14 @@ public class Config {
       return str;
     } else {
       return str.endsWith("/") ? str : str + "/";
+    }
+  }
+
+  public static ZoneId getZoneId () {
+    try {
+      return ZoneId.of(getText(P_TZ_TIME_ZONE, V_DEFAULT_TIME_ZONE));
+    } catch (ZoneRulesException zre) {
+      return ZoneId.systemDefault();
     }
   }
 

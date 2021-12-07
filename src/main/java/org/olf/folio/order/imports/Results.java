@@ -51,12 +51,12 @@ public class Results {
   // To be configurable
   DateTimeFormatter formatTime =
           DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT )
-                  .withLocale(Locale.US)
-                  .withZone( ZoneId.of("America/Chicago"));
+                  .withLocale(Config.locale)
+                  .withZone( Config.zoneId);
   DateTimeFormatter formatDateTime =
           DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT )
-                  .withLocale(Locale.US)
-                  .withZone( ZoneId.of("America/Chicago"));
+                  .withLocale(Config.locale)
+                  .withZone( Config.zoneId);
 
   JSONObject resultsJson = new JSONObject();
 
