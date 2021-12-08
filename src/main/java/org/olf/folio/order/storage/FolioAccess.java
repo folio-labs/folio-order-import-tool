@@ -191,16 +191,16 @@ public class FolioAccess {
     HttpEntity entity = response.getEntity();
     String responseString = EntityUtils.toString(entity, "UTF-8");
     int responseCode = response.getStatusLine().getStatusCode();
-
     logger.info("POST:");
-    logger.debug(body.toString(2));
-    logger.info(apiPath);
-    logger.info(responseCode);
-
+    logger.debug("Request body: " + body.toString(2));
+    logger.info("Path: " + apiPath);
+    logger.info("Response code: " + responseCode);
     if (responseCode > 399) {
       throw new Exception(responseString);
     }
-    return new JSONObject(responseString);
+    JSONObject responseJson = new JSONObject(responseString);
+    logger.debug("Response JSON: " + responseJson.toString(2));
+    return responseJson;
   }
 
 }

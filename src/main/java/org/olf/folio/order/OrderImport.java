@@ -102,7 +102,7 @@ public class OrderImport {
 					throws Exception {
 		CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
 
-		FolioAccess.callApiPostWithUtf8(FolioData.COMPOSITE_ORDERS_PATH, compositePo);
+		JSONObject persistedPo = FolioAccess.callApiPostWithUtf8(FolioData.COMPOSITE_ORDERS_PATH, compositePo);
 
 		//INSERT A NOTE IF THERE IS ONE IN THE MARC RECORD
 		if (mappedMarc.hasNotes() && compositePo.hasPoLines() && Config.noteTypeName != null) {
@@ -115,9 +115,7 @@ public class OrderImport {
 			FolioAccess.callApiPostWithUtf8(FolioData.NOTES_PATH, note.asJson());
 		}
 
-		// GET THE UPDATED PURCHASE ORDER FROM FOLIO (TO RETRIEVE THE INSTANCE ID FOR INVENTORY UPDATES)
-		return CompositePurchaseOrder.fromJson(
-						FolioAccess.callApiGetById(FolioData.COMPOSITE_ORDERS_PATH, compositePo.getId()));
+		return CompositePurchaseOrder.fromJson(persistedPo);
 	}
 
 	private void updateInventory(String instanceId, MarcRecordMapping mappedMarc, RecordResult outcome)
