@@ -39,7 +39,7 @@ public class LogHistory {
               if (getAgeOfFileInDays(file) < Config.daysToShowResults) {
                 addHistoryEntry(file, resultsJson, logEntries);
               } else {
-                logger.info(String.format(
+                logger.debug(String.format(
                         "Skipped display of file '%s' since it's more than %d days old ",
                         file.getName(), Config.daysToShowResults));
               }
@@ -82,7 +82,7 @@ public class LogHistory {
   private static long getAgeOfFileInDays(File file) {
     Instant fileInstant = Instant.ofEpochMilli(file.lastModified());
     Duration age = Duration.between(fileInstant, Instant.now());
-    logger.info("File is " + age.toDays() + " days old");
+    logger.debug("File is " + age.toDays() + " days old");
     return age.toDays();
   }
 

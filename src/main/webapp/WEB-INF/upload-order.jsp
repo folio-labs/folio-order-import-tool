@@ -179,7 +179,7 @@ function sendImportRequest() {
 		data: form_data,
 		url: "/import/service/upload",
 		success: showImportResponse,
-		error: updateFailed
+		error: requestFailed
 	});
 	e.preventDefault();
 	return false;
@@ -208,7 +208,7 @@ function sendAnalyzeRequest() {
 		data: form_data,
 		url: "/import/service/upload?analyzeOnly=true",
 		success: showAnalyzeResponse,
-		error: updateFailed
+		error: requestFailed
 	});
 	e.preventDefault();
 	return false;
@@ -225,7 +225,7 @@ function showAnalyzeResponse(response) {
 	requestImportHistory();
 }
 
-function updateFailed(response) {
+function requestFailed(response) {
 	$('#import').removeClass('is-loading');
 	$('#analyze').removeClass('is-loading');
 	alert(response.responseText);
@@ -238,7 +238,7 @@ function requestImportHistory () {
 		contentType: false,
 		url: "/import/service/upload/history",
 		success: showHistoryResponse,
-		error: updateFailed
+		error: requestFailed
 	});
 	return false;
 }
@@ -258,7 +258,7 @@ function requestImportResults (importName) {
 		contentType: false,
 		url: "/import/service/upload/results?name="+importName,
 		success: showImportResultsResponse,
-		error: updateFailed
+		error: requestFailed
 	});
 	return false;
 }

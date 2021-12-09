@@ -57,17 +57,18 @@ public class FileStorageHelper {
   }
 
   public String resultsBaseName () {
-    logger.info("Storage helper providing resultsBaseName " + FilenameUtils.getBaseName(fileLocation(EXT_JSON)));
+    logger.debug("Storage helper providing resultsBaseName " + FilenameUtils.getBaseName(fileLocation(EXT_JSON)));
     return FilenameUtils.getBaseName(fileLocation(EXT_JSON));
   }
 
   public static FileStorageHelper storeMarcFile(InputStream marcInput, String inputName, boolean analyzeOnly) {
-    logger.info("Initializing file names, storing incoming MARC file");
     FileStorageHelper storage = new FileStorageHelper();
     storage.directory = Config.uploadFilePath;
     storage.requestType = getRequestType(analyzeOnly);
     storage.inputBaseName = FilenameUtils.getBaseName(inputName);
-    storage.writeMarcFile(marcInput, storage.fileLocation(EXT_MRC));
+    logger.info(String.format("Initializing file names, storing incoming MARC file [%s]",
+            storage.fileLocation(EXT_MRC)));
+    FileStorageHelper.writeMarcFile(marcInput, storage.fileLocation(EXT_MRC));
     return storage;
   }
 
@@ -84,11 +85,11 @@ public class FileStorageHelper {
   }
 
   public InputStream getMarcInputStream() throws FileNotFoundException {
-    logger.info("Creating MARC input stream from " + baseNameOfMarcFile());
+    logger.debug("Creating MARC input stream from " + baseNameOfMarcFile());
     return new FileInputStream(fullPathToMarcFile());
   }
 
-  private void writeMarcFile(InputStream uploadedInputStream,
+  private static void writeMarcFile(InputStream uploadedInputStream,
                              String uploadedFileServerLocation) {
     try {
       int read;
@@ -105,11 +106,12 @@ public class FileStorageHelper {
   }
 
   public void storeResults(Results results) throws Exception {
-    logger.info("Storing analyze/import results with " + results.getRecordsProcessed() + " records ");
+    logger.debug("Storing analyze/import results with " + results.getRecordsProcessed() + " records.");
     String location = fileLocation(EXT_JSON);
     BufferedWriter writer = new BufferedWriter(new FileWriter(location, false));
     writer.write(results.toJson().toString(2));
     writer.close();
+    logger.debug(String.format("Results written to file [%s]", location));
   }
 
   private static String getRequestType (boolean analyzeOnly) {
@@ -123,7 +125,10 @@ public class FileStorageHelper {
   public static JSONObject getResults(String name) throws IOException {
     Path path = Paths.get(Config.uploadFilePath + name + "." + EXT_JSON);
     JSONObject response;
-    String resultsFile =  Files.readString(path);
+    logger.debug(String.format("%s exists? %b", path, Files.exists(path)));
+    logger.debug("Reading results file at path " + path);
+    String resultsFile = Files.readString(path);
+    logger.debug("Got results file " + resultsFile);
     if (resultsFile.isEmpty()) {
       response = new JSONObject();
       response.put("error", "empty json");

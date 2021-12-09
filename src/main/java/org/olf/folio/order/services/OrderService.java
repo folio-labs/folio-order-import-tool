@@ -60,12 +60,19 @@ public class OrderService {
 			} catch (Exception e) {
 				return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
 			}
-		} else {
+		} else { // actual import, initialize results file
 			Results importResults = new Results(true, storage).markStarted();
 			try {
 				importResults.setMarcRecordCount(OrderImport.countMarcRecords(storage));
+				storage.storeResults(importResults);
 			} catch (FileNotFoundException fnf) {
-				// ignore
+				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+								.entity("Application error, could not find the MARC file that was only just saved: " + fnf.getMessage())
+								.build();
+			} catch (Exception e) {
+				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+								.entity("Could not store the initial, empty import results file: " + e.getMessage())
+								.build();
 			}
 			// Run asynchronous if actual import
 			new Thread(() -> {
@@ -87,14 +94,15 @@ public class OrderService {
 					@QueryParam("name") String resultsFileName)  {
 		JSONObject results;
 		try {
-			logger.info("Looking for results file for " + resultsFileName);
+			logger.debug("Looking for results file for " + resultsFileName);
 			results = FileStorageHelper.getResults(resultsFileName);
 		} catch (IOException ioe) {
-			logger.error("Error reading results file: " + resultsFileName);
+			logger.error("Error reading results file: " + resultsFileName + ": " + ioe.getMessage() + " - " + ioe.getCause());
 			JSONObject error = new JSONObject();
-			error.put("error", ioe.getLocalizedMessage());
+			error.put("Error reading results file", ioe.getMessage());
 			return Response.status(Response.Status.BAD_REQUEST).entity(error.toString(2)).build();
 		}
+		logger.debug("Responding with import results");
 		return Response.status(Response.Status.OK).entity(results.toString(2)).build();
 	}
 
@@ -111,7 +119,7 @@ public class OrderService {
 			error.put("error", ioe.getLocalizedMessage());
 			return Response.status(Response.Status.BAD_REQUEST).entity(error.toString(2)).build();
 		}
-		logger.info("Responding with history object " + history.toString(2));
+		logger.debug("Responding with history object " + history.toString(2));
 		return Response.status(Response.Status.OK).entity(history.toString(2)).build();
 	}
 
