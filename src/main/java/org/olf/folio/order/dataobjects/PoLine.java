@@ -62,7 +62,7 @@ public class PoLine extends JsonDataObject {
             .putCost(Cost.fromMarcRecord(mappedMarc))
             .putLocations(new JSONArray().put(PoLineLocation.fromMarcRecord(mappedMarc).asJson()))
             .putTitleOrPackage(mappedMarc.title())
-            .putAcquisitionMethod(mappedMarc.acquisitionMethod())
+            .putAcquisitionMethod(mappedMarc.acquisitionMethodId())
             .putRush(mappedMarc.rush())
             .putDescriptionIfPresent(mappedMarc.description())
             .putFundDistribution(new JSONArray().put(Fund.fromMarcRecord(mappedMarc).asJson()))

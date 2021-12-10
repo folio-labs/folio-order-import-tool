@@ -136,6 +136,8 @@ public class Config {
   private static final String V_DEFAULT_TIME_ZONE = "Europe/Stockholm";
   private static final String V_DEFAULT_LOCALE = "sv-SE";
 
+  public static boolean acquisitionMethodsApiPresent = true;
+
   public static List<Object> allSettings = new ArrayList<>();
 
   public static void load (ServletContext servletContext) {

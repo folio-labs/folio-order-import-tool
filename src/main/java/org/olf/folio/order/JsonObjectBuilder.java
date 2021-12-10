@@ -97,7 +97,7 @@ public class JsonObjectBuilder {
     orderLine.put("cost", cost);
     orderLine.put("locations", locations);
     orderLine.put("titleOrPackage", mappedMarc.title());
-    orderLine.put("acquisitionMethod", mappedMarc.acquisitionMethod());
+    orderLine.put("acquisitionMethod", mappedMarc.acquisitionMethodValue());
     orderLine.put("rush", mappedMarc.rush());
     if (mappedMarc.hasDescription())
       orderLine.put("description", mappedMarc.description());
@@ -105,10 +105,10 @@ public class JsonObjectBuilder {
     JSONObject fundDist = new JSONObject();
     fundDist.put("distributionType", "percentage");
     fundDist.put("value", 100);
-    fundDist.put("fundId", mappedMarc.fundUUID());
+    fundDist.put("fundId", mappedMarc.fundId());
     fundDist.put("code", mappedMarc.fundCode());
     if (mappedMarc.hasExpenseClassCode())
-      fundDist.put("expenseClassId", mappedMarc.getExpenseClassUUID());
+      fundDist.put("expenseClassId", mappedMarc.expenseClassId());
     funds.put(fundDist);
     orderLine.put("fundDistribution", funds);
     orderLine.put("purchaseOrderId", order.getString("id"));
