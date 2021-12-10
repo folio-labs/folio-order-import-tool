@@ -49,7 +49,7 @@ A number of configuration parameters control the startup and operation of the se
 | onIsbnInvalid             | removeIsbn, reportError, doNothing                                                                                                     | reportError                  | Controls if the tool should report error and perhaps skip the record, or remove the ISBN to ingest, or do nothing (which should cause the import to error out later)                                                                                                                                                  | 
 | **Tool UI**               |||
 | daysToShowResults         | number of days ³                                                                                                                       | 14                           | Results are listed in the UI for this number of days after first created. After that they will be skipped (but not deleted)                                                                                                                                                                                           |
-| timeZone                  | A [tz time zone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones), ie `America/Chicago`                                   | Europe/Stockholm             | Sets the time zone of dates in the UI                                                                                                                                                                                                                                                                                 |
+| tzTimeZone                  | A [tz time zone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones), ie `America/Chicago`                                   | Europe/Stockholm             | Sets the time zone of dates in the UI                                                                                                                                                                                                                                                                                 |
 | locale                    | Language and country, i.e. `en-US`                                                                                                     | sv-SE                        | Formats dates in the UI                                                                                                                                                                                                                                                                                               | 
 | folioUiUrl                | Protocol and domain of FOLIO UI, ie https://folio-snapshot.dev.folio.org/ ²                                                            | none                         | If provided, links to FOLIO's UI will be displayed for records in the import log.                                                                                                                                                                                                                                     |
 | folioUiInventoryPath      | Path to the Inventory UI ²                                                                                                             | inventory/view               | Used for a link in the import log to the Instance in UI Inventory.                                                                                                                                                                                                                                                    |
@@ -65,25 +65,27 @@ A number of configuration parameters control the startup and operation of the se
 Example import.properties:
 
 ```
-baseOkapiEndpoint: https://folio-snapshot.dev.folio.org/
-exitOnAccessErrors: no
-exitOnConfigErrors: no
-exitOnFailedIdLookups: no
-fiscalYearCode: FY2021
-folioUiInventoryPath: inventory/view
-folioUiOrdersPath: orders/view
-folioUiUrl: https://uchicago-test.folio.indexdata.com/
-materialType: unspecified
-noteType: General note
-objectCodeRequired: no
-okapi_username: diku_admin
-onIsbnInvalid: reportError
-onValidationErrors: attemptImport
-permELocation: On Order - Order
-permLocation: On Order - Order
-tenant: diku
-textForElectronicResources: Available to snapshot users
-uploadFilePath: /var/tmp/order-import
+baseOkapiEndpoint = https://folio-snapshot.dev.folio.org/
+exitOnAccessErrors = no
+exitOnConfigErrors = no
+exitOnFailedIdLookups = no
+fiscalYearCode = FY2021
+folioUiInventoryPath = inventory/view
+folioUiOrdersPath = orders/view
+folioUiUrl = https://uchicago-test.folio.indexdata.com/
+locale = en-US
+materialType = unspecified
+noteType = General note
+objectCodeRequired = no
+okapi_username = diku_admin
+onIsbnInvalid = reportError
+onValidationErrors = attemptImport
+permELocation = On Order - Order
+permLocation = On Order - Order
+tenant = diku
+textForElectronicResources = Available to snapshot users
+tzTimeZone = America/Chicago
+uploadFilePath = /var/tmp/order-import
 ```
 
 
