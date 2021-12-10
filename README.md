@@ -5,15 +5,12 @@ orders.
 
 ## What does it do?
 
-* It takes an uploaded file that contains MARC records and creates orders, instances, holdings, items and MARC records
-  for each.
+* It takes an uploaded file that contains MARC records and creates orders, instances, holdings and items in FOLIO Orders and FOLIO Inventory.
 * It uses the 980 field to get the fund code, vendor code, price, tag, quantity, notes and electronic/print indicator
 * It only creates items if the material is print (which should be indicated in the 980$z field) - It looks for the
   values ELECTRONIC or PRINT
-* It lets FOLIO create the instance, holdings and item records using the "createInventory" value in the order line
-* It optionally creates an invoice
-* It does all of this using the FOLIO API
-* It uses a property file to determine locations, fiscal year, note type, payment method (if import invoices), and
+* It lets FOLIO Orders create the instance, holdings and item records using the "createInventory" value in the order line
+* It uses a property file to determine locations, fiscal year, note type, and
   material type and default text for electronic resources (in case subfield z is missing)
 
 ## If you want to try it
@@ -32,16 +29,6 @@ orders.
 * We've included example MARC files, but you will have to update them with your vendor, fund, object codes
 * To effectuate changes of import properties, restart the service
 
-#### Optional Invoice import
-
-* The script supports three modes of invoice imports, as configured in import.properties:
-    - Never import an invoice: This is default behavior so either leave out any invoice properties or
-      set `importInvoice = false`
-    - Import an invoice if invoice data are found in the MARC: Set `importInvoice = true`
-      and `failIfNoInvoiceData = 'false'`
-    - Importing an invoice is mandatory: Set `importInvoice = true` and `failIfNoInvoiceData = true`
-* Will import one invoice and one invoice line
-
 ## Operations
 
 #### Configurations in import.properties
@@ -59,8 +46,6 @@ A number of configuration parameters control the startup and operation of the se
 | **Processing**            ||||
 | onValidationErrors        | cancelAll, skipFailed, attemptImport                                                                                                   | cancelAll                    | If one or more records fail the initial validation check, this setting will cause the service to either cancel the entire import (`cancelAll`), skip the current, failed record (`skipFailed`), or attempt import anyway (`attemptImport`). With the last option, the import itself would presumably eventually fail. |
 | objectCodeRequired        | boolean ¹                                                                                                                              | true                         | If true, the validation will fail if no object code is found in the incoming MARC.                                                                                                                                                                                                                                    |
-| importInvoice             | boolean ¹                                                                                                                              | false                        | Will look for invoice data to import if `true`.                                                                                                                                                                                                                                                                       |
-| failIfNoInvoiceData       | boolean ¹                                                                                                                              | (true)                       | If importInvoice is `true` and this setting is `true` the service will report an error if input is missing invoice data.                                                                                                                                                                                              |
 | onIsbnInvalid             | removeIsbn, reportError, doNothing                                                                                                     | reportError                  | Controls if the tool should report error and perhaps skip the record, or remove the ISBN to ingest, or do nothing (which should cause the import to error out later)                                                                                                                                                  | 
 | **Tool UI**               |||
 | daysToShowResults         | number of days ³                                                                                                                       | 14                           | Results are listed in the UI for this number of days after first created. After that they will be skipped (but not deleted)                                                                                                                                                                                           |
@@ -84,23 +69,18 @@ baseOkapiEndpoint: https://folio-snapshot.dev.folio.org/
 exitOnAccessErrors: no
 exitOnConfigErrors: no
 exitOnFailedIdLookups: no
-failIfNoInvoiceData: no
 fiscalYearCode: FY2021
 folioUiInventoryPath: inventory/view
 folioUiOrdersPath: orders/view
 folioUiUrl: https://uchicago-test.folio.indexdata.com/
-importInvoice: no
 materialType: unspecified
 noteType: General note
 objectCodeRequired: no
 okapi_username: diku_admin
 onIsbnInvalid: reportError
 onValidationErrors: attemptImport
-paymentMethod: EFT
 permELocation: On Order - Order
 permLocation: On Order - Order
-permELocationWithInvoiceImport: invoice import disabled
-permLocationWithInvoiceImport: invoice import disabled
 tenant: diku
 textForElectronicResources: Available to snapshot users
 uploadFilePath: /var/tmp/order-import
@@ -175,8 +155,8 @@ The service accesses following FOLIO APIs:
 * Retrieves holdings record FOLIO created (GET /holdings-storage/holdings?query=(instanceId==theInstanceId))
 * PUT to /instances (to update the instance with source 'MARC' and add data)  (PUT /inventory/instances/theInstanceId)
 * PUT to /holdings (to add 856s to holdings) (PUT /holdings-storage/holdings/...)
-* Optionally POST an invoice (POST /invoice/invoices)
-* Optionally POST an invoice line (POST /invoice/invoice-lines)
+* Deprecated: Optionally POST an invoice (POST /invoice/invoices)
+* Deprecated: Optionally POST an invoice line (POST /invoice/invoice-lines)
 
 #### Docker image
 
@@ -230,28 +210,18 @@ container e.g.:
 | 980 $u                    | Reference number type        | orderLine. vendorDetail. referenceNumbers[]. refNumberType                                                                                                                                            | No                                                                         | "Vendor internal number"                                                               ||
 | 980 $w                    | Rush indicator               | orderLine.rush                                                                                                                                                                                        | No                                                                         | false                                                                                  | Values: [RUSH] or nothing                         |
 | 980 $y                    | Expense class                | orderLine. fundDistribution. expenseClass                                                                                                                                                             | No                                                                         |                                                                                        | Code of an existing expense class in FOLIO        |
-| INVOICES                  |
-| 980 $h                    | Vendor invoice no            | invoice.vendorInvoiceNo                                                                                                                                                                               | Yes*                                                                       |
-| 980 $i                    | Invoice date                 | invoice.invoiceDate                                                                                                                                                                                   | Yes*                                                                       |                                                                                        | Format: [YYYY-MM-DD]                              |
-| 980 $j                    | Sub total                    | invoiceLine.subTotal                                                                                                                                                                                  | No                                                                         |                                                                                        | Format: [9999.99]                                 |
 | 980 $v                    | See comments for 980$v above |                                                                                                                                                                                                       |
-
-`*` if importing invoices
 
 #### Static values, configured in import.properties
 
-| Property name                      | Description                               | Examples                    | Target properties                              | Required                                              | Content                                                      |
-|------------------------------------|-------------------------------------------|-----------------------------|------------------------------------------------|-------------------------------------------------------|--------------------------------------------------------------|
-| permLocation                       | The name of a FOLIO location              | SECOND FLOOR                | orderLine.locations[].id (name resolved to id) | Yes, if physical resource and not uploading invoice   | The location must exist in FOLIO. Validated on startup.      |
-| permELocation                      | The name of a FOLIO location              | SECOND FLOOR                | orderLine.locations[].id (name resolved to id) | Yes, if electronic resource and not uploading invoice | The location must exist in FOLIO. Validated on startup.      |
-| fiscalYearCode                     | The code of a FOLIO fiscal year           | FY2022                      | For resolving fund ID                          | Yes                                                   | Must exist in FOLIO. Validated on startup.                   |
-| text For Electronic Resources      | A link text                               | Available to Snapshot Users | instance. electronicAccessEntry[]. linkText    |                                                       | A default.                                                   |
-| noteType                           | The name of a note type for note in 980$n | General note                | notes[].note.typeId (name resolved to id)      | No                                                    | The note type must exist in FOLIO. Validated on startup.     |
-| materialType                       | The name of a material type               | book                        | orderLine. physical. materialType              | Yes                                                   | The material type must exist in FOLIO. Validated on startup. |
-| INVOICES                           |
-| paymentMethod                      | Payment method code                       | EFT                         | invoice.paymentMethod                          | Yes                                                   | One of a list of enumerated values                           |
-| perm Location With Invoice Import  | The name of a FOLIO location              | Annex                       | orderLine.locations[].id (name resolved ot id  | Yes, if physical resource and uploading invoice       | The location must exist in FOLIO                             |
-| perm ELocation With Invoice Import | The name of a FOLIO location              | Online                      | orderLine.locations[].id (name resolved ot id  | Yes, if electronic resource and uploading invoice     | The location must exist in FOLIO                             |
+| Property name                      | Description                               | Examples                    | Target properties                              | Required                     | Content                                                      |
+|------------------------------------|-------------------------------------------|-----------------------------|------------------------------------------------|------------------------------|--------------------------------------------------------------|
+| permLocation                       | The name of a FOLIO location              | SECOND FLOOR                | orderLine.locations[].id (name resolved to id) | Yes, if physical resource    | The location must exist in FOLIO. Validated on startup.      |
+| permELocation                      | The name of a FOLIO location              | SECOND FLOOR                | orderLine.locations[].id (name resolved to id) | Yes, if electronic resource  | The location must exist in FOLIO. Validated on startup.      |
+| fiscalYearCode                     | The code of a FOLIO fiscal year           | FY2022                      | For resolving fund ID                          | Yes                          | Must exist in FOLIO. Validated on startup.                   |
+| text For Electronic Resources      | A link text                               | Available to Snapshot Users | instance. electronicAccessEntry[]. linkText    |                              | A default.                                                   |
+| noteType                           | The name of a note type for note in 980$n | General note                | notes[].note.typeId (name resolved to id)      | No                           | The note type must exist in FOLIO. Validated on startup.     |
+| materialType                       | The name of a material type               | book                        | orderLine. physical. materialType              | Yes                          | The material type must exist in FOLIO. Validated on startup. |
 
 #### Hard-coded values
 
@@ -276,13 +246,6 @@ container e.g.:
 | orderLine.locations[].quantityElectronic                     | 1                                            |
 | IF PHYSICAL                                                  |
 | orderLine.cost.quantityPhysical                              | 1                                            |
-| INVOICES                                                     |
-| invoice.batchGroupId                                         | UUID of batch group "FOLIO"                  |
-| invoice.source                                               | "API"                                        |
-| invoice.status                                               | "Open"                                       |
-| invoiceLine.invoiceLineStatus                                | "Open"                                       |
-| invoiceLine.quantity                                         | 1                                            |
-| invoiceLine.releaseEncumbrance                               | true                                         |
 
 ### Development
 
