@@ -84,7 +84,8 @@ public class ConfigurationCheck {
       try {
         ZoneId.of(compositeConfiguration.getString(Config.P_TZ_TIME_ZONE));
       } catch (ZoneRulesException zre) {
-        addPropertyError(Config.P_TZ_TIME_ZONE, zre.getMessage());
+        addPropertyError(Config.P_TZ_TIME_ZONE, zre.getMessage()
+                + "  (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)");
         return false;
       }
     }
@@ -190,7 +191,7 @@ public class ConfigurationCheck {
 
   private boolean checkFolioAccess() {
     try {
-      FolioAccess.initialize(logger);
+      FolioAccess.initialize();
     } catch (Exception e) {
       accessErrors.add(e.getMessage());
       return false;

@@ -351,7 +351,7 @@ function showName() {
     <br>Rec# {{recNo}} PO number <a href={{data.uiUrlPo}} target=orders>{{data.poNumber}}</a>
     {{#if hasValidationErrors}}<b>failed</b>
       {{#each validationErrors}}
-        <br>Error {{this}}
+        <br>Error: {{this}}
       {{/each}}
     {{/if}}
     {{#if hasImportError}}
@@ -384,7 +384,7 @@ function showName() {
     <br>Rec# {{recNo}}
     {{#if hasValidationErrors}}<b>failed</b>
       {{#each validationErrors}}
-        <br>Error {{this}}
+        <br>Error: {{this}}
       {{/each}}
     {{/if}}
     <br>Title: {{data.title}}

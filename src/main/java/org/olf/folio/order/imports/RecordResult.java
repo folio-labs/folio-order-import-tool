@@ -96,7 +96,7 @@ public class RecordResult {
     return this;
   }
 
-  public RecordResult addValidationMessageIfNotNull(String errorMessage) {
+  public RecordResult addValidationMessage(String errorMessage) {
     if (errorMessage != null) {
       recordResultJson.put(P_HAS_VALIDATION_ERRORS,true);
       validationErrors().put(errorMessage);

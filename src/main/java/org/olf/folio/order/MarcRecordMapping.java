@@ -235,8 +235,27 @@ public class MarcRecordMapping {
     return d980.getSubfieldsAsString(FUND_CODE);
   }
 
-  public String fundUUID() throws Exception {
+  /**
+   * @return true if 980$b is set
+   */
+  public boolean hasFundCode() {
+    return has(fundCode());
+  }
+
+  public String fundId() throws Exception {
     return FolioData.getFundId(fundCode());
+  }
+
+  public String budgetId() throws Exception {
+    if (has(fundId()) && hasExpenseClassCode()) {
+      return FolioData.getBudgetId(fundId(),FolioData.getFiscalYearId(Config.fiscalYearCode));
+    } else {
+      return null;
+    }
+  }
+
+  public boolean hasBudgetId() throws Exception {
+    return has(budgetId());
   }
 
   /**
@@ -244,6 +263,10 @@ public class MarcRecordMapping {
    */
   public String vendorCode() {
     return d980.getSubfieldsAsString(VENDOR_CODE);
+  }
+
+  public boolean hasVendorCode() {
+    return has(vendorCode());
   }
 
   public String vendorUuid() throws Exception {
@@ -266,6 +289,10 @@ public class MarcRecordMapping {
    */
   public String price() {
     return d980.getSubfieldsAsString(PRICE);
+  }
+
+  public boolean hasPrice() {
+    return price() != null && !price().isEmpty();
   }
 
   /**
@@ -299,9 +326,33 @@ public class MarcRecordMapping {
             : d980.getSubfieldsAsString(CURRENCY);
   }
 
-  public String acquisitionMethod() {
+  public String acquisitionMethodValue() {
     return d980.getSubfieldsAsString(ACQUISITION_METHOD) == null ? "Purchase"
             : d980.getSubfieldsAsString(ACQUISITION_METHOD);
+  }
+
+  public boolean hasAcquisitionMethod() {
+    return has(acquisitionMethodValue());
+  }
+
+  /**
+   * Current FOLIO platform releases contain versions of the Orders APIs that require a
+   * semantic name for the acquisitionMethod, but a coming version of Orders -- now found on
+   * FOLIO snapshot -- will require a UUID that is present in an acquisition_method table.
+   * This method attempts the UUID look-up first, then falls back to the semantic name from
+   * the MARC record.
+   * @return A UUID or a semantic label depending on the FOLIO API version.
+   */
+  public String acquisitionMethodId() throws Exception {
+    try {
+      return FolioData.getAcquisitionMethodId(acquisitionMethodValue());
+    } catch (Exception e) {
+      if (e.getMessage().contains("No suitable module found for path")) {
+        return acquisitionMethodValue();
+      } else {
+        throw e;
+      }
+    }
   }
 
   /**
@@ -366,7 +417,7 @@ public class MarcRecordMapping {
     return expenseClassCode() != null && !expenseClassCode().isEmpty();
   }
 
-  public String getExpenseClassUUID() throws Exception {
+  public String expenseClassId() throws Exception {
     return FolioData.getExpenseClassId(expenseClassCode());
   }
 
@@ -546,6 +597,10 @@ public class MarcRecordMapping {
 
   public boolean hasSystemControlNumber () {
     return !getDataFieldsForIdentifierType(Constants.SYSTEM_CONTROL_NUMBER).isEmpty();
+  }
+
+  public boolean has (String string) {
+    return string != null && !string.isEmpty();
   }
 
 

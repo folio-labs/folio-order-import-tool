@@ -22,16 +22,14 @@ import java.nio.charset.Charset;
 public class FolioAccess {
 
   protected static String token;
-  protected static Logger logger;
+  protected static Logger logger = Logger.getLogger(FolioAccess.class);
 
   /**
    * Capture configuration from import.properties, authenticate to FOLIO and retrieve reference data
-   * @param logger Logger.
    * @throws Exception If FOLIO back-end request fails.
    */
-  public static void initialize(Logger logger) throws Exception {
+  public static void initialize() throws Exception {
     //GET THE FOLIO TOKEN
-    FolioAccess.logger = logger;
     token = authenticate();
   }
 
