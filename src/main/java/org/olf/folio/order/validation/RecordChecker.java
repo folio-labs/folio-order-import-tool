@@ -14,11 +14,8 @@ import org.olf.folio.order.storage.FolioData;
 import org.olf.folio.order.utils.Utils;
 
 import java.io.FileNotFoundException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class RecordChecker {
-
 
   public static Results validateMarcRecords(FileStorageHelper fileStore) throws FileNotFoundException {
     MarcReader reader = new MarcStreamReader(fileStore.getMarcInputStream());
@@ -39,21 +36,120 @@ public class RecordChecker {
     try {
       outcome.setInputMarcData(mappedMarc);
 
+      // Sanity check
       if (!mappedMarc.has980()) {
-        outcome.addValidationMessageIfNotNull("Record is missing the 980 field")
+        outcome.addValidationMessage("Record is missing the 980 field")
                 .markSkipped(Config.onValidationErrorsSKipFailed);
         return;
       }
 
+      // Check for mandatory fields. Check that mappings to FOLIO IDs resolve.
+      if (!mappedMarc.hasFundCode()) {
+        outcome.addValidationMessage("Record is missing required fund code (908$b)")
+                .markSkipped(Config.onValidationErrorsSKipFailed);
+      } else {
+        String failMessage = FolioData.validateFund(mappedMarc.fundCode());
+        if (failMessage != null) {
+          outcome.addValidationMessage(failMessage)
+                  .markSkipped(Config.onValidationErrorsSKipFailed);
+        }
+      }
+      if (! mappedMarc.hasVendorCode()) {
+        outcome.addValidationMessage("Record is missing required vendor code")
+                .markSkipped(Config.onValidationErrorsSKipFailed);
+      } else {
+        String orgValidationResult = FolioData.validateOrganization(mappedMarc.vendorCode());
+        if (orgValidationResult != null) {
+          outcome.addValidationMessage(orgValidationResult)
+                  .markSkipped(Config.onValidationErrorsSKipFailed);
+        }
+      }
+      if (!mappedMarc.hasPrice()) {
+        outcome.addValidationMessage("Record is missing required price info (980$m)")
+                .markSkipped(Config.onValidationErrorsSKipFailed);
+      }
+      if (Config.objectCodeRequired) {
+        if (!mappedMarc.hasObjectCode()) {
+          outcome.setFlagIfNotNull(
+                          "Object code is required according to the startup config" +
+                                  " but no object code found in the record")
+                  .markSkipped(Config.onValidationErrorsSKipFailed);
+        }
+      }
+
+      // Validate optional properties
+      if (mappedMarc.hasObjectCode()) {
+        String failMessage = FolioData.validateObjectCode(mappedMarc.objectCode());
+        if (failMessage != null) {
+          outcome.addValidationMessage(failMessage)
+                  .markSkipped(Config.onValidationErrorsSKipFailed);
+        }
+      }
+
+      if (mappedMarc.hasProjectCode()) {
+        String failMessage = FolioData.validateObjectCode(mappedMarc.projectCode());
+        if (failMessage != null ) {
+          outcome.addValidationMessage(failMessage)
+                  .markSkipped(Config.onValidationErrorsSKipFailed);
+        }
+      }
+
+      if (mappedMarc.hasBillTo()) {
+        String failMessage = FolioData.validateAddress(mappedMarc.billTo());
+        if (failMessage != null) {
+          outcome.addValidationMessage(failMessage)
+                  .markSkipped(Config.onValidationErrorsSKipFailed);
+        }
+      }
+
+      if (mappedMarc.hasExpenseClassCode()) {
+        if (FolioData.getExpenseClassId(mappedMarc.expenseClassCode())==null) {
+          outcome.addValidationMessage(
+                          "No expense class with the code ("
+                                  + mappedMarc.expenseClassCode()
+                                  + ") found in FOLIO.")
+                  .markSkipped(Config.onValidationErrorsSKipFailed);
+        } else {
+          if (mappedMarc.hasBudgetId()) {
+            String budgetExpClassId = FolioData.getBudgetExpenseClassId(
+                    mappedMarc.budgetId(), mappedMarc.expenseClassId());
+            if (budgetExpClassId == null) {
+              outcome.addValidationMessage(
+                      String.format("No budget expense class found for fund code (%s) and expense class (%s).",
+                               mappedMarc.fundCode(), mappedMarc.expenseClassCode()))
+                      .markSkipped(Config.onValidationErrorsSKipFailed);
+
+            }
+          }
+        }
+      }
+
+      if (mappedMarc.hasAcquisitionMethod()) {
+          if (Config.acquisitionMethodsApiPresent) {
+            if (FolioData.getAcquisitionMethodId(mappedMarc.acquisitionMethodValue()) == null) {
+              outcome.addValidationMessage(
+                      "No acquisition method with the value (" + mappedMarc.acquisitionMethodValue() + ") found in FOLIO.").markSkipped(
+                      Config.onValidationErrorsSKipFailed);
+            }
+          }
+      }
+
+      if (Config.importInvoice) {
+        outcome.addValidationMessage(
+                        FolioData.validateRequiredValuesForInvoice(mappedMarc.title(), mappedMarc.getRecord()))
+                .markSkipped(Config.onValidationErrorsSKipFailed);
+      }
+
+      // Check for valid ISBNs and other identifiers
       if (mappedMarc.hasISBN() && Utils.isInvalidIsbn(mappedMarc.getISBN())) {
         if (Config.V_ON_ISBN_INVALID_REMOVE_ISBN.equalsIgnoreCase(Config.onIsbnInvalid)) {
           outcome.setFlagIfNotNull(
                   String.format(
-                          "ISBN %s is not valid. Will remove the ISBN to continue",
+                          "ISBN %s is not valid. Will remove the ISBN to continue.",
                           mappedMarc.getISBN())
           );
         } else if (Config.V_ON_ISBN_INVALID_REPORT_ERROR.equalsIgnoreCase(Config.onIsbnInvalid)) {
-          outcome.addValidationMessageIfNotNull("ISBN is invalid")
+          outcome.addValidationMessage("ISBN is invalid")
                   .markSkipped(Config.onValidationErrorsSKipFailed);
         }
       } else if (!mappedMarc.hasISBN() &&
@@ -72,7 +168,7 @@ public class RecordChecker {
                   (totalRecords>1 ? ", for example one with " : " and "),
                   firstExistingInstance.getHrid());
         } else {
-          existingInstancesMessage = "Found no existing Instances with that exact title";
+          existingInstancesMessage = "Found no existing Instances with that exact title.";
         }
         outcome.setFlagIfNotNull(
                 "No ISBN, ISSN, Publisher number or distributor number, system control number," +
@@ -81,50 +177,8 @@ public class RecordChecker {
                 + existingInstancesMessage);
       }
 
-      Map<String, String> requiredFields = new HashMap<>();
-      if (Config.objectCodeRequired) {
-        requiredFields.put("Object code", mappedMarc.objectCode());
-      }
-      requiredFields.put(MarcRecordMapping.FUND_CODE_LABEL, mappedMarc.fundCode());
-      requiredFields.put(MarcRecordMapping.VENDOR_CODE_LABEL, mappedMarc.vendorCode());
-      requiredFields.put(MarcRecordMapping.PRICE_LABEL, mappedMarc.price());
-
-      // MAKE SURE EACH OF THE REQUIRED SUBFIELDS HAS DATA
-      for (Map.Entry<String,String> entry : requiredFields.entrySet())  {
-        if (entry.getValue()==null || entry.getValue().isEmpty()) {
-          String message = String.format("Mandatory data element %s missing (looked in %s).",
-                  entry.getKey(), MarcRecordMapping.FOLIO_TO_MARC_FIELD_MAP.get(entry.getKey()));
-          outcome.addValidationMessageIfNotNull(message)
-                  .markSkipped(Config.onValidationErrorsSKipFailed);
-        }
-      }
-
-      //VALIDATE THE ORGANIZATION, OBJECT CODE AND FUND
-      //STOP THE PROCESS IF ANY ERRORS WERE FOUND
-      String orgValidationResult = FolioData.validateOrganization(mappedMarc.vendorCode());
-      if (orgValidationResult != null) {
-        outcome.addValidationMessageIfNotNull(orgValidationResult)
-                .markSkipped(Config.onValidationErrorsSKipFailed);
-      }
-      if (mappedMarc.hasObjectCode()) {
-        outcome.addValidationMessageIfNotNull(
-                FolioData.validateObjectCode(mappedMarc.objectCode()))
-                .markSkipped(Config.onValidationErrorsSKipFailed);
-      }
-      if (mappedMarc.hasProjectCode()) {
-        outcome.addValidationMessageIfNotNull(
-                FolioData.validateObjectCode(mappedMarc.projectCode()))
-                .markSkipped(Config.onValidationErrorsSKipFailed);
-      }
-
-      if (Config.importInvoice) {
-        outcome.addValidationMessageIfNotNull(
-                FolioData.validateRequiredValuesForInvoice(mappedMarc.title(), mappedMarc.getRecord()))
-                .markSkipped(Config.onValidationErrorsSKipFailed);
-      }
-
     }	catch(Exception e) {
-      outcome.addValidationMessageIfNotNull("Got exception when validating MARC record: " + e.getMessage() + " " + e.getClass());
+      outcome.addValidationMessage("Got exception when validating MARC record: " + e.getMessage() + " " + e.getClass());
     }
   }
 

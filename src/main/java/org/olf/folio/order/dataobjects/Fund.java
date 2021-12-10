@@ -14,9 +14,9 @@ public class Fund extends JsonDataObject {
     return new Fund()
             .putDistributionType(V_PERCENTAGE)
             .putValue(100)
-            .putFundId(mappedMarc.fundUUID())
+            .putFundId(mappedMarc.fundId())
             .putCode(mappedMarc.fundCode())
-            .putExpenseClassIdIfPresent(mappedMarc.getExpenseClassUUID());
+            .putExpenseClassIdIfPresent(mappedMarc.expenseClassId());
   }
 
   public Fund putDistributionType (String distributionType) {

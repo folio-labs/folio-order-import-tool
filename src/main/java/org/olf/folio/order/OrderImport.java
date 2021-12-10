@@ -30,7 +30,7 @@ public class OrderImport {
 
 	public Results runAnalyzeJob(FileStorageHelper fileStore) throws Exception {
 		logger.info("...starting...");
-		FolioAccess.initialize(logger);
+		FolioAccess.initialize();
 
 		//GET THE UPLOADED FILE, EXIT IF NONE PROVIDED
 		if (fileStore.fullPathToMarcFile() == null) {
@@ -44,7 +44,7 @@ public class OrderImport {
 	public Results runImportJob(FileStorageHelper fileStore, Results results) throws Exception {
 
 		logger.info("...starting...");
-		FolioAccess.initialize(logger);
+		FolioAccess.initialize();
 
 		//GET THE UPLOADED FILE, EXIT IF NONE PROVIDED
 		if (fileStore.fullPathToMarcFile() == null) {

@@ -53,6 +53,9 @@ public class ConfigurationCheck {
     }
     boolean timeZoneValid = checkTimeZone();
     validOnAnalysisErrorsSetting = configOnValidationErrorsIsValid();
+    // temporary check for the presence of an API:
+    checkForAcquisitionMethodsEndpoint();
+    //
     return (allMandatoryPresent
             && authenticationPassed
             && urlPassed
@@ -84,7 +87,8 @@ public class ConfigurationCheck {
       try {
         ZoneId.of(compositeConfiguration.getString(Config.P_TZ_TIME_ZONE));
       } catch (ZoneRulesException zre) {
-        addPropertyError(Config.P_TZ_TIME_ZONE, zre.getMessage());
+        addPropertyError(Config.P_TZ_TIME_ZONE, zre.getMessage()
+                + "  (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)");
         return false;
       }
     }
@@ -190,7 +194,7 @@ public class ConfigurationCheck {
 
   private boolean checkFolioAccess() {
     try {
-      FolioAccess.initialize(logger);
+      FolioAccess.initialize();
     } catch (Exception e) {
       accessErrors.add(e.getMessage());
       return false;
@@ -198,6 +202,19 @@ public class ConfigurationCheck {
     logger.info(" ");
     logger.info("Access to FOLIO works with the provided authentication configuration");
     return true;
+  }
+
+  private void checkForAcquisitionMethodsEndpoint () {
+    try {
+      FolioData.callApiGet("orders-storage/acquisition-methods?limit=1");
+      logger.info("The present version of Orders has the (/orders-storage/acquisition-methods) API.");
+      Config.acquisitionMethodsApiPresent = true;
+    } catch (Exception e) {
+      if (e.getMessage().contains("No suitable module found for path")) {
+        logger.info("The present version of Orders does not provide the (/orders-storage/acquisition-methods) API.");
+        Config.acquisitionMethodsApiPresent = false;
+      }
+    }
   }
 
   private boolean checkUploadFilePath () {

@@ -25,8 +25,10 @@ public class FolioData extends FolioAccess {
   public static final String ORGANIZATIONS_ARRAY = "organizations";
   public static final String FUNDS_ARRAY = "funds";
   public static final String EXPENSE_CLASSES_ARRAY = "expenseClasses";
-  public static final String LOCATIONS_ARRAY = "locations";
   public static final String BUDGETS_ARRAY = "budgets";
+  public static final String BUDGET_EXPENSE_CLASSES_ARRAY = "budgetExpenseClasses";
+  public static final String ACQUISITION_METHODS_ARRAY = "acquisitionMethods";
+  public static final String LOCATIONS_ARRAY = "locations";
   public static final String FISCAL_YEARS_ARRAY = "fiscalYears";
   public static final String INSTANCE_TYPES_ARRAY = "instanceTypes";
   public static final String CONTRIBUTOR_TYPES_ARRAY = "contributorTypes";
@@ -47,6 +49,8 @@ public class FolioData extends FolioAccess {
   public static final Map<String,String> fiscalYearCodeToUuid = new HashMap<>();
   public static final Map<String,String> fundCodeToUuid = new HashMap<>();
   public static final Map<String,String> fundIdAndFiscalYearIdToBudgetId = new HashMap<>();
+  public static final Map<String,String> acquisitionMethodValueToUuid = new HashMap<>();
+  public static final Map<String,String> budgetAndExpClassToBudgetExpClassId = new HashMap<>();
 
   public static String getNextPoNumberFromOrders() throws Exception {
     return (callApiGet("orders/po-number")).getString("poNumber");
@@ -74,6 +78,15 @@ public class FolioData extends FolioAccess {
             "finance/expense-classes?query=(code==%22" + expenseClassCode + "%22)",
             EXPENSE_CLASSES_ARRAY,
             expenseClassCodeToUuid);
+  }
+
+  public static String getAcquisitionMethodId (String acquisitionMethodValue) throws Exception {
+    return getIdByKey(
+            acquisitionMethodValue,
+            "orders-storage/acquisition-methods?query=(value==%22"
+                    + URLEncoder.encode(acquisitionMethodValue, StandardCharsets.UTF_8) +"%22)",
+            ACQUISITION_METHODS_ARRAY,
+            acquisitionMethodValueToUuid);
   }
 
   public static String getInstanceTypeId(String instanceTypeName) throws Exception {
@@ -161,6 +174,16 @@ public class FolioData extends FolioAccess {
     return fundIdAndFiscalYearIdToBudgetId.get(comboKey);
   }
 
+  public static String getBudgetExpenseClassId(String budgetId, String expenseClassId) throws Exception {
+    String comboKey = budgetId + "/" + expenseClassId;
+    if (! budgetAndExpClassToBudgetExpClassId.containsKey(comboKey) ) {
+      String budgetExpenseClassQuery = "finance-storage/budget-expense-classes?query=(budgetId==" + "%22" + budgetId + "%22" + "+and+" + "expenseClassId==" + "%22" + expenseClassId + "%22)";
+      String budgetExpenseClassId = getFirstId(callApiGetArray(budgetExpenseClassQuery, BUDGET_EXPENSE_CLASSES_ARRAY));
+      budgetAndExpClassToBudgetExpClassId.put(comboKey, budgetExpenseClassId);
+    }
+    return budgetAndExpClassToBudgetExpClassId.get(comboKey);
+  }
+
   public static JSONArray getTags (String objectCode) throws Exception {
     String tagEndpoint = "tags?query=(label==" + objectCode + ")";
     return callApiGetArray(tagEndpoint,TAGS_ARRAY);
@@ -179,42 +202,37 @@ public class FolioData extends FolioAccess {
     //VALIDATE FISCAL YEAR CODE
     String fiscalYearId = getFiscalYearId(Config.fiscalYearCode);
     if (fiscalYearId == null) {
-      return "Fiscal year code in file (" + Config.fiscalYearCode + ") does not exist in FOLIO";
+      return "No fiscal year with the code (" + Config.fiscalYearCode + ") found in FOLIO";
     }
      //VALIDATE FUND CODE
     String fundId = getFundId(fundCode);
     if (fundId == null) {
-      return "Fund code in file (" + fundCode + ") does not exist in FOLIO";
+      return "No fund with the code (" + fundCode + ") found in FOLIO.";
     }
     //MAKE SURE THE FUND CODE EXISTS FOR THE CURRENT FISCAL YEAR
     if (getBudgetId(fundId, fiscalYearId) == null) {
-      return "Fund code in file (" + fundCode + ") does not have a budget for fiscal year code in file (" + Config.fiscalYearCode +")";
+      return "The fund code in the record (" + fundCode + ") does not have a budget for the configured fiscal year (" + Config.fiscalYearCode +")";
     }
     return null;
   }
 
   public static String validateObjectCode(String objectCode) throws Exception {
     if (getTags(objectCode).length() < 1) {
-      return "Object code in the record (" + objectCode + ") does not exist in FOLIO";
+      return "No object code (" + objectCode + ") found in FOLIO";
     }
     return null;
   }
 
   public static String validateOrganization(String orgCode) throws Exception {
     if (getOrganizationId(orgCode) == null) {
-      return "Organization code in file (" + orgCode + ") does not exist in FOLIO";
+      return "No organization with the code (" + orgCode + ") found in FOLIO";
     }
     return null;
   }
 
-  // Use this?
-  public static JSONObject validateAddress (String name, String title) throws Exception {
-    JSONObject responseMessage = new JSONObject();
+  public static String validateAddress (String name) throws Exception {
     if (getAddressIdByName(name) == null) {
-      responseMessage.put("error", "Address with the (" + name + ") does not exist in FOLIO");
-      responseMessage.put("title", title);
-      responseMessage.put("PONumber", "~error~");
-      return responseMessage;
+      return "No address with the name (" + name + ") found in FOLIO.";
     }
     return null;
   }
