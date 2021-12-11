@@ -2,7 +2,7 @@ package org.olf.folio.order.dataobjects;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.BaseMapping;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +11,7 @@ public class OrderLineDetails extends JsonDataObject{
   public static final String P_RECEIVING_NOTE = "receivingNote";
   public static final String P_PRODUCT_IDS = "productIds";
 
-  public static OrderLineDetails fromMarcRecord(MarcRecordMapping mappedMarc) {
+  public static OrderLineDetails fromMarcRecord(BaseMapping mappedMarc) {
     return new OrderLineDetails()
             .putReceivingNoteIfPresent(mappedMarc.receivingNote())
             .putProductIdsIfPresent(ProductIdentifier.createProductIdentifiersFromMarc(mappedMarc));

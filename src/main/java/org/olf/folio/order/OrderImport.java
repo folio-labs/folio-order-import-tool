@@ -18,6 +18,7 @@ import org.olf.folio.order.dataobjects.Item;
 import org.olf.folio.order.dataobjects.Link;
 import org.olf.folio.order.dataobjects.Note;
 import org.olf.folio.order.imports.FileStorageHelper;
+import org.olf.folio.order.mapping.BaseMapping;
 import org.olf.folio.order.validation.RecordChecker;
 import org.olf.folio.order.imports.RecordResult;
 import org.olf.folio.order.imports.Results;
@@ -67,7 +68,7 @@ public class OrderImport {
 			RecordResult outcome = results.nextResult();
 			try {
 				Record record = reader.next();
-				MarcRecordMapping mappedMarc = new MarcRecordMapping(record);
+				BaseMapping mappedMarc = Config.getMarcMapping(record);
   			RecordChecker.validateMarcRecord(mappedMarc, outcome);
 				if (!outcome.isSkipped()) {
 					// RECORD VALIDATION PASSED OR SERVICE IS CONFIGURED TO ATTEMPT IMPORT IN ANY CASE
@@ -98,7 +99,7 @@ public class OrderImport {
 		return results.markDone();
 	}
 
-	private CompositePurchaseOrder importPurchaseOrderAndNote(MarcRecordMapping mappedMarc, RecordResult outcome)
+	private CompositePurchaseOrder importPurchaseOrderAndNote(BaseMapping mappedMarc, RecordResult outcome)
 					throws Exception {
 		CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
 
@@ -118,7 +119,7 @@ public class OrderImport {
 		return CompositePurchaseOrder.fromJson(persistedPo);
 	}
 
-	private void updateInventory(String instanceId, MarcRecordMapping mappedMarc, RecordResult outcome)
+	private void updateInventory(String instanceId, BaseMapping mappedMarc, RecordResult outcome)
 					throws Exception {
 		// RETRIEVE, UPDATE, AND PUT THE RELATED INSTANCE
 		Instance fetchedInstance = Instance.fromJson(
@@ -184,7 +185,7 @@ public class OrderImport {
 
 	public static void maybeImportInvoice(
 							   CompositePurchaseOrder po,
-							   MarcRecordMapping marc) throws Exception {
+							   BaseMapping marc) throws Exception {
 
 		if (Config.importInvoice && marc.hasInvoice()) {
 			UUID orderLineUUID = UUID.fromString(po.getCompositePoLines().get(0).getId());

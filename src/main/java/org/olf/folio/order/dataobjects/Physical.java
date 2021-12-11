@@ -3,7 +3,8 @@ package org.olf.folio.order.dataobjects;
 import org.json.JSONObject;
 import org.olf.folio.order.Config;
 import org.olf.folio.order.Constants;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcMapSigma;
 
 public class Physical extends JsonDataObject {
   public static final String P_CREATE_INVENTORY = "createInventory";
@@ -15,10 +16,15 @@ public class Physical extends JsonDataObject {
    * startup config.
    * @param mappedMarc not yet used
    */
-  public static Physical fromMarcRecord(MarcRecordMapping mappedMarc) {
-    return new Physical()
-            .putCreateInventory(V_INSTANCE_HOLDING_ITEM)
-            .putMaterialType(Constants.MATERIAL_TYPES_MAP.get(Config.materialType));
+  public static Physical fromMarcRecord(BaseMapping mappedMarc) throws Exception {
+    Physical physical =  new Physical()
+            .putCreateInventory(V_INSTANCE_HOLDING_ITEM);
+    if (mappedMarc instanceof MarcMapSigma) {
+      physical.putMaterialType(((MarcMapSigma) mappedMarc).materialTypeId());
+    } else {
+      physical.putMaterialType(Constants.MATERIAL_TYPES_MAP.get(Config.materialType));
+    }
+    return physical;
   }
 
   public static Physical fromJson(JSONObject physicalJson) {
@@ -38,11 +44,7 @@ public class Physical extends JsonDataObject {
     return (String) json.get(P_CREATE_INVENTORY);
   }
   public String getMaterialType () {
-    return (String) json.get(P_MATERIAL_TYPE);
+    return getString(P_MATERIAL_TYPE);
   }
-  private static String getMaterialTypeId (String materialType) {
-    return isUUID(materialType) ? materialType : Constants.MATERIAL_TYPES_MAP.get(materialType);
-  }
-
 
 }

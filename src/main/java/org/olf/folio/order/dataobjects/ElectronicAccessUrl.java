@@ -3,7 +3,7 @@ package org.olf.folio.order.dataobjects;
 import org.json.JSONArray;
 import org.marc4j.marc.DataField;
 import org.olf.folio.order.Constants;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.BaseMapping;
 
 public class ElectronicAccessUrl extends JsonDataObject {
 
@@ -18,7 +18,7 @@ public class ElectronicAccessUrl extends JsonDataObject {
   private static final String LICENSE_NOTE         = "z";
 
 
-  public static JSONArray getElectronicAccessFromMarcRecord (MarcRecordMapping mappedMarc, String defaultLinkText) {
+  public static JSONArray getElectronicAccessFromMarcRecord (BaseMapping mappedMarc, String defaultLinkText) {
     JSONArray electronicAccess = new JSONArray();
     for (DataField d856 : mappedMarc.getAll856s()) {
       if (d856.getSubfieldsAsString(URI) != null) {

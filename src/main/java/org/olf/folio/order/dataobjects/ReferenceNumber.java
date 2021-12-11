@@ -1,14 +1,13 @@
 package org.olf.folio.order.dataobjects;
 
-import org.json.JSONObject;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.BaseMapping;
 
 public class ReferenceNumber extends JsonDataObject {
   public static final String P_REF_NUMBER = "refNumber";
   public static final String P_REF_NUMBER_TYPE = "refNumberType";
   public static final String V_VENDOR_INTERNAL_NUMBER = "Vendor internal number";
 
-  public static ReferenceNumber fromMarcRecord(MarcRecordMapping mappedMarc) {
+  public static ReferenceNumber fromMarcRecord(BaseMapping mappedMarc) {
     return new ReferenceNumber()
             .putRefNumber(mappedMarc.vendorItemId())
             .putRefNumberType(mappedMarc.hasRefNumberType()

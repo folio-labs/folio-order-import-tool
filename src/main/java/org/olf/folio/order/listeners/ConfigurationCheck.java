@@ -1,7 +1,6 @@
 package org.olf.folio.order.listeners;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
 import org.olf.folio.order.Config;
 import org.olf.folio.order.Constants;
@@ -44,6 +43,7 @@ public class ConfigurationCheck {
     boolean validOnAnalysisErrorsSetting;
     allMandatoryPresent = checkMissingMandatoryProperties();
     urlPassed = checkBaseOkapiEndpointUrl();
+    boolean validMarcMappingChoice = specifiedMarcMappingExists();
     if (allMandatoryPresent && urlPassed) {
       authenticationPassed = checkFolioAccess();
       if (authenticationPassed) {
@@ -59,6 +59,7 @@ public class ConfigurationCheck {
     return (allMandatoryPresent
             && authenticationPassed
             && urlPassed
+            && validMarcMappingChoice
             && validOnAnalysisErrorsSetting
             && fileSystemPathIsWriteable
             && timeZoneValid );
@@ -80,6 +81,24 @@ public class ConfigurationCheck {
       }
     }
     return true;
+  }
+
+  public boolean specifiedMarcMappingExists() {
+    if (compositeConfiguration.containsKey(Config.P_MARC_MAPPING)) {
+      if (Arrays.asList(
+              Config.V_MARC_MAPPING_CHI,
+              Config.V_MARC_MAPPING_LAMBDA,
+              Config.V_MARC_MAPPING_SIGMA).contains(compositeConfiguration.getString(Config.P_MARC_MAPPING).toLowerCase())) {
+        return true;
+      } else {
+        addPropertyError(Config.P_MARC_MAPPING,
+                String.format("Unknown MARC mapping option. Options are %s, %s, and %s.",
+                        Config.V_MARC_MAPPING_CHI, Config.V_MARC_MAPPING_LAMBDA, Config.V_MARC_MAPPING_SIGMA));
+        return false;
+      }
+    } else {
+      return true;
+    }
   }
 
   public boolean checkTimeZone () {

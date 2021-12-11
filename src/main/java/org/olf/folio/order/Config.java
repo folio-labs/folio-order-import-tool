@@ -1,5 +1,11 @@
 package org.olf.folio.order;
 
+import org.marc4j.marc.Record;
+import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcMapChi;
+import org.olf.folio.order.mapping.MarcMapLambda;
+import org.olf.folio.order.mapping.MarcMapSigma;
+
 import javax.servlet.ServletContext;
 import java.time.ZoneId;
 import java.time.zone.ZoneRulesException;
@@ -33,8 +39,12 @@ public class Config {
   public static final String P_PERM_E_LOCATION_WITH_INVOICE_IMPORT = "permELocationWithInvoiceImport";
   public static final String P_TEXT_FOR_ELECTRONIC_RESOURCES = "textForElectronicResources";
   public static final String P_PAYMENT_METHOD = "paymentMethod";
+  // MARC MAPPING
+  public static final String P_MARC_MAPPING = "marcMapping";
+  public static final String V_MARC_MAPPING_CHI = "chi";
+  public static final String V_MARC_MAPPING_LAMBDA = "lambda";
+  public static final String V_MARC_MAPPING_SIGMA = "sigma";
   // PROCESSING INSTRUCTIONS
-  public static final String P_OBJECT_CODE_REQUIRED = "objectCodeRequired";
   public static final String P_IMPORT_INVOICE = "importInvoice";
   public static final String P_FAIL_IF_NO_INVOICE_DATA = "failIfNoInvoiceData";
   public static final String P_EXIT_ON_CONFIG_ERRORS = "exitOnConfigErrors";
@@ -67,9 +77,9 @@ public class Config {
           P_FOLIO_UI_URL,
           P_IMPORT_INVOICE,
           P_LOCALE,
+          P_MARC_MAPPING,
           P_MATERIAL_TYPE,
           P_NOTE_TYPE,
-          P_OBJECT_CODE_REQUIRED,
           P_OKAPI_PASSWORD,
           P_OKAPI_USERNAME,
           P_ON_ISBN_INVALID,
@@ -105,12 +115,12 @@ public class Config {
   public static String noteTypeName;
   public static String materialType;
   public static String textForElectronicResources;
-  public static boolean objectCodeRequired;
   public static boolean importInvoice;
   public static boolean failIfNoInvoiceData;
   public static String paymentMethod;
   public static String permLocationWithInvoiceImport;
   public static String permELocationWithInvoiceImport;
+  public static String marcMapping;
   public static boolean exitOnConfigErrors;
   public static boolean exitOnAccessErrors;
   public static boolean exitOnFailedIdLookups;
@@ -151,18 +161,14 @@ public class Config {
       apiUsername = getText(P_OKAPI_USERNAME);
       apiPassword = getText(P_OKAPI_PASSWORD);
       tenant = getText(P_TENANT);
+
       // Operations
       uploadFilePath = withEndingSlash(getText(P_UPLOAD_FILE_PATH, V_DEFAULT_FILE_STORAGE_PATH));
       daysToKeepResults = getInt(P_DAYS_TO_KEEP_RESULTS, V_DEFAULT_DAYS_TO_KEEP_RESULTS);
-      // UI
-      daysToShowResults = getInt(P_DAYS_TO_SHOW_RESULTS, V_DEFAULT_DAYS_TO_DISPLAY_RESULTS);
-      folioUiUrl = withEndingSlash(getText(P_FOLIO_UI_URL));
-      folioUiInventoryPath = withEndingSlash(getText(P_FOLIO_UI_INVENTORY_PATH,V_DEFAULT_UI_INVENTORY_PATH));
-      folioUiOrdersPath = withEndingSlash(getText(P_FOLIO_UI_ORDERS_PATH, V_DEFAULT_UI_ORDERS_PATH));
-      tzTimeZone = getText(P_TZ_TIME_ZONE, V_DEFAULT_TIME_ZONE);
-      language_country = getText(P_LOCALE, V_DEFAULT_LOCALE);
-      locale = Locale.forLanguageTag(getText(P_LOCALE, V_DEFAULT_LOCALE));
-      zoneId = getZoneId();
+
+      // MARC mapping
+      marcMapping = getText(P_MARC_MAPPING, V_MARC_MAPPING_CHI).toLowerCase();
+
       // Default values
       permLocationName = getText(P_PERM_LOCATION); // Default, could change with invoice
       permELocationName = getText(P_PERM_E_LOCATION); // Default, could change with invoice
@@ -171,11 +177,11 @@ public class Config {
       materialType = getText(P_MATERIAL_TYPE, V_DEFAULT_MATERIAL_TYPE);
       paymentMethod = getText(P_PAYMENT_METHOD);
       textForElectronicResources = getText(P_TEXT_FOR_ELECTRONIC_RESOURCES);
+
       // Processing instructions
       exitOnConfigErrors = getBoolean(P_EXIT_ON_CONFIG_ERRORS,true);
       exitOnAccessErrors = getBoolean(P_EXIT_ON_ACCESS_ERRORS, true);
       exitOnFailedIdLookups = getBoolean(P_EXIT_ON_FAILED_ID_LOOKUPS,true);
-      objectCodeRequired = getBoolean(P_OBJECT_CODE_REQUIRED, true);
       importInvoice = getBoolean(P_IMPORT_INVOICE,false);
       failIfNoInvoiceData = getBoolean(P_FAIL_IF_NO_INVOICE_DATA, importInvoice);
       onValidationErrors = getText(P_ON_VALIDATION_ERRORS, V_ON_VALIDATION_ERRORS_CANCEL_ALL);
@@ -186,6 +192,16 @@ public class Config {
       onIsbnInvalidFlagError = V_ON_ISBN_INVALID_REPORT_ERROR.equalsIgnoreCase(onIsbnInvalid);
       onIsbnInvalidRemoveIsbn = V_ON_ISBN_INVALID_REMOVE_ISBN.equalsIgnoreCase(onIsbnInvalid);
       onIsbnInvalidDoNothing = V_ON_ISBN_INVALID_DO_NOTHING.equalsIgnoreCase(onIsbnInvalid);
+
+      // UI
+      daysToShowResults = getInt(P_DAYS_TO_SHOW_RESULTS, V_DEFAULT_DAYS_TO_DISPLAY_RESULTS);
+      folioUiUrl = withEndingSlash(getText(P_FOLIO_UI_URL));
+      folioUiInventoryPath = withEndingSlash(getText(P_FOLIO_UI_INVENTORY_PATH,V_DEFAULT_UI_INVENTORY_PATH));
+      folioUiOrdersPath = withEndingSlash(getText(P_FOLIO_UI_ORDERS_PATH, V_DEFAULT_UI_ORDERS_PATH));
+      tzTimeZone = getText(P_TZ_TIME_ZONE, V_DEFAULT_TIME_ZONE);
+      language_country = getText(P_LOCALE, V_DEFAULT_LOCALE);
+      locale = Locale.forLanguageTag(getText(P_LOCALE, V_DEFAULT_LOCALE));
+      zoneId = getZoneId();
 
       permLocationWithInvoiceImport = getText(P_PERM_LOCATION_WITH_INVOICE_IMPORT,
               (importInvoice ? EMPTY : NOT_APPLICABLE));
@@ -247,6 +263,17 @@ public class Config {
       return ZoneId.of(getText(P_TZ_TIME_ZONE, V_DEFAULT_TIME_ZONE));
     } catch (ZoneRulesException zre) {
       return ZoneId.systemDefault();
+    }
+  }
+
+  public static BaseMapping getMarcMapping (Record record) {
+    switch (marcMapping) {
+      case V_MARC_MAPPING_LAMBDA:
+        return new MarcMapLambda(record);
+      case V_MARC_MAPPING_SIGMA:
+        return new MarcMapSigma(record);
+      default:
+        return new MarcMapChi(record);
     }
   }
 

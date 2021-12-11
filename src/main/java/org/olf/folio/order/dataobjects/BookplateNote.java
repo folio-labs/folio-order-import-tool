@@ -1,7 +1,6 @@
 package org.olf.folio.order.dataobjects;
 
 import org.olf.folio.order.Constants;
-import org.olf.folio.order.MarcRecordMapping;
 
 public class BookplateNote extends JsonDataObject {
   public static final String P_HOLDINGS_NOTE_TYPE_ID = "holdingsNoteTypeId";

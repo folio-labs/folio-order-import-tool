@@ -4,13 +4,15 @@ import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.olf.folio.order.dataobjects.ProductIdentifier;
+import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcMapLambda;
 import org.olf.folio.order.storage.FolioData;
 
 import java.util.UUID;
 
 public class JsonObjectBuilder {
 
-  public static JSONObject createCompositePoJson(MarcRecordMapping mappedMarc, Config config, Logger logger) throws Exception {
+  public static JSONObject createCompositePoJson(BaseMapping mappedMarc, Config config, Logger logger) throws Exception {
     JSONObject order = new JSONObject();
     order.put("poNumber", FolioData.getNextPoNumberFromOrders());
     logger.info("NEXT PO NUMBER: " + order.getString("poNumber"));
@@ -77,18 +79,20 @@ public class JsonObjectBuilder {
       vendorDetail.put("referenceNumbers", referenceNumbers);
       orderLine.put("vendorDetail", vendorDetail);
     }
-    // Tags
-    JSONObject tags = new JSONObject();
-    JSONArray tagList = new JSONArray();
-    if (mappedMarc.hasObjectCode()) {
-      tagList.put(mappedMarc.objectCode());
-    }
-    if (mappedMarc.hasProjectCode()) {
-      tagList.put(mappedMarc.projectCode());
-    }
-    if (!tagList.isEmpty()) {
-      tags.put("tagList", tagList);
-      orderLine.put("tags", tags);
+    if (mappedMarc instanceof MarcMapLambda) {
+      // Tags
+      JSONObject tags = new JSONObject();
+      JSONArray tagList = new JSONArray();
+      if (( (MarcMapLambda) mappedMarc ).hasObjectCode()) {
+        tagList.put(( (MarcMapLambda) mappedMarc ).objectCode());
+      }
+      if (( (MarcMapLambda) mappedMarc ).hasProjectCode()) {
+        tagList.put(( (MarcMapLambda) mappedMarc ).projectCode());
+      }
+      if (!tagList.isEmpty()) {
+        tags.put("tagList", tagList);
+        orderLine.put("tags", tags);
+      }
     }
     // Order line
     orderLine.put("id", UUID.randomUUID().toString());
@@ -164,7 +168,7 @@ public class JsonObjectBuilder {
   final static String INVOICE_LINE_STATUS = "Open";
   final static boolean RELEASE_ENCUMBRANCE = true;
 
-  static JSONObject createInvoiceJson(String poNumber, MarcRecordMapping marc) throws Exception {
+  static JSONObject createInvoiceJson(String poNumber, BaseMapping marc) throws Exception {
     JSONObject invoice = new JSONObject();
     invoice.put("id", UUID.randomUUID());
     invoice.put("poNumbers", (new JSONArray()).put(poNumber)); // optional
@@ -179,7 +183,7 @@ public class JsonObjectBuilder {
     return invoice;
   }
 
-  static JSONObject createInvoiceLineJson(UUID orderLineUUID, MarcRecordMapping marc, JSONObject invoice) {
+  static JSONObject createInvoiceLineJson(UUID orderLineUUID, BaseMapping marc, JSONObject invoice) {
     JSONObject invoiceLine = new JSONObject();
     invoiceLine.put("description", marc.title());  // required
     invoiceLine.put("invoiceId", UUID.fromString(invoice.get("id").toString())); // required

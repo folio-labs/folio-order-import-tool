@@ -1,6 +1,6 @@
 package org.olf.folio.order.dataobjects;
 
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.BaseMapping;
 
 public class Cost extends JsonDataObject {
   public static final String P_QUANTITY_PHYSICAL = "quantityPhysical";
@@ -9,7 +9,7 @@ public class Cost extends JsonDataObject {
   public static final String P_LIST_UNIT_PRICE_ELECTRONIC = "listUnitPriceElectronic";
   public static final String P_CURRENCY = "currency";
 
-  public static Cost fromMarcRecord(MarcRecordMapping mappedMarc) {
+  public static Cost fromMarcRecord(BaseMapping mappedMarc) {
     Cost cost = new Cost();
     if (mappedMarc.electronic()) {
       cost.putQuantityElectronic(1);

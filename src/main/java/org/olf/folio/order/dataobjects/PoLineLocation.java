@@ -2,7 +2,8 @@ package org.olf.folio.order.dataobjects;
 
 import org.json.JSONObject;
 import org.olf.folio.order.Config;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcMapSigma;
 import org.olf.folio.order.storage.FolioData;
 
 public class PoLineLocation extends JsonDataObject {
@@ -17,7 +18,7 @@ public class PoLineLocation extends JsonDataObject {
     return loc;
   }
 
-  public static PoLineLocation fromMarcRecord(MarcRecordMapping mappedMarc) throws Exception {
+  public static PoLineLocation fromMarcRecord(BaseMapping mappedMarc) throws Exception {
     if (mappedMarc.electronic()) {
       return new PoLineLocation()
               .putQuantityElectronic(1)
@@ -35,7 +36,7 @@ public class PoLineLocation extends JsonDataObject {
    * @param mappedMarc the MARC record, for determining if an invoice is present
    * @return  the name of the location from the startup configuration
    */
-  private static String getLocationName (MarcRecordMapping mappedMarc)  {
+  private static String getLocationName (BaseMapping mappedMarc)  {
     return (mappedMarc.electronic() ?
             (Config.importInvoice && mappedMarc.hasInvoice()) ?
                     Config.permELocationWithInvoiceImport : Config.permELocationName
@@ -45,8 +46,12 @@ public class PoLineLocation extends JsonDataObject {
     );
   }
 
-  private static String getLocationId (MarcRecordMapping mappedMarc) throws Exception {
-    return FolioData.getLocationIdByName(getLocationName(mappedMarc));
+  private static String getLocationId (BaseMapping mappedMarc) throws Exception {
+    if (mappedMarc instanceof MarcMapSigma) {
+      return ((MarcMapSigma) mappedMarc).locationId();
+    } else {
+      return FolioData.getLocationIdByName(getLocationName(mappedMarc));
+    }
   }
 
   public PoLineLocation putQuantityPhysical(int i) {

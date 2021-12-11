@@ -29,70 +29,212 @@ orders.
 * We've included example MARC files, but you will have to update them with your vendor, fund, object codes
 * To effectuate changes of import properties, restart the service
 
-## Operations
+### Docker image
 
-#### Configurations in import.properties
+You can build a Docker image using the [Dockerfile](Dockerfile) in this repository.
 
-A number of configuration parameters control the startup and operation of the service. 
+1. Build the WAR for the webapp: `mvn install`
+1. Build the Docker image: `docker build .`
+1. Run the container: `docker run -d -p 8080:8080 <imageId>`
+
+This will run a [Jetty](https://hub.docker.com/_/jetty) container with the order import webapp as the root, using the
+default configuration in the [import.properties](import.properties) file. This will work against the
+FOLIO [folio-snapshot](https://folio-snapshot.dev.folio.org) reference environment.
+
+To override the default configuration, mount your configuration to `/var/lib/jetty/order/import.properties` on the
+container e.g.:
+
+    docker run -d -v $(pwd)/order:/var/lib/jetty/order -p 8080:8080 <imageId>
+
+## How to configure the service
+
+The startup configuration has parameters controlling FOLIO access, start-up behavior, server settings, process controls, UI settings and static values populated to FOLIO. The table show all parameters except for the static FOLIO data that are described in the subsequent paragraphs.
+
+***FOLIO access settings, startup behavior, server settings for the tool, import process controls, UI settings***
 
 | Name                      | Values                                                                                                                                 | Default                      | What it does                                                                                                                                                                                                                                                                                                          |
 |---------------------------|----------------------------------------------------------------------------------------------------------------------------------------|------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **FOLIO access**          ||||
+| baseOkapiEndpoint         | Protocol and domain of the FOLIO backend REST service<br/>i.e. https://folio-snapshot.dev.folio.org/                                   || I.e.                         |
+| tenant                    | FOLIO tenant, i.e. 'diku'                                                                                                              |||
+| okapi_username            | The FOLIO user name of the import user i.e. 'diku_admin'                                                                               |||
+| okapi_password            | The password for the import user                                                                                                       |||
 | **Startup**               ||||
-| exitOnConfigurationErrors | boolean ¹                                                                                                                              | true                         | If true: If the service detects fatal problems with the configuration properties it will exit. False: The service will merely log configuration problems.                                                                                                                                                             | 
-| exitOnFailedIdLookups     | boolean ¹                                                                                                                              | true                         | If true: The service looks up FOLIO UUIDs by names of codes of certain properties and will exit if it fails to find any. False: The service will merely log missing values.                                                                                                                                           |
+| exitOnConfigurationErrors | boolean ¹                                                                                                                              | true                         | If set to true (the default), the service will exit if it detects fatal problems with the configuration properties -- like missing mandatory properties. <br/>If set to false, it will merely log configuration problems.                                                                                             | 
+| exitOnAccessErrors        | boolean ¹                                                                                                                              | true                         | If set to true (the default), the service will exit if it fails to gain access to FOLIO for any reason (wrong URL, tenant, username or service down etc). <br/>If set to false, it will merely log access problems.                                                                                                   |
+| exitOnFailedIdLookups     | boolean ¹                                                                                                                              | true                         | If set to true (the default), the service will exit if it fails to resolve configured names of codes to FOLIO UUIDs. <br/>If set to false, it will merely log missing values.                                                                                                                                         |
 | **Server**                ||||
 | uploadFilePath            | File system path. The parent directory must exist on the server. The given subdirectory will be created if it doesn't exist already. ² | /var/tmp/folio-order-import/ | Directory for storing uploaded MARC files and the outcomes of imports.                                                                                                                                                                                                                                                |
- | daysToKeepResults         | number of days ³                                                                                                                       | 365                          | Results log files older than this number of days will be deleted from the server.                                                                                                                                                                                                                                     | 
+ | daysToKeepResults         | number of days ³                                                                                                                       | 365                          | Results log files older than this number of days will be deleted from the server.                                                                                                                                                                                                                                     |
+| marcMapping               | `chi`, `lambda`, or `sigma`                                                                                                            | chi                          | Selects a MARC mapping option. The available mapping options are described in the mapping tables below.                                                                                                                                                                                                               |
 | **Processing**            ||||
 | onValidationErrors        | cancelAll, skipFailed, attemptImport                                                                                                   | cancelAll                    | If one or more records fail the initial validation check, this setting will cause the service to either cancel the entire import (`cancelAll`), skip the current, failed record (`skipFailed`), or attempt import anyway (`attemptImport`). With the last option, the import itself would presumably eventually fail. |
-| objectCodeRequired        | boolean ¹                                                                                                                              | true                         | If true, the validation will fail if no object code is found in the incoming MARC.                                                                                                                                                                                                                                    |
 | onIsbnInvalid             | removeIsbn, reportError, doNothing                                                                                                     | reportError                  | Controls if the tool should report error and perhaps skip the record, or remove the ISBN to ingest, or do nothing (which should cause the import to error out later)                                                                                                                                                  | 
 | **Tool UI**               |||
 | daysToShowResults         | number of days ³                                                                                                                       | 14                           | Results are listed in the UI for this number of days after first created. After that they will be skipped (but not deleted)                                                                                                                                                                                           |
-| tzTimeZone                  | A [tz time zone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones), ie `America/Chicago`                                   | Europe/Stockholm             | Sets the time zone of dates in the UI                                                                                                                                                                                                                                                                                 |
+| tzTimeZone                | A [tz time zone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones), ie `America/Chicago`                                   | Europe/Stockholm             | Sets the time zone of dates in the UI                                                                                                                                                                                                                                                                                 |
 | locale                    | Language and country, i.e. `en-US`                                                                                                     | sv-SE                        | Formats dates in the UI                                                                                                                                                                                                                                                                                               | 
 | folioUiUrl                | Protocol and domain of FOLIO UI, ie https://folio-snapshot.dev.folio.org/ ²                                                            | none                         | If provided, links to FOLIO's UI will be displayed for records in the import log.                                                                                                                                                                                                                                     |
 | folioUiInventoryPath      | Path to the Inventory UI ²                                                                                                             | inventory/view               | Used for a link in the import log to the Instance in UI Inventory.                                                                                                                                                                                                                                                    |
 | folioUiOrdersPath         | Path to the Orders UI ²                                                                                                                | orders/view                  | Used for a link in the import log to the order in UI Orders.                                                                                                                                                                                                                                                          |
 
-[1] Boolean settings: `true`, `TRUE`, `yes`, `YES`, `y`, `Y`, and `1` will resolve to **true**, while `false`, `FALSE`, `no`, `NO`, `n`, `N`
+
+1) Boolean settings: `true`, `TRUE`, `yes`, `YES`, `y`, `Y`, and `1` will resolve to **true**, while `false`, `FALSE`, `no`, `NO`, `n`, `N`
 , and `0` will resolve to **false**
+2) file paths, URLs and API paths can be with our without the ending slash (`/`)
+3) if the provided config value is not a valid number, the default will apply
 
-[2] file paths, URLs and API paths can be with our without the ending slash (`/`) 
+## What data are populated to FOLIO
+The tool populates FOLIO Orders, Inventory and utility modules with data from three different sources: 
+1) The incoming MARC records
+2) Static values defined as configuration parameters
+3) Static values hard-coded in the program. 
 
-[3] if the provided config value is not a valid number, the default will apply
+### Data from the incoming MARC records
+The tool provides three, slightly different sets of MARC mappings. All three share a basic set of mappings but then extend that with a few mappings of their own. 
 
-Example import.properties:
+The desired mapping set to use is selected at startup by setting the parameter  `marcMapping` to either `chi` (default), `lambda` or `sigma`. 
 
+#### Core mapping table
+
+| MARC_fields¹   | Description                  | Target properties                                                                                                                                                                                     | Required                                 | Default                                                                                | Content (incoming)                                                                                     |
+|----------------|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| 020 $a ($c $q) | ISBN                         | orderLine.details.productIds[] <br/>instance.identifiers[]                                                                                                                                            | No, but a note will be logged if missing |                                                                                        |
+| 020 $z ($c $q) | Invalid ISBN                 | instance.identifiers[]                                                                                                                                                                                | No                                       |                                                                                        |
+| 022 $a ($c $q) | ISSN                         | orderLine.details.productIds[] <br/>instance.identifiers[]                                                                                                                                            | No                                       |                                                                                        |
+| 022 $l ($c $q) | Linking ISSN                 | instance.identifiers[]                                                                                                                                                                                | No                                       |                                                                                        |
+| 022 ($z $y $n) | Invalid ISSN                 | instance.identifiers[]                                                                                                                                                                                | No                                       |                                                                                        |
+| 024 $a         | Other standard identifier    | orderLine.details.productIds[]<br/>instance.identifiers[]                                                                                                                                             | No                                       | 
+| 025 $a         | Other standard identifier    | orderLine.details.productIds[]<br/>instance.identifiers[]                                                                                                                                             | No                                       |
+| 028 $a         | Publisher/Distributor number | orderLine.details.productIds[]<br/>instance.identifiers[]                                                                                                                                             | No                                       |
+| 035 9$a        | System control number        | instance.identifiers[]                                                                                                                                                                                | No                                       |
+| 100, 700       | Contributors                 | instance.contributors.name /w contributor name type 'Personal name" and contributor type from $4 or 'bkp'                                                                                             | No                                       |                                                                                        |
+| 245 $a ($b $c) | Instance title               | instance.title, orderLine.titleOrPackage                                                                                                                                                              | Yes                                      |
+| 856 $u         | URI                          | instance. electronicAccessUrl[]. uri, holdingsRecord. electronicAccessUrl[]. uri                                                                                                                      | No                                       |
+| 856 $x         | User limit                   | orderLine.eResource.userLimit if ELECTRONIC                                                                                                                                                           | No                                       |                                                                                        | Integer                                                                                                |
+| 856 $y         | Access provider code         | orderLine. eresource. accessProvider if ELECTRONIC                                                                                                                                                    | No                                       | Vendor code (if 856$y is not present or the code does not resolve to an existing org.) |                                                                                                        |
+| 856 $z         | Link text                    | instance. electronicAccessUrl[]. linkText, holdingsRecord. electronicAccessUrl[]. linkText                                                                                                            | No                                       | Static config value text-For-Electronic-Resources (see separate table)                 ||
+| 980 $b         | Fund code                    | orderLine. fundDistribution[]. fundCode and (resolved to) .fundId,                                                                                                                                    | Yes                                      |                                                                                        | Fund code must exist in FOLIO for the given fiscal year                                                |
+| 980 $c         | Vendor item id               | orderLine. vendorDetail. referenceNumbers[] .refNumber, refNumberType set to "Vendor internal number", but see 980$u                                                                                  | No                                       |
+| 980 $e         | Description                  | orderLine.description                                                                                                                                                                                 | No                                       |
+| 980 $f         | Selector                     | orderLine.selector                                                                                                                                                                                    | No                                       |
+| 980 $g         | Vendor account               | orderLine. vendorDetail. vendorAccount                                                                                                                                                                | No                                       |
+| 980 $k         | Currency                     | orderLine. cost. currency, invoice.currency                                                                                                                                                           | No                                       | "USD"                                                                                  | Three letter currency code                                                                             |
+| 980 $l         | Access provider code         |                                                                                                                                                                                                       |                                          |                                                                                        |                                                                                                        |
+| 980 $m         | Price                        | orderLine. cost. listUnitPriceElectronic or orderLine. cost. listUnitPrice                                                                                                                            | Yes                                      |                                                                                        | Format: [9999.99]                                                                                      |
+| 980 $n         | Notes                        | Notes of link.type "poLine", domain "orders", and note type from config                                                                                                                               | No                                       |
+| 980 $p         | Donor                        | orderLine.donor, Electronic: holdingsRecord.notes[].note /w note type 'Electronic bookplate' and staffOnly false. Physical: item.notes[].note /w note type 'Electronic bookplate' and staffOnly false | No                                       |
+| 980 $s         | Bill to                      | order.billTo                                                                                                                                                                                          | No                                       |                                                                                        | Name of existing address in FOLIO                                                                      |
+| 980 $t         | Acquisition method           | orderLine.acquisitionMethod                                                                                                                                                                           | No                                       | "Purchase"                                                                             | One of nine allowed strings                                                                            |
+| 980 $u         | Reference number type        | orderLine. vendorDetail. referenceNumbers[]. refNumberType                                                                                                                                            | No                                       | "Vendor internal number"                                                               ||
+| 980 $v         | Vendor code                  | order.vendor.vendorId (code resolved to id)                                                                                                                                                           | Yes                                      |                                                                                        | Vendor code must exist in FOLIO                                                                        |
+| 980 $w         | Rush indicator               | orderLine.rush                                                                                                                                                                                        | No                                       | false                                                                                  | Values: [RUSH] or nothing                                                                              |
+| 980 $y         | Expense class                | orderLine. fundDistribution. expenseClass                                                                                                                                                             | No                                       |                                                                                        | Code of an existing expense class that must be assigned to a budget in FOLIO for the given fiscal year |
+| 980 $z         | Electronic indicator         | orderLine.orderFormat ("Electronic Resource" or "Physical Resource")                                                                                                                                  | No                                       | "Physical resource"                                                                    | Values: [ELECTRONIC] or arbitrary text or nothing                                                      |
+
+1) For the repeatable fields 856 and 980, only the first occurrence is considered
+
+#### `Chi` mapping extension
+
+| MARC_fields¹   | Description      | Target properties      | Required | Default | Content (incoming) |
+|----------------|------------------|------------------------|----------|---------|--------------------|
+| 980 $o         | Barcode          |                        | No       |         |                    |
+
+#### `Lambda` mapping extension
+
+| MARC_fields¹  | Description    | Target properties     | Required | Default | Content (incoming) |
+|---------------|----------------|-----------------------|----------|---------|--------------------|
+| 980 $o        | Object code    | orderLine tag list    | Yes      |         |                    | 
+| 980 $r        | Project code   | orderLine tag list    | No       |         |                    |
+
+#### `Sigma` mapping extension (!! work-in-progress !!)
+
+| MARC_fields¹ | Description   | Target properties                                       | Required | Default                   | Content (incoming) |
+|--------------|---------------|---------------------------------------------------------|----------|---------------------------|--------------------|
+| 980 $a       | Location      | orderLine.locations[].id (name resolved to id)          | Yes      |                           |                    | 
+| 980 $d       | Material type | orderLine.physical.materialType and item.materialTypeId | No       | Configured material type  |                    |
+
+### Pre-configured values, defined as parameters in the startup properties file
+| Property name                      | Description                               | Examples                    | Target properties                              | Required                     | Content                                                      |
+|------------------------------------|-------------------------------------------|-----------------------------|------------------------------------------------|------------------------------|--------------------------------------------------------------|
+| permLocation                       | The name of a FOLIO location              | SECOND FLOOR                | orderLine.locations[].id (name resolved to id) | Yes, if physical resource    | The location must exist in FOLIO. Validated on startup.      |
+| permELocation                      | The name of a FOLIO location              | SECOND FLOOR                | orderLine.locations[].id (name resolved to id) | Yes, if electronic resource  | The location must exist in FOLIO. Validated on startup.      |
+| fiscalYearCode                     | The code of a FOLIO fiscal year           | FY2022                      | For resolving fund ID                          | Yes                          | Must exist in FOLIO. Validated on startup.                   |
+| text For Electronic Resources      | A link text                               | Available to Snapshot Users | instance. electronicAccessEntry[]. linkText    |                              | A default.                                                   |
+| noteType                           | The name of a note type for note in 980$n | General note                | notes[].note.typeId (name resolved to id)      | No                           | The note type must exist in FOLIO. Validated on startup.     |
+| materialType                       | The name of a material type               | book                        | orderLine. physical. materialType              | Yes                          | The material type must exist in FOLIO. Validated on startup. |
+
+
+### Static values, hard-coded in the program
+
+| Target properties                                            | Value                                        |
+|--------------------------------------------------------------|----------------------------------------------|
+| orderLine.cost.currency                                      | "USD" (but see 980$k for UC)                 |
+| order.orderType                                              | "One-Time"                                   |
+| order.reEncumber                                             | true                                         |
+| order.approved                                               | true                                         |
+| order.workflowStatus                                         | "Open"                                       |
+| orderLine.source                                             | "User"                                       |
+| orderLine.receiptStatus                                      | "Receipt Not Required" if 980$z = ELECTRONIC |
+| orderLine.fundDistribution.funds[].fundDist.distributionType | "percentage"                                 |
+| orderLine.acquisitionMethod                                  | "Purchase" (but see 980$t for UC)            |
+| orderLine.fundDistribution.funds[].fundDist.value            | 100                                          |
+| instance.source                                              | "MARC"                                       |
+| instance.instanceTypeId                                      | UUID for 'text'                              |
+| instance.discoverySuppress                                   | false                                        |
+| IF ELECTRONIC                                                |
+| orderLine.cost.quantityElectronic                            | 1                                            |
+| orderLine.eResource.activated                                | false                                        |
+| orderLine.locations[].quantityElectronic                     | 1                                            |
+| IF PHYSICAL                                                  |
+| orderLine.cost.quantityPhysical                              | 1                                            |
+
+## FOLIO API usage and required user permissions
+
+### API Calls
+
+This is how the tool uses FOLIO's APIs:
+
+* It makes requests to a number of reference data APIs to map reference values (fiscal years, fund codes, budgets, instance types, material types, note
+  types, tags)
+* It gets the next PO number from Orders
+* It posts a purchase order (approved and open) and one line item for each MARC record in a file 
+* It retrieves, then put the new/linked Instance from Inventory
+* It optionally retrieves, then put the new/linked holdings record 
+* It optionally posts notes for the Order
+
+#### APIs used
 ```
-baseOkapiEndpoint = https://folio-snapshot.dev.folio.org/
-exitOnAccessErrors = no
-exitOnConfigErrors = no
-exitOnFailedIdLookups = no
-fiscalYearCode = FY2021
-folioUiInventoryPath = inventory/view
-folioUiOrdersPath = orders/view
-folioUiUrl = https://uchicago-test.folio.indexdata.com/
-locale = en-US
-materialType = unspecified
-noteType = General note
-objectCodeRequired = no
-okapi_username = diku_admin
-onIsbnInvalid = reportError
-onValidationErrors = attemptImport
-permELocation = On Order - Order
-permLocation = On Order - Order
-tenant = diku
-textForElectronicResources = Available to snapshot users
-tzTimeZone = America/Chicago
-uploadFilePath = /var/tmp/order-import
-```
+  orders/po-number
+  orders/composite-orders
+  orders-storage/acquisition-methods¹
 
+  inventory/instances
+  holdings-storage/holdings
+  inventory/items
+  instance-types
+  material-types
+  contributor-types
+  holdings-types
+  note-types
+  locations
 
-#### User permissions
+  finance/expense-classes
+  finance/funds
+  finance/fiscal-years
+  finance/budgets
+  finance-storage/budget-expense-classes
 
-To access the APIs, the FOLIO user defined in the `import.properties` file needs the following permissions:
+  organizations-storage/organizations
 
+  notes
+  tags
+
+  configurations/entries
+````
+1) coming API usage, will require permission `orders-storage.acquisition-methods.collection.get`
+
+### Required permissions 
 ```json
 {
   "permissions": [
@@ -142,113 +284,9 @@ To access the APIs, the FOLIO user defined in the `import.properties` file needs
 }
 ```
 
-#### API Calls
 
-The service accesses following FOLIO APIs:
 
-* GET calls to initialize reference values (fiscal years, fund codes, budgets, instance types, material types, note
-  types)
-* Get next PO number (GET /orders/po-number)
-* Posts a purchase order (approved and open) and one line item for each MARC record in a file (POST
-  /orders/composite-orders)
-* Retrieves the purchase order (to get the ID of the instance FOLIO automatically created) (GET
-  /orders/composite-orders/theOrderUuid)
-* Retrieve the new instance (GET /inventory/instances/theInstanceId)
-* Retrieves holdings record FOLIO created (GET /holdings-storage/holdings?query=(instanceId==theInstanceId))
-* PUT to /instances (to update the instance with source 'MARC' and add data)  (PUT /inventory/instances/theInstanceId)
-* PUT to /holdings (to add 856s to holdings) (PUT /holdings-storage/holdings/...)
-* Deprecated: Optionally POST an invoice (POST /invoice/invoices)
-* Deprecated: Optionally POST an invoice line (POST /invoice/invoice-lines)
 
-#### Docker image
-
-You can build a Docker image using the [Dockerfile](Dockerfile) in this repository.
-
-1. Build the WAR for the webapp: `mvn install`
-1. Build the Docker image: `docker build .`
-1. Run the container: `docker run -d -p 8080:8080 <imageId>`
-
-This will run a [Jetty](https://hub.docker.com/_/jetty) container with the order import webapp as the root, using the
-default configuration in the [import.properties](import.properties) file. This will work against the
-FOLIO [folio-snapshot](https://folio-snapshot.dev.folio.org) reference environment.
-
-To override the default configuration, mount your configuration to `/var/lib/jetty/order/import.properties` on the
-container e.g.:
-
-    docker run -d -v $(pwd)/order:/var/lib/jetty/order -p 8080:8080 <imageId>
-
-### MARC to FOLIO mappings
-
-| MARC fields               | Description                  | Target properties                                                                                                                                                                                     | Required                                                                   | Default                                                                                | Content (incoming)                                                                                      |
-|---------------------------|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| 020 $a ($c $q)            | Identifiers                  | instance.identifiers[].value /w type 'ISBN'                                                                                                                                                           | No                                                                         |                                                                                        |
-| 020 $z ($c $q)            | Identifiers                  | instance.identifiers[].value /w type 'Invalid ISBN'                                                                                                                                                   | No                                                                         |                                                                                        |
-| 022 $a ($c $q)            | Identifiers                  | instance.identifiers[].value /w type 'ISSN'                                                                                                                                                           | No                                                                         |                                                                                        |
-| 022 $l ($c $q)            | Identifiers                  | instance.identifiers[].value /w type 'Linking ISSN'                                                                                                                                                   | No                                                                         |                                                                                        |
-| 022 ($z $y $n)            | Identifiers                  | instance.identifiers[].value /w type 'Invalid ISSN'                                                                                                                                                   | No                                                                         |                                                                                        |
-| 100, 700                  | Contributors                 | instance.contributors.name /w contributor name type 'Personal name" and contributor type from $4 or 'bkp'                                                                                             | No                                                                         |                                                                                        |
-| 245 $a ($b $c)            | Instance title               | instance.title, orderLine.titleOrPackage                                                                                                                                                              | Yes                                                                        |
-| 856 $u                    | URI                          | instance. electronicAccessUrl[]. uri, holdingsRecord. electronicAccessUrl[]. uri                                                                                                                      | No                                                                         |
-| 856 $z                    | Link text                    | instance. electronicAccessUrl[]. linkText, holdingsRecord. electronicAccessUrl[]. linkText                                                                                                            | No                                                                         | Static config value text-For-Electronic-Resources (see separate table)                 ||
-| 980 $b                    | Fund code                    | orderLine. fundDistribution[]. fundCode and (resolved to) .fundId,                                                                                                                                    | Yes                                                                        |                                                                                        | Fund code must exist in FOLIO for the given fiscal year                                                 |
-| 980 $c                    | Vendor item id               | orderLine. vendorDetail. referenceNumbers[] .refNumber, refNumberType set to "Vendor internal number", but see 980$u                                                                                  | No                                                                         |
-| 980 $m                    | Price                        | orderLine. cost. listUnitPriceElectronic or orderLine. cost. listUnitPrice                                                                                                                            | Yes                                                                        |                                                                                        | Format: [9999.99]                                                                                       |
-| 980 $n                    | Notes                        | Notes of link.type "poLine", domain "orders", and note type from config                                                                                                                               | No                                                                         |
-| 980 $o                    | Object code                  | orderLine tag list                                                                                                                                                                                    | Yes - unless optional config property object-Code-Required is set to false |
-| 980 $r                    | Project code                 | orderLine tag list                                                                                                                                                                                    | No                                                                         |
-| 980 $v                    | Vendor code                  | order.vendor.vendorId (code resolved to id)                                                                                                                                                           | Yes                                                                        |                                                                                        | Vendor code must exist in FOLIO                                                                         |
-| 980 $z                    | Electronic indicator         | orderLine.orderFormat ("Electronic Resource" or "Physical Resource")                                                                                                                                  | No                                                                         | "Physical resource"                                                                    | Values: [ELECTRONIC] or arbitrary text or nothing                                                       |
-| University of Chicago     |
-| 035 $a                    | Identifiers                  | instance.identifiers[].value /w type 'System control number'                                                                                                                                          | No                                                                         |
-| 856 (first occurrence) $x | User limit                   | orderLine.eResource.userLimit if ELECTRONIC                                                                                                                                                           | No                                                                         |                                                                                        | Integer                                                                                                 |
-| 856 (first occurrence) $y | Access provider code         | orderLine. eresource. accessProvider if ELECTRONIC                                                                                                                                                    | No                                                                         | Vendor code (if 856$y is not present or the code does not resolve to an existing org.) |                                                                                                         |
-| 980 $e                    | Description                  | orderLine.description                                                                                                                                                                                 | No                                                                         |
-| 980 $f                    | Selector                     | orderLine.selector                                                                                                                                                                                    | No                                                                         |
-| 980 $g                    | Vendor account               | orderLine. vendorDetail. vendorAccount                                                                                                                                                                | No                                                                         |
-| 980 $k                    | Currency                     | orderLine. cost. currency, invoice.currency                                                                                                                                                           | No                                                                         | "USD"                                                                                  | Three letter currency code                                                                              |
-| 980 $p                    | Donor                        | orderLine.donor, Electronic: holdingsRecord.notes[].note /w note type 'Electronic bookplate' and staffOnly false. Physical: item.notes[].note /w note type 'Electronic bookplate' and staffOnly false | No                                                                         |
-| 980 $s                    | Bill to                      | order.billTo                                                                                                                                                                                          | No                                                                         |                                                                                        | Name of existing address in FOLIO                                                                       |
-| 980 $t (for now)          | Acquisition method           | orderLine.acquisitionMethod                                                                                                                                                                           | No                                                                         | "Purchase"                                                                             | One of nine allowed strings                                                                             |
-| 980 $u                    | Reference number type        | orderLine. vendorDetail. referenceNumbers[]. refNumberType                                                                                                                                            | No                                                                         | "Vendor internal number"                                                               ||
-| 980 $w                    | Rush indicator               | orderLine.rush                                                                                                                                                                                        | No                                                                         | false                                                                                  | Values: [RUSH] or nothing                                                                               |
-| 980 $y                    | Expense class                | orderLine. fundDistribution. expenseClass                                                                                                                                                             | No                                                                         |                                                                                        | Code of an existing expense class that must be assigned to a budget in FOLIO for the given fiscal year  |
-| 980 $v                    | See comments for 980$v above |                                                                                                                                                                                                       |
-
-#### Static values, configured in import.properties
-
-| Property name                      | Description                               | Examples                    | Target properties                              | Required                     | Content                                                      |
-|------------------------------------|-------------------------------------------|-----------------------------|------------------------------------------------|------------------------------|--------------------------------------------------------------|
-| permLocation                       | The name of a FOLIO location              | SECOND FLOOR                | orderLine.locations[].id (name resolved to id) | Yes, if physical resource    | The location must exist in FOLIO. Validated on startup.      |
-| permELocation                      | The name of a FOLIO location              | SECOND FLOOR                | orderLine.locations[].id (name resolved to id) | Yes, if electronic resource  | The location must exist in FOLIO. Validated on startup.      |
-| fiscalYearCode                     | The code of a FOLIO fiscal year           | FY2022                      | For resolving fund ID                          | Yes                          | Must exist in FOLIO. Validated on startup.                   |
-| text For Electronic Resources      | A link text                               | Available to Snapshot Users | instance. electronicAccessEntry[]. linkText    |                              | A default.                                                   |
-| noteType                           | The name of a note type for note in 980$n | General note                | notes[].note.typeId (name resolved to id)      | No                           | The note type must exist in FOLIO. Validated on startup.     |
-| materialType                       | The name of a material type               | book                        | orderLine. physical. materialType              | Yes                          | The material type must exist in FOLIO. Validated on startup. |
-
-#### Hard-coded values
-
-| Target properties                                            | Value                                        |
-|--------------------------------------------------------------|----------------------------------------------|
-| orderLine.cost.currency                                      | "USD" (but see 980$k for UC)                 |
-| order.orderType                                              | "One-Time"                                   |
-| order.reEncumber                                             | true                                         |
-| order.approved                                               | true                                         |
-| order.workflowStatus                                         | "Open"                                       |
-| orderLine.source                                             | "User"                                       |
-| orderLine.receiptStatus                                      | "Receipt Not Required" if 980$z = ELECTRONIC |
-| orderLine.fundDistribution.funds[].fundDist.distributionType | "percentage"                                 |
-| orderLine.acquisitionMethod                                  | "Purchase" (but see 980$t for UC)            |
-| orderLine.fundDistribution.funds[].fundDist.value            | 100                                          |
-| instance.source                                              | "MARC"                                       |
-| instance.instanceTypeId                                      | UUID for 'text'                              |
-| instance.discoverySuppress                                   | false                                        |
-| IF ELECTRONIC                                                |
-| orderLine.cost.quantityElectronic                            | 1                                            |
-| orderLine.eResource.activated                                | false                                        |
-| orderLine.locations[].quantityElectronic                     | 1                                            |
-| IF PHYSICAL                                                  |
-| orderLine.cost.quantityPhysical                              | 1                                            |
-
-### Development
+### Development notes
 
 Documentation on the schema for communication between the service and the UI can be found in [IMPORT_RESPONSE_SCHEMA](IMPORT_RESPONSE_SCHEMA.md) 

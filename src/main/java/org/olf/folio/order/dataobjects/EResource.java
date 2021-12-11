@@ -1,6 +1,6 @@
 package org.olf.folio.order.dataobjects;
 
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.BaseMapping;
 
 public class EResource extends JsonDataObject {
 
@@ -15,7 +15,7 @@ public class EResource extends JsonDataObject {
   public static final String P_PUBLIC_NOTE = "publicNote";
   public static final String P_RELATIONSHIP_ID = "relationshipId";
 
-  public static EResource fromMarcRecord(MarcRecordMapping mappedMarc)
+  public static EResource fromMarcRecord(BaseMapping mappedMarc)
           throws Exception {
 
     return new EResource()

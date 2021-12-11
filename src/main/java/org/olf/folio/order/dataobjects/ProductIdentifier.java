@@ -5,12 +5,12 @@ import org.json.JSONObject;
 import org.marc4j.marc.DataField;
 import org.olf.folio.order.Config;
 import org.olf.folio.order.Constants;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.BaseMapping;
 import org.olf.folio.order.utils.Utils;
 
 import java.util.List;
 
-import static org.olf.folio.order.MarcRecordMapping.getIdentifierValue;
+import static org.olf.folio.order.mapping.BaseMapping.getIdentifierValue;
 
 public class ProductIdentifier extends JsonDataObject {
   public static final String P_PRODUCT_ID_TYPE = "productIdType";
@@ -22,7 +22,7 @@ public class ProductIdentifier extends JsonDataObject {
     return pi;
   }
 
-  public static JSONArray createProductIdentifiersFromMarc (MarcRecordMapping mappedMarc) {
+  public static JSONArray createProductIdentifiersFromMarc (BaseMapping mappedMarc) {
     return createProductIdentifiersJson(mappedMarc,false,
             Constants.ISBN,
             Constants.ISSN,
@@ -36,7 +36,7 @@ public class ProductIdentifier extends JsonDataObject {
    * @param identifierTypeIds One or more identifier types to look up values for in the MARC record
    * @return A JSON array of identifiers
    */
-  public static JSONArray createProductIdentifiersJson(MarcRecordMapping mappedMarc, boolean includeQualifiers, String ...identifierTypeIds) {
+  public static JSONArray createProductIdentifiersJson(BaseMapping mappedMarc, boolean includeQualifiers, String ...identifierTypeIds) {
       JSONArray identifiersJson = new JSONArray();
       for (String identifierTypeId : identifierTypeIds) {
           List<DataField> identifierFields = mappedMarc.getDataFieldsForIdentifierType(identifierTypeId);

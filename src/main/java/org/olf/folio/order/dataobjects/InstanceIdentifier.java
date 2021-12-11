@@ -4,18 +4,18 @@ package org.olf.folio.order.dataobjects;
 import org.json.JSONArray;
 import org.marc4j.marc.DataField;
 import org.olf.folio.order.Constants;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.BaseMapping;
 
 import java.util.List;
 
-import static org.olf.folio.order.MarcRecordMapping.getIdentifierValue;
+import static org.olf.folio.order.mapping.BaseMapping.getIdentifierValue;
 import static org.olf.folio.order.dataobjects.ProductIdentifier.isNotInvalidIsbnThatShouldBeRemoved;
 
 public class InstanceIdentifier extends JsonDataObject {
   public static final String P_IDENTIFIER_TYPE_ID = "identifierTypeId";
   public static final String P_VALUE = "value";
 
-  public static JSONArray createInstanceIdentifiersFromMarc (MarcRecordMapping mappedMarc) {
+  public static JSONArray createInstanceIdentifiersFromMarc (BaseMapping mappedMarc) {
     return createInstanceIdentifiersJson(mappedMarc, true,
             Constants.ISBN,
             Constants.INVALID_ISBN,
@@ -33,7 +33,7 @@ public class InstanceIdentifier extends JsonDataObject {
    * @return A JSON array of identifiers
    */
   public static JSONArray createInstanceIdentifiersJson(
-          MarcRecordMapping mappedMarc, boolean includeQualifiers, String ...identifierTypeIds) {
+          BaseMapping mappedMarc, boolean includeQualifiers, String ...identifierTypeIds) {
 
       JSONArray identifiersJson = new JSONArray();
       for (String identifierTypeId : identifierTypeIds) {

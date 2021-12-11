@@ -1,7 +1,7 @@
 package org.olf.folio.order.dataobjects;
 
 import org.json.JSONArray;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.BaseMapping;
 
 public class VendorDetail extends JsonDataObject {
 
@@ -9,7 +9,7 @@ public class VendorDetail extends JsonDataObject {
   public static final String P_VENDOR_ACCOUNT = "vendorAccount";
   public static final String P_REFERENCE_NUMBERS = "referenceNumbers";
 
-  public static VendorDetail fromMarcRecord (MarcRecordMapping mappedMarc) {
+  public static VendorDetail fromMarcRecord (BaseMapping mappedMarc) {
     return new VendorDetail()
             .putInstructions("")
             .putVendorAccount(

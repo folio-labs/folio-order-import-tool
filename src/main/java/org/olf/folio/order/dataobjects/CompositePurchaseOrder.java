@@ -2,7 +2,7 @@ package org.olf.folio.order.dataobjects;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.BaseMapping;
 import org.olf.folio.order.storage.FolioData;
 
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ public class CompositePurchaseOrder extends JsonDataObject {
     return po;
   }
 
-  public static CompositePurchaseOrder fromMarcRecord(MarcRecordMapping mappedMarc)
+  public static CompositePurchaseOrder fromMarcRecord(BaseMapping mappedMarc)
           throws Exception {
 
     UUID orderId = UUID.randomUUID();
