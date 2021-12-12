@@ -17,6 +17,7 @@ import org.olf.folio.order.entities.Item;
 import org.olf.folio.order.entities.ProductIdentifier;
 import org.olf.folio.order.imports.RecordResult;
 import org.olf.folio.order.storage.FolioData;
+import org.olf.folio.order.storage.ValidationLookups;
 import org.olf.folio.order.utils.Utils;
 
 import java.util.ArrayList;
@@ -827,18 +828,18 @@ public abstract class BaseMapping {
     if (!hasFundCode()) {
       outcome.addValidationMessageIfAny("Record is missing required fund code (908$b)");
     } else {
-      outcome.addValidationMessageIfAny(FolioData.validateFund(fundCode()));
+      outcome.addValidationMessageIfAny(ValidationLookups.validateFund(fundCode()));
     }
     if (! hasVendorCode()) {
       outcome.addValidationMessageIfAny("Record is missing required vendor code");
     } else {
-      outcome.addValidationMessageIfAny(FolioData.validateOrganization(vendorCode()));
+      outcome.addValidationMessageIfAny(ValidationLookups.validateOrganization(vendorCode()));
     }
     if (!hasPrice()) {
       outcome.addValidationMessageIfAny("Record is missing required price info (980$m)");
     }
     if (hasBillTo()) {
-      outcome.addValidationMessageIfAny(FolioData.validateAddress(billTo()));
+      outcome.addValidationMessageIfAny(ValidationLookups.validateAddress(billTo()));
     }
     if (hasExpenseClassCode()) {
       if (FolioData.getExpenseClassId(expenseClassCode())==null) {
@@ -846,11 +847,10 @@ public abstract class BaseMapping {
                         "No expense class with the code (" + expenseClassCode() + ") found in FOLIO.");
       } else {
         if (hasBudgetId()) {
-          String budgetExpClassId = FolioData.getBudgetExpenseClassId(budgetId(), expenseClassId());
-          if (budgetExpClassId == null) {
+          if (ValidationLookups.validateBudgetExpenseClass(budgetId(), expenseClassId()) != null) {
             outcome.addValidationMessageIfAny(
-                            String.format("No budget expense class found for fund code (%s) and expense class (%s).",
-                                    fundCode(), expenseClassCode()));
+                    String.format("No budget expense class found for fund code (%s) and expense class (%s).",
+                            fundCode(), expenseClassCode()));
           }
         }
       }
@@ -864,7 +864,8 @@ public abstract class BaseMapping {
       }
     }
     if (Config.importInvoice) {
-      outcome.addValidationMessageIfAny(FolioData.validateRequiredValuesForInvoice(title(), getRecord()));
+      outcome.addValidationMessageIfAny(
+              ValidationLookups.validateRequiredValuesForInvoice(title(), getRecord()));
     }
 
     // Flag issues with ISBN or other identifiers

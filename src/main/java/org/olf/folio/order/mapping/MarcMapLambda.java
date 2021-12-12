@@ -2,7 +2,7 @@ package org.olf.folio.order.mapping;
 
 import org.marc4j.marc.Record;
 import org.olf.folio.order.imports.RecordResult;
-import org.olf.folio.order.storage.FolioData;
+import org.olf.folio.order.storage.ValidationLookups;
 
 public class MarcMapLambda extends BaseMapping {
   protected static final String OBJECT_CODE           = "o";
@@ -41,13 +41,13 @@ public class MarcMapLambda extends BaseMapping {
         outcome.setFlagIfNotNull(
                 "Object code is required with MARC mapping 'Lambda'" + " but no object code found in the record");
       } else {
-        String message = FolioData.validateTag(objectCode());
+        String message = ValidationLookups.validateTag(objectCode());
         if (message != null) {
           outcome.addValidationMessageIfAny("Cannot set the object code: " + message);
         }
       }
       if (hasProjectCode()) {
-        String message = FolioData.validateTag(projectCode());
+        String message = ValidationLookups.validateTag(projectCode());
         if (message != null) {
           outcome.addValidationMessageIfAny("Cannot set the project code: " + message);
         }

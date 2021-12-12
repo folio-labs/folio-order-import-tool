@@ -3,7 +3,7 @@ package org.olf.folio.order.mapping;
 import org.marc4j.marc.Record;
 import org.olf.folio.order.entities.Item;
 import org.olf.folio.order.imports.RecordResult;
-import org.olf.folio.order.storage.FolioData;
+import org.olf.folio.order.storage.ValidationLookups;
 
 public class MarcMapChi extends BaseMapping {
   protected static final String BARCODE  = "o";
@@ -39,7 +39,7 @@ public class MarcMapChi extends BaseMapping {
   public boolean validate (RecordResult outcome) throws Exception {
     super.validate(outcome);
     if (hasBarcode()) {
-      outcome.addValidationMessageIfAny(FolioData.validateBarcode(barcode()));
+      outcome.addValidationMessageIfAny(ValidationLookups.validateBarcodeUniqueness(barcode()));
     }
     return !outcome.failedValidation();
   }
