@@ -8,8 +8,13 @@ import org.marc4j.marc.Subfield;
 import org.marc4j.marc.VariableField;
 import org.olf.folio.order.Config;
 import org.olf.folio.order.Constants;
+import org.olf.folio.order.dataobjects.BookplateNote;
 import org.olf.folio.order.dataobjects.ElectronicAccessUrl;
+import org.olf.folio.order.dataobjects.HoldingsRecord;
 import org.olf.folio.order.dataobjects.Instance;
+import org.olf.folio.order.dataobjects.InstanceIdentifier;
+import org.olf.folio.order.dataobjects.Item;
+import org.olf.folio.order.dataobjects.ProductIdentifier;
 import org.olf.folio.order.imports.RecordResult;
 import org.olf.folio.order.storage.FolioData;
 import org.olf.folio.order.utils.Utils;
@@ -511,6 +516,7 @@ public abstract class BaseMapping {
     return contributors;
   }
 
+
   private JSONObject makeContributorForOrderLine(DataField field, String contributorNameType) {
     Subfield subfield = field.getSubfield( 'a' );
     JSONObject contributor = new JSONObject();
@@ -577,11 +583,6 @@ public abstract class BaseMapping {
     return !getDataFieldsForIdentifierType(Constants.SYSTEM_CONTROL_NUMBER).isEmpty();
   }
 
-  public boolean has (String string) {
-    return string != null && !string.isEmpty();
-  }
-
-
   public String getISBN() {
     List<DataField> isbnFields =
             getDataFieldsForIdentifierType(Constants.ISBN);
@@ -592,13 +593,54 @@ public abstract class BaseMapping {
     }
   }
 
+  public JSONArray productIdentifiers () {
+    JSONArray identifiersJson = new JSONArray();
+    for (String identifierTypeId : Arrays.asList(
+            Constants.ISBN,
+            Constants.ISSN,
+            Constants.OTHER_STANDARD_IDENTIFIER,
+            Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER)) {
+      for (DataField identifierField : getDataFieldsForIdentifierType(identifierTypeId)) {
+        String value = getIdentifierValue( identifierTypeId, identifierField);
+        if (has(value) && doIncludeThisIdentifier(identifierTypeId, value)) {
+            identifiersJson.put(new ProductIdentifier()
+                    .putProductId(value)
+                    .putProductIdType(identifierTypeId).asJson());
+        }
+      }
+    }
+    return identifiersJson;
+  }
+
+  public JSONArray instanceIdentifiers () {
+    JSONArray identifiersJson = new JSONArray();
+    for (String identifierTypeId : Arrays.asList(
+            Constants.ISBN,
+            Constants.INVALID_ISBN,
+            Constants.ISSN,
+            Constants.INVALID_ISSN,
+            Constants.LINKING_ISSN,
+            Constants.OTHER_STANDARD_IDENTIFIER,
+            Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER,
+            Constants.SYSTEM_CONTROL_NUMBER)) {
+      for (DataField identifierField : getDataFieldsForIdentifierType(identifierTypeId)) {
+        String value = getIdentifierValueWithQualifiers( identifierTypeId, identifierField);
+        if (has(value) && doIncludeThisIdentifier(identifierTypeId, value)) {
+            identifiersJson.put(new InstanceIdentifier().putValue(value).putIdentifierTypeId(
+                    identifierTypeId).asJson());
+        }
+      }
+    }
+    return identifiersJson;
+  }
+
   /**
    * Finds identifier fields in the provided MARC records by tag, subfield tag(s) and possibly indicator2 -- all
    * dependent on the given identifier type
    * @param requestedIdentifierType The Identifier type to find data fields for
    * @return List of identifier fields matching the applicable criteria for the given identifier type
    */
-  public List<DataField> getDataFieldsForIdentifierType( String requestedIdentifierType) {
+  private List<DataField> getDataFieldsForIdentifierType( String requestedIdentifierType) {
     List<DataField> identifierFields = new ArrayList<>();
     switch(requestedIdentifierType)
     {
@@ -640,7 +682,7 @@ public abstract class BaseMapping {
    * @param withAnyOfTheseSubFields One or more subfield codes, of which at least one must be present for the field to be included
    * @return A list of Identifier fields matching the given tag and subfield code criteria
    */
-  public List<DataField> findIdentifierFieldsByTagAndSubFields( String tagToFind, char ...withAnyOfTheseSubFields) {
+  private List<DataField> findIdentifierFieldsByTagAndSubFields( String tagToFind, char ...withAnyOfTheseSubFields) {
     List<DataField> fieldsFound = new ArrayList<>();
     List<VariableField> fieldsFoundForTag = marcRecord.getVariableFields(tagToFind);
     for (VariableField field : fieldsFoundForTag) {
@@ -655,16 +697,12 @@ public abstract class BaseMapping {
     return fieldsFound;
   }
 
-  private static String getInitialDigits(String s) {
-    String trimmed = s.trim();
-    StringBuilder f = new StringBuilder();
-    for (int i = 0; i < trimmed.length(); i++)
-      if (Character.isDigit(trimmed.charAt(i))) {
-        f.append(trimmed.charAt(i));
-      } else {
-        break;
-      }
-    return f.length()>0 ? f.toString() : s;
+  private static String getIdentifierValue(String identifierType, DataField identifierField) {
+    return getIdentifierValue(identifierType, identifierField, false);
+  }
+
+  private static String getIdentifierValueWithQualifiers(String identifierType, DataField identifierField) {
+    return getIdentifierValue(identifierType, identifierField, true);
   }
 
   /**
@@ -675,7 +713,7 @@ public abstract class BaseMapping {
    * @param includeQualifiers Indication whether to add additional subfield(s) to the identifier value
    * @return The resulting identifier value
    */
-  public static String getIdentifierValue ( String identifierType, DataField identifierField, boolean includeQualifiers) {
+  private static String getIdentifierValue ( String identifierType, DataField identifierField, boolean includeQualifiers) {
     String identifierValue;
     switch ( identifierType ) {
       case Constants.ISBN:                           // 020 using $a, extend with c,q
@@ -721,6 +759,60 @@ public abstract class BaseMapping {
         break;
     }
     return identifierValue;
+  }
+
+  private static String getInitialDigits(String s) {
+    String trimmed = s.trim();
+    StringBuilder f = new StringBuilder();
+    for (int i = 0; i < trimmed.length(); i++)
+      if (Character.isDigit(trimmed.charAt(i))) {
+        f.append(trimmed.charAt(i));
+      } else {
+        break;
+      }
+    return f.length()>0 ? f.toString() : s;
+  }
+
+  private static boolean doIncludeThisIdentifier(String identifierTypeId, String value) {
+    if (identifierTypeId.equals(Constants.ISBN)) {
+      if (Utils.isInvalidIsbn(value)) {
+        return !Config.onIsbnInvalidRemoveIsbn;
+      }
+    }
+    return true;
+  }
+
+  public void populateInstanceFromMarc(Instance instance) throws Exception {
+    instance.putTitle(title())
+            .putSource(Instance.V_FOLIO)
+            .putInstanceTypeId(FolioData.getInstanceTypeId("text"))
+            .putIdentifiers(instanceIdentifiers())
+            .putContributors(getContributorsForInstance())
+            .putDiscoverySuppress(false)
+            .putElectronicAccess(getElectronicAccess(Config.textForElectronicResources))
+            .putNatureOfContentTermIds(new JSONArray())
+            .putPrecedingTitles(new JSONArray())
+            .putSucceedingTitles(new JSONArray());
+  }
+
+  public void populateHoldingsRecordFromMarc (HoldingsRecord holdingsRecord) throws Exception {
+    holdingsRecord.putElectronicAccess(getElectronicAccess(Config.textForElectronicResources));
+    if (electronic()) {
+      holdingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName("Electronic"));
+      if (hasDonor()) {
+        holdingsRecord.addBookplateNote(
+                BookplateNote.createElectronicBookplateNote(donor()));
+      }
+    }
+  }
+
+  public boolean updateItem () {
+    return (hasDonor() && !electronic());
+  }
+
+  public void populateItemFromMarc (Item item) {
+    item.addBookplateNote(BookplateNote.createPhysicalBookplateNote(donor()));
+
   }
 
   public boolean validate(RecordResult outcome) throws Exception {
@@ -810,4 +902,9 @@ public abstract class BaseMapping {
 
     return !outcome.failedValidation();
   }
+
+  public boolean has (String string) {
+    return string != null && !string.isEmpty();
+  }
+
 }

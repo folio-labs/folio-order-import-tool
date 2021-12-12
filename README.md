@@ -207,7 +207,7 @@ This is how the tool uses FOLIO's APIs:
 ```
   orders/po-number
   orders/composite-orders
-  orders-storage/acquisition-methods¹
+  orders/acquisition-methods¹
 
   inventory/instances
   holdings-storage/holdings
@@ -225,7 +225,7 @@ This is how the tool uses FOLIO's APIs:
   finance/budgets
   finance-storage/budget-expense-classes
 
-  organizations-storage/organizations
+  organizations/organizations
 
   notes
   tags
@@ -278,7 +278,7 @@ This is how the tool uses FOLIO's APIs:
     "orders.item.get",
     "orders.item.post",
     "orders.po-number.item.get",
-    "organizations-storage.organizations.collection.get",
+    "organizations.organizations.collection.get",
     "tags.collection.get"
   ]
 }

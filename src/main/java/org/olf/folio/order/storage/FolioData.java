@@ -21,9 +21,9 @@ public class FolioData extends FolioAccess {
   public static final String NOTES_PATH = "notes";
   public static final String LOCATIONS_PATH = "locations";
   public static final String ORDERS_PO_NUMBER_PATH = "orders/po-number";
-  public static final String ORGANIZATIONS_PATH = "organizations-storage/organizations";
+  public static final String ORGANIZATIONS_PATH = "organizations/organizations";
   public static final String EXPENSE_CLASSES_PATH = "finance/expense-classes";
-  public static final String ACQUISITION_METHODS_PATH = "orders-storage/acquisition-methods";
+  public static final String ACQUISITION_METHODS_PATH = "orders/acquisition-methods";
   public static final String INSTANCE_TYPES_PATH = "instance-types";
   public static final String MATERIAL_TYPES_PATH = "material-types";
   public static final String CONTRIBUTOR_TYPES_PATH = "contributor-types";
@@ -287,6 +287,15 @@ public class FolioData extends FolioAccess {
       }
     }
     return null;
+  }
+
+  public static String validateBarcode (String barcode) throws Exception {
+    JSONArray items = FolioAccess.callApiGetArray(ITEMS_PATH + "?query=(barcode=="+ encode(barcode) + ")", ITEMS_ARRAY);
+    if (items.isEmpty()) {
+      return null;
+    } else {
+      return String.format("Barcode (%s) already exists.", barcode);
+    }
   }
 
   public static JSONObject getInstancesByQuery (String query) throws Exception {

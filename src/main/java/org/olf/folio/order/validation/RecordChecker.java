@@ -35,7 +35,7 @@ public class RecordChecker {
         outcome.markSkipped(Config.onValidationErrorsSKipFailed);
       }
     }	catch(Exception e) {
-      outcome.addValidationMessageIfAny("Got exception when validating MARC record: " + e.getMessage() + " " + e.getClass());
+      outcome.addValidationMessageIfAny("Got exception when validating MARC record: " + e.getMessage() + " " + e.getClass() );
     }
   }
 

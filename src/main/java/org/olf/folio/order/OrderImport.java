@@ -122,64 +122,39 @@ public class OrderImport {
 	private void updateInventory(String instanceId, BaseMapping mappedMarc, RecordResult outcome)
 					throws Exception {
 		// RETRIEVE, UPDATE, AND PUT THE RELATED INSTANCE
-		Instance fetchedInstance = Instance.fromJson(
+		Instance instance = Instance.fromJson(
 						FolioAccess.callApiGetById(FolioData.INSTANCES_PATH, instanceId));
-		if (fetchedInstance.getSource().equals(Instance.V_MARC)) {
-			String feedback = String.format("Purchase order and line were created and linked to records in " +
+		if (instance.getSource().equals(Instance.V_MARC)) {
+			String feedback =
+							String.format("Purchase order and line were created and linked to records in " +
 											"Inventory but cannot update the Instance %s because it has 'source' set to %s",
-							fetchedInstance.getHrid(), fetchedInstance.getSource());
-
+							        instance.getHrid(), instance.getSource());
 			outcome.setFlagIfNotNull(feedback)
-							.setInstanceHrid(fetchedInstance.getHrid())
+							.setInstanceHrid(instance.getHrid())
 							.setInstanceUiUrl(Config.folioUiUrl, Config.folioUiInventoryPath,
-											fetchedInstance.getId(), fetchedInstance.getHrid());
-
-			return;
+											instance.getId(), instance.getHrid());
+		} else {
+			mappedMarc.populateInstanceFromMarc(instance);
+			FolioAccess.callApiPut(FolioData.INSTANCES_PATH, instance);
+			outcome.setInstanceHrid(instance.getHrid()).setInstanceUiUrl(Config.folioUiUrl, Config.folioUiInventoryPath, instance.getId(), instance.getHrid());
 		}
-
-		fetchedInstance.putTitle(mappedMarc.title())
-						.putSource(Instance.V_FOLIO)
-						.putInstanceTypeId(FolioData.getInstanceTypeId("text"))
-						.putIdentifiers(InstanceIdentifier.createInstanceIdentifiersFromMarc(mappedMarc))
-						.putContributors(mappedMarc.getContributorsForInstance())
-						.putDiscoverySuppress(false)
-						.putElectronicAccess(mappedMarc.getElectronicAccess(Config.textForElectronicResources))
-						.putNatureOfContentTermIds(new JSONArray())
-						.putPrecedingTitles(new JSONArray())
-						.putSucceedingTitles(new JSONArray());
-		FolioAccess.callApiPut(FolioData.INSTANCES_PATH, fetchedInstance);
-		// END OF INSTANCE
-		outcome.setInstanceHrid(fetchedInstance.getHrid())
-						.setInstanceUiUrl(Config.folioUiUrl, Config.folioUiInventoryPath,
-										fetchedInstance.getId(), fetchedInstance.getHrid());
 
 		// RETRIEVE, UPDATE, AND PUT THE RELATED HOLDINGS RECORD
-		HoldingsRecord fetchedHoldingsRecord = HoldingsRecord.fromJson(
+		HoldingsRecord holdingsRecord = HoldingsRecord.fromJson(
 						FolioAccess.callApiGetFirstObjectOfArray(
-										FolioData.HOLDINGS_STORAGE_PATH + "?query=(instanceId==" + fetchedInstance.getId() + ")",
+										FolioData.HOLDINGS_STORAGE_PATH + "?query=(instanceId==" + instance.getId() + ")",
 										FolioData.HOLDINGS_RECORDS_ARRAY));
-		fetchedHoldingsRecord.putElectronicAccess(mappedMarc.getElectronicAccess(Config.textForElectronicResources));
-		if (mappedMarc.electronic()) {
-			fetchedHoldingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName("Electronic"));
-			if (mappedMarc.hasDonor()) {
-				fetchedHoldingsRecord.addBookplateNote(
-								BookplateNote.createElectronicBookplateNote(mappedMarc.donor()));
-			}
-		}
-		FolioAccess.callApiPut(FolioData.HOLDINGS_STORAGE_PATH, fetchedHoldingsRecord);
-		// END OF HOLDINGS RECORD
+    mappedMarc.populateHoldingsRecordFromMarc(holdingsRecord);
+		FolioAccess.callApiPut(FolioData.HOLDINGS_STORAGE_PATH, holdingsRecord);
 
-		// RETRIEVE, UPDATE, AND PUT THE RELATED ITEM IF THE MARC RECORD HAS A DONOR
-		if (!mappedMarc.electronic() && mappedMarc.hasDonor()) {
-			//IF PHYSICAL RESOURCE WITH DONOR INFO, GET THE ITEM FOLIO CREATED, SO WE CAN ADD NOTE ABOUT DONOR
-			Item fetchedItem =
-							Item.fromJson(
+		if (mappedMarc.updateItem()) {
+			Item item =Item.fromJson(
 											FolioAccess.callApiGetFirstObjectOfArray(
 															FolioData.ITEMS_PATH + "?query=(holdingsRecordId=="
-																			+ fetchedHoldingsRecord.getId() + ")",
+																			+ holdingsRecord.getId() + ")",
 															FolioData.ITEMS_ARRAY));
-			fetchedItem.addBookplateNote(BookplateNote.createPhysicalBookplateNote(mappedMarc.donor()));
-			FolioAccess.callApiPut(FolioData.ITEMS_PATH, fetchedItem);
+			mappedMarc.populateItemFromMarc(item);
+			FolioAccess.callApiPut(FolioData.ITEMS_PATH, item);
 		}
 	}
 

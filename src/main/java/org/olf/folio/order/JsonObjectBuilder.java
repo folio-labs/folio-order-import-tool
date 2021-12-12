@@ -12,6 +12,7 @@ import java.util.UUID;
 
 public class JsonObjectBuilder {
 
+
   public static JSONObject createCompositePoJson(BaseMapping mappedMarc, Config config, Logger logger) throws Exception {
     JSONObject order = new JSONObject();
     order.put("poNumber", FolioData.getNextPoNumberFromOrders());
@@ -124,8 +125,8 @@ public class JsonObjectBuilder {
       orderLine.put("donor", mappedMarc.donor());
 
     orderLine.put("contributors", mappedMarc.getContributorsForOrderLine());
-    if (!ProductIdentifier.createProductIdentifiersFromMarc(mappedMarc).isEmpty()) {
-      orderLineDetails.put("productIds", ProductIdentifier.createProductIdentifiersFromMarc(mappedMarc));
+    if (!mappedMarc.productIdentifiers().isEmpty()) {
+      orderLineDetails.put("productIds", mappedMarc.productIdentifiers());
     }
     if (!orderLineDetails.isEmpty())
       orderLine.put("details", orderLineDetails);
@@ -151,7 +152,6 @@ public class JsonObjectBuilder {
   private static String getMaterialTypeId (String materialType) {
     return isUUID(materialType) ? materialType : Constants.MATERIAL_TYPES_MAP.get(materialType);
   }
-
   private static boolean isUUID(String str)
   {
     return ( str != null && Constants.UUID_PATTERN.matcher( str ).matches() );

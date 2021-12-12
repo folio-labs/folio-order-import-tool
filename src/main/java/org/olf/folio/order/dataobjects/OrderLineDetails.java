@@ -14,7 +14,7 @@ public class OrderLineDetails extends JsonDataObject{
   public static OrderLineDetails fromMarcRecord(BaseMapping mappedMarc) {
     return new OrderLineDetails()
             .putReceivingNoteIfPresent(mappedMarc.receivingNote())
-            .putProductIdsIfPresent(ProductIdentifier.createProductIdentifiersFromMarc(mappedMarc));
+            .putProductIdsIfPresent(mappedMarc.productIdentifiers());
   }
 
   public static OrderLineDetails fromJson (JSONObject json) {
