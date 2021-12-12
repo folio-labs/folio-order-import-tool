@@ -15,7 +15,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.olf.folio.order.Config;
-import org.olf.folio.order.dataobjects.JsonDataObject;
+import org.olf.folio.order.entities.FolioEntity;
 
 import java.nio.charset.Charset;
 
@@ -127,7 +127,7 @@ public class FolioAccess {
     }
   }
 
-  public static String callApiPut(String apiPath, JsonDataObject object) throws Exception {
+  public static String callApiPut(String apiPath, FolioEntity object) throws Exception {
     return callApiPut(apiPath + "/" + object.getId(), object.asJson());
   }
 
@@ -167,7 +167,7 @@ public class FolioAccess {
     return "ok";
   }
 
-  public static JSONObject callApiPostWithUtf8(String apiPath, JsonDataObject object) throws Exception {
+  public static JSONObject callApiPostWithUtf8(String apiPath, FolioEntity object) throws Exception {
     return callApiPostWithUtf8(apiPath, object.asJson());
   }
 

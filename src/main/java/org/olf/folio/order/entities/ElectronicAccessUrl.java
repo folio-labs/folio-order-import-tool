@@ -1,11 +1,11 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
 import org.marc4j.marc.DataField;
 import org.olf.folio.order.Constants;
 import org.olf.folio.order.mapping.BaseMapping;
 
-public class ElectronicAccessUrl extends JsonDataObject {
+public class ElectronicAccessUrl extends FolioEntity {
 
   public static final String P_LINK_TEXT = "linkText";
   public static final String P_URI = "uri";

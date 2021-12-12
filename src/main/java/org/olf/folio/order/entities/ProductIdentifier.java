@@ -1,8 +1,8 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONObject;
 
-public class ProductIdentifier extends JsonDataObject {
+public class ProductIdentifier extends FolioEntity {
   public static final String P_PRODUCT_ID_TYPE = "productIdType";
   public static final String P_PRODUCT_ID = "productId";
 

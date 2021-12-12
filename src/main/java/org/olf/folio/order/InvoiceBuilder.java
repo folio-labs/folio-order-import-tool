@@ -3,16 +3,55 @@ package org.olf.folio.order;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.olf.folio.order.dataobjects.ProductIdentifier;
 import org.olf.folio.order.mapping.BaseMapping;
 import org.olf.folio.order.mapping.MarcMapLambda;
 import org.olf.folio.order.storage.FolioData;
 
 import java.util.UUID;
 
-public class JsonObjectBuilder {
+public class InvoiceBuilder {
 
 
+
+  // Hard-coded values
+  final static String BATCH_GROUP_ID = "2a2cb998-1437-41d1-88ad-01930aaeadd5"; // ='FOLIO', System default
+
+  final static String SOURCE = "API";
+  final static int INVOICE_LINE_QUANTITY = 1;
+
+  // tbd
+  final static String STATUS = "Open";
+  final static String INVOICE_LINE_STATUS = "Open";
+  final static boolean RELEASE_ENCUMBRANCE = true;
+
+  static JSONObject createInvoiceJson(String poNumber, BaseMapping marc) throws Exception {
+    JSONObject invoice = new JSONObject();
+    invoice.put("id", UUID.randomUUID());
+    invoice.put("poNumbers", (new JSONArray()).put(poNumber)); // optional
+    invoice.put("batchGroupId", BATCH_GROUP_ID); // required
+    invoice.put("currency", marc.currency()); // required
+    invoice.put("invoiceDate", marc.invoiceDate()); // required
+    invoice.put("paymentMethod", Config.paymentMethod); // required
+    invoice.put("status", STATUS); // required
+    invoice.put("source", SOURCE); // required
+    invoice.put("vendorInvoiceNo", marc.vendorInvoiceNo()); // required
+    invoice.put("vendorId", marc.vendorUuid()); // required
+    return invoice;
+  }
+
+  static JSONObject createInvoiceLineJson(UUID orderLineUUID, BaseMapping marc, JSONObject invoice) {
+    JSONObject invoiceLine = new JSONObject();
+    invoiceLine.put("description", marc.title());  // required
+    invoiceLine.put("invoiceId", UUID.fromString(invoice.get("id").toString())); // required
+    invoiceLine.put("invoiceLineStatus", INVOICE_LINE_STATUS); // required
+    invoiceLine.put("subTotal", marc.subTotal());  // required
+    invoiceLine.put("quantity", INVOICE_LINE_QUANTITY); // required
+    invoiceLine.put("releaseEncumbrance", RELEASE_ENCUMBRANCE);  // required
+    invoiceLine.put("poLineId", orderLineUUID);
+    return invoiceLine;
+  }
+
+  // Previous JSON builder - create the JSON is now done by BaseMapping and the entity objects in entities.
   public static JSONObject createCompositePoJson(BaseMapping mappedMarc, Config config, Logger logger) throws Exception {
     JSONObject order = new JSONObject();
     order.put("poNumber", FolioData.getNextPoNumberFromOrders());
@@ -155,44 +194,6 @@ public class JsonObjectBuilder {
   private static boolean isUUID(String str)
   {
     return ( str != null && Constants.UUID_PATTERN.matcher( str ).matches() );
-  }
-
-  // Hard-coded values
-  final static String BATCH_GROUP_ID = "2a2cb998-1437-41d1-88ad-01930aaeadd5"; // ='FOLIO', System default
-
-  final static String SOURCE = "API";
-  final static int INVOICE_LINE_QUANTITY = 1;
-
-  // tbd
-  final static String STATUS = "Open";
-  final static String INVOICE_LINE_STATUS = "Open";
-  final static boolean RELEASE_ENCUMBRANCE = true;
-
-  static JSONObject createInvoiceJson(String poNumber, BaseMapping marc) throws Exception {
-    JSONObject invoice = new JSONObject();
-    invoice.put("id", UUID.randomUUID());
-    invoice.put("poNumbers", (new JSONArray()).put(poNumber)); // optional
-    invoice.put("batchGroupId", BATCH_GROUP_ID); // required
-    invoice.put("currency", marc.currency()); // required
-    invoice.put("invoiceDate", marc.invoiceDate()); // required
-    invoice.put("paymentMethod", Config.paymentMethod); // required
-    invoice.put("status", STATUS); // required
-    invoice.put("source", SOURCE); // required
-    invoice.put("vendorInvoiceNo", marc.vendorInvoiceNo()); // required
-    invoice.put("vendorId", marc.vendorUuid()); // required
-    return invoice;
-  }
-
-  static JSONObject createInvoiceLineJson(UUID orderLineUUID, BaseMapping marc, JSONObject invoice) {
-    JSONObject invoiceLine = new JSONObject();
-    invoiceLine.put("description", marc.title());  // required
-    invoiceLine.put("invoiceId", UUID.fromString(invoice.get("id").toString())); // required
-    invoiceLine.put("invoiceLineStatus", INVOICE_LINE_STATUS); // required
-    invoiceLine.put("subTotal", marc.subTotal());  // required
-    invoiceLine.put("quantity", INVOICE_LINE_QUANTITY); // required
-    invoiceLine.put("releaseEncumbrance", RELEASE_ENCUMBRANCE);  // required
-    invoiceLine.put("poLineId", orderLineUUID);
-    return invoiceLine;
   }
 
 }

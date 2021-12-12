@@ -1,6 +1,6 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
-public class Link extends JsonDataObject {
+public class Link extends FolioEntity {
 
   public static final String P_TYPE = "type";
   public static final String V_PO_LINE = "poLine";

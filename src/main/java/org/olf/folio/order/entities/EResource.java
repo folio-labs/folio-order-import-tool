@@ -1,8 +1,8 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.olf.folio.order.mapping.BaseMapping;
 
-public class EResource extends JsonDataObject {
+public class EResource extends FolioEntity {
 
   public static final String P_ACTIVATED = "activated";
   public static final String P_CREATE_INVENTORY = "createInventory";

@@ -1,8 +1,8 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.olf.folio.order.mapping.BaseMapping;
 
-public class Cost extends JsonDataObject {
+public class Cost extends FolioEntity {
   public static final String P_QUANTITY_PHYSICAL = "quantityPhysical";
   public static final String P_LIST_UNIT_PRICE = "listUnitPrice";
   public static final String P_QUANTITY_ELECTRONIC = "quantityElectronic";

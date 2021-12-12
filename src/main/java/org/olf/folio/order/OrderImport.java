@@ -2,21 +2,19 @@ package org.olf.folio.order;
 
 import java.io.FileNotFoundException;
 import java.util.UUID;
-import org.json.JSONArray;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.marc4j.MarcReader;
 import org.marc4j.MarcStreamReader;
 import org.marc4j.marc.Record;
 import org.apache.log4j.Logger;
-import org.olf.folio.order.dataobjects.BookplateNote;
-import org.olf.folio.order.dataobjects.CompositePurchaseOrder;
-import org.olf.folio.order.dataobjects.HoldingsRecord;
-import org.olf.folio.order.dataobjects.Instance;
-import org.olf.folio.order.dataobjects.InstanceIdentifier;
-import org.olf.folio.order.dataobjects.Item;
-import org.olf.folio.order.dataobjects.Link;
-import org.olf.folio.order.dataobjects.Note;
+import org.olf.folio.order.entities.CompositePurchaseOrder;
+import org.olf.folio.order.entities.HoldingsRecord;
+import org.olf.folio.order.entities.Instance;
+import org.olf.folio.order.entities.Item;
+import org.olf.folio.order.entities.Link;
+import org.olf.folio.order.entities.Note;
 import org.olf.folio.order.imports.FileStorageHelper;
 import org.olf.folio.order.mapping.BaseMapping;
 import org.olf.folio.order.validation.RecordChecker;
@@ -164,8 +162,8 @@ public class OrderImport {
 
 		if (Config.importInvoice && marc.hasInvoice()) {
 			UUID orderLineUUID = UUID.fromString(po.getCompositePoLines().get(0).getId());
-			JSONObject invoice = JsonObjectBuilder.createInvoiceJson(po.getPoNumber(), marc);
-			JSONObject invoiceLine = JsonObjectBuilder.createInvoiceLineJson(orderLineUUID, marc, invoice);
+			JSONObject invoice = InvoiceBuilder.createInvoiceJson(po.getPoNumber(), marc);
+			JSONObject invoiceLine = InvoiceBuilder.createInvoiceLineJson(orderLineUUID, marc, invoice);
 			logger.info(FolioAccess.callApiPostWithUtf8("invoice/invoices", invoice).toString());
 			logger.info(FolioAccess.callApiPostWithUtf8("invoice/invoice-lines", invoiceLine).toString());
 		}

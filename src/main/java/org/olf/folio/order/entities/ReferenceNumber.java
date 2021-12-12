@@ -1,8 +1,8 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.olf.folio.order.mapping.BaseMapping;
 
-public class ReferenceNumber extends JsonDataObject {
+public class ReferenceNumber extends FolioEntity {
   public static final String P_REF_NUMBER = "refNumber";
   public static final String P_REF_NUMBER_TYPE = "refNumberType";
   public static final String V_VENDOR_INTERNAL_NUMBER = "Vendor internal number";

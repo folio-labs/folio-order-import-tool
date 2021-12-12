@@ -1,9 +1,9 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
 import org.olf.folio.order.mapping.BaseMapping;
 
-public class VendorDetail extends JsonDataObject {
+public class VendorDetail extends FolioEntity {
 
   public static final String P_INSTRUCTIONS = "instructions";
   public static final String P_VENDOR_ACCOUNT = "vendorAccount";

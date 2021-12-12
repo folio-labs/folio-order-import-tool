@@ -1,4 +1,4 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class CompositePurchaseOrder extends JsonDataObject {
+public class CompositePurchaseOrder extends FolioEntity {
   public static final String P_PO_NUMBER = "poNumber";
   public static final String P_VENDOR = "vendor";
   public static final String P_ORDER_TYPE = "orderType";

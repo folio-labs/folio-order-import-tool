@@ -1,4 +1,4 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class PoLine extends JsonDataObject {
+public class PoLine extends FolioEntity {
   public static final String P_ID = "id";
   public static final String P_PURCHASE_ORDER_ID = "purchaseOrderId";
   public static final String P_ORDER_FORMAT = "orderFormat";

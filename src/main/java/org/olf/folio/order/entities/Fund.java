@@ -1,8 +1,8 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.olf.folio.order.mapping.BaseMapping;
 
-public class Fund extends JsonDataObject {
+public class Fund extends FolioEntity {
   public static final String P_DISTRIBUTION_TYPE = "distributionType";
   public static final String V_PERCENTAGE = "percentage";
   public static final String P_VALUE = "value";

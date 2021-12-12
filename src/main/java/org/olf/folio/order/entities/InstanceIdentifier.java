@@ -1,6 +1,6 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
-public class InstanceIdentifier extends JsonDataObject {
+public class InstanceIdentifier extends FolioEntity {
   public static final String P_IDENTIFIER_TYPE_ID = "identifierTypeId";
   public static final String P_VALUE = "value";
 

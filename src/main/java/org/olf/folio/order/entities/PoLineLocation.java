@@ -1,4 +1,4 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONObject;
 import org.olf.folio.order.Config;
@@ -6,7 +6,7 @@ import org.olf.folio.order.mapping.BaseMapping;
 import org.olf.folio.order.mapping.MarcMapSigma;
 import org.olf.folio.order.storage.FolioData;
 
-public class PoLineLocation extends JsonDataObject {
+public class PoLineLocation extends FolioEntity {
 
   public static final String P_QUANTITY_PHYSICAL = "quantityPhysical";
   public static final String P_QUANTITY_ELECTRONIC = "quantityElectronic";

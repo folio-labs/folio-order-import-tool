@@ -1,9 +1,9 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class Item extends JsonDataObject {
+public class Item extends FolioEntity {
   public static final String P_NOTES = "notes";
   public static final String P_BARCODE = "barcode";
 

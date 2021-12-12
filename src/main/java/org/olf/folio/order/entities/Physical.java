@@ -1,4 +1,4 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONObject;
 import org.olf.folio.order.Config;
@@ -6,7 +6,7 @@ import org.olf.folio.order.Constants;
 import org.olf.folio.order.mapping.BaseMapping;
 import org.olf.folio.order.mapping.MarcMapSigma;
 
-public class Physical extends JsonDataObject {
+public class Physical extends FolioEntity {
   public static final String P_CREATE_INVENTORY = "createInventory";
   public static final String P_MATERIAL_TYPE = "materialType";
   public static final String V_INSTANCE_HOLDING_ITEM = "Instance, Holding, Item";

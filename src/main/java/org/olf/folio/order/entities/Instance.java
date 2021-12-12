@@ -1,9 +1,9 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class Instance extends JsonDataObject {
+public class Instance extends FolioEntity {
   public static final String P_ID = "id";
   public static final String P_HRID = "hrid";
   public static final String P_TITLE = "title";
