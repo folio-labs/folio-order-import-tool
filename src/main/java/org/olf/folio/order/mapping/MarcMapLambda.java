@@ -41,10 +41,16 @@ public class MarcMapLambda extends BaseMapping {
         outcome.setFlagIfNotNull(
                 "Object code is required with MARC mapping 'Lambda'" + " but no object code found in the record");
       } else {
-        outcome.addValidationMessageIfAny(FolioData.validateObjectCode(objectCode()));
+        String message = FolioData.validateTag(objectCode());
+        if (message != null) {
+          outcome.addValidationMessageIfAny("Cannot set the object code: " + message);
+        }
       }
       if (hasProjectCode()) {
-        outcome.addValidationMessageIfAny(FolioData.validateObjectCode(projectCode()));
+        String message = FolioData.validateTag(projectCode());
+        if (message != null) {
+          outcome.addValidationMessageIfAny("Cannot set the project code: " + message);
+        }
       }
     }
     return !outcome.failedValidation();

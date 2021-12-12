@@ -136,16 +136,16 @@ The desired mapping set to use is selected at startup by setting the parameter  
 
 #### `Chi` mapping extension
 
-| MARC_fields¹   | Description      | Target properties      | Required | Default | Content (incoming) |
-|----------------|------------------|------------------------|----------|---------|--------------------|
-| 980 $o         | Barcode          |                        | No       |         |                    |
+| MARC_fields¹   | Description      | Target properties | Required | Default | Content (incoming)                             |
+|----------------|------------------|-------------------|----------|---------|------------------------------------------------|
+| 980 $o         | Barcode          | item.barcode      | No       |         | A barcode that doesn't exist already in FOLIO. |
 
 #### `Lambda` mapping extension
 
-| MARC_fields¹  | Description    | Target properties     | Required | Default | Content (incoming) |
-|---------------|----------------|-----------------------|----------|---------|--------------------|
-| 980 $o        | Object code    | orderLine tag list    | Yes      |         |                    | 
-| 980 $r        | Project code   | orderLine tag list    | No       |         |                    |
+| MARC_fields¹  | Description    | Target properties     | Required | Default | Content (incoming)                             |
+|---------------|----------------|-----------------------|----------|---------|------------------------------------------------|
+| 980 $o        | Object code    | orderLine tag list    | Yes      |         | The object code must exist as a Tag in FOLIO.  | 
+| 980 $r        | Project code   | orderLine tag list    | No       |         | The project code must exist as a Tag in FOLIO. |
 
 #### `Sigma` mapping extension (!! work-in-progress !!)
 

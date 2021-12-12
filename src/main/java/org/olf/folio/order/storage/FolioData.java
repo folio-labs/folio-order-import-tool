@@ -215,7 +215,12 @@ public class FolioData extends FolioAccess {
 
   public static JSONArray getTags (String objectCode) throws Exception {
     String tagEndpoint = TAGS_PATH + "?query=(label==" + objectCode + ")";
-    return callApiGetArray(tagEndpoint,TAGS_ARRAY);
+    JSONObject tagResponse = callApiGet(tagEndpoint);
+    if (tagResponse.has(TAGS_ARRAY)) {
+      return tagResponse.getJSONArray(TAGS_ARRAY);
+    } else {
+      return new JSONArray();
+    }
   }
 
   private static String getIdByKey (String key, String url, String nameOfArray, Map<String,String> map)
@@ -245,9 +250,9 @@ public class FolioData extends FolioAccess {
     return null;
   }
 
-  public static String validateObjectCode(String objectCode) throws Exception {
+  public static String validateTag(String objectCode) throws Exception {
     if (getTags(objectCode).length() < 1) {
-      return "No object code (" + objectCode + ") found in FOLIO";
+      return "No tag (" + objectCode + ") found in FOLIO";
     }
     return null;
   }

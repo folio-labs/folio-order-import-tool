@@ -812,7 +812,6 @@ public abstract class BaseMapping {
 
   public void populateItemFromMarc (Item item) {
     item.addBookplateNote(BookplateNote.createPhysicalBookplateNote(donor()));
-
   }
 
   public boolean validate(RecordResult outcome) throws Exception {
