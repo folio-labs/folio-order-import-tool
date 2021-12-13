@@ -6,36 +6,21 @@ orders.
 ## What does it do?
 
 * It takes an uploaded file that contains MARC records and creates orders, instances, holdings and items in FOLIO Orders and FOLIO Inventory.
-* It uses the 980 field to get the fund code, vendor code, price, tag, quantity, notes and electronic/print indicator
+* It uses the 980 field to get the fund code, vendor code, price, tag, notes and electronic/print indicator
 * It only creates items if the material is print (which should be indicated in the 980$z field) - It looks for the
   values ELECTRONIC or PRINT
 * It lets FOLIO Orders create the instance, holdings and item records using the "createInventory" value in the order line
-* It uses a property file to determine locations, fiscal year, note type, and
+* It uses the property file to determine locations, fiscal year, note type, and
   material type and default text for electronic resources (in case subfield z is missing)
+
+For details, see [data populated to FOLIO](#what-data-are-populated-to-folio).
+
 ### Two modes: Validate and Import
 
-The MARC file can be run through validation without actually importing anything to FOLIO. Choose a MARC file in the tool's UI and click `Analyze MARC records`. 
+The MARC file can be run through validation without actually importing anything to FOLIO. Choose a MARC file in the tool's UI and click `Analyze MARC records`. For details about the checks, see [Validation of incoming MARC records](#validation-of-incoming-marc-records)
 
-The analysis will check for each record in the file that:
-* The record has a MARC field 980.
-* The record provides a fund code that exists in FOLIO Finance.
-* The provided fund code is associated with an existing fiscal year (making it a budget) in FOLIO Finance.
-* If the record provides an expense class code, it exists in FOLIO Finance where it is associated with the budget.
-* The record provides a vendor code that exists in FOLIO Organizations.
-* The record provides a price amount.
-* If the record provides a bill-to name, an address with that name exists in FOLIO Configurations.
-* (when this API comes into production: If the record provides an acquisition method, the method exists in FOLIO Orders)
+When running an actual import, the exact same checks are performed for each record, and the tool then acts on the results according to the setting of configuration parameter `onValidationErrors`. See the [configuration table](#how-to-configure-the-service) 
 
-If any of these checks fail it will be marked as an error.
-
-On top of that the analysis will check if
-
-* The record has an ISBN that is valid (after stripping the ISBN string down to its leading digits) 
-* If there is no valid ISBN, that the record provides one or more of the following identifiers: ISSN, Publisher or Distributor number, System control number, or Other standard Identifier.
-
-Missing identifiers is not considered an error that should prevent the import, but a flag is raised since it will prevent FOLIO Orders from linking the incoming order with an existing title in FOLIO Inventory, thus triggering the creation of new records in Inventory.
-
-When running an actual import, the exact same checks are performed for each record, and the tool then acts according to the setting of configuration parameter `onValidationErrors`.
 ## If you want to try it
 
 * It expects the properties file to be here: `/yourhomefolder/order/import.properties` unless you specify an alternative
@@ -211,6 +196,28 @@ The desired mapping is selected at startup by setting the parameter `marcMapping
 | orderLine.locations[].quantityElectronic                     | 1                                            |
 | IF PHYSICAL                                                  |
 | orderLine.cost.quantityPhysical                              | 1                                            |
+
+## Validation of incoming MARC records
+
+Each incoming will go through following checks on analyze or import:
+
+* The record has a MARC field 980.
+* The record provides a fund code that exists in FOLIO Finance.
+* The provided fund code is associated with an existing fiscal year (making it a budget) in FOLIO Finance.
+* If the record provides an expense class code, it exists in FOLIO Finance where it is associated with the budget.
+* The record provides a vendor code that exists in FOLIO Organizations.
+* The record provides a price amount.
+* If the record provides a bill-to name, an address with that name exists in FOLIO Configurations.
+* (when this API comes into production: If the record provides an acquisition method, the method exists in FOLIO Orders)
+
+If any of these checks fail it will be marked as an error.
+
+On top of that the analysis will check if
+
+* The record has an ISBN that is valid (after stripping the ISBN string down to its leading digits)
+* If there is no valid ISBN, that the record provides one or more of the following identifiers: ISSN, Publisher or Distributor number, System control number, or Other standard Identifier.
+
+Missing identifiers is not considered an error that should prevent the import, but a flag is raised since it will prevent FOLIO Orders from linking the incoming order with an existing title in FOLIO Inventory, thus triggering the creation of new records in Inventory.
 
 ## FOLIO API usage and required user permissions
 
