@@ -91,9 +91,9 @@ The tool populates FOLIO Orders, Inventory and utility modules with data from th
 3) Static values hard-coded in the program. 
 
 ### Data from the incoming MARC records
-The tool provides three, slightly different sets of MARC mappings. All three share a basic set of mappings but then extend that with a few mappings of their own. 
+The tool provides three, slightly different sets of MARC mappings. All three share a basic set of mappings but then extend that with some mappings of their own. 
 
-The desired mapping set to use is selected at startup by setting the parameter  `marcMapping` to either `chi` (default), `lambda` or `sigma`. 
+The desired mapping is selected at startup by setting the parameter `marcMapping` to either `chi` (default), `lambda` or `sigma`. 
 
 #### Core mapping table
 
@@ -225,7 +225,7 @@ This is how the tool uses FOLIO's APIs:
   finance/budgets
   finance-storage/budget-expense-classes
 
-  organizations/organizations
+  organizations-storage/organizations
 
   notes
   tags
@@ -278,7 +278,7 @@ This is how the tool uses FOLIO's APIs:
     "orders.item.get",
     "orders.item.post",
     "orders.po-number.item.get",
-    "organizations.organizations.collection.get",
+    "organizations-storage.organizations.collection.get",
     "tags.collection.get"
   ]
 }
