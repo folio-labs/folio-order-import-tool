@@ -7,17 +7,16 @@ import org.marc4j.marc.Record;
 import org.marc4j.marc.Subfield;
 import org.marc4j.marc.VariableField;
 import org.olf.folio.order.Config;
-import org.olf.folio.order.Constants;
-import org.olf.folio.order.entities.BookplateNote;
-import org.olf.folio.order.entities.ElectronicAccessUrl;
-import org.olf.folio.order.entities.HoldingsRecord;
-import org.olf.folio.order.entities.Instance;
-import org.olf.folio.order.entities.InstanceIdentifier;
-import org.olf.folio.order.entities.Item;
-import org.olf.folio.order.entities.ProductIdentifier;
-import org.olf.folio.order.imports.RecordResult;
-import org.olf.folio.order.storage.FolioData;
-import org.olf.folio.order.storage.ValidationLookups;
+import org.olf.folio.order.entities.inventory.BookplateNote;
+import org.olf.folio.order.entities.inventory.ElectronicAccessUrl;
+import org.olf.folio.order.entities.inventory.HoldingsRecord;
+import org.olf.folio.order.entities.inventory.Instance;
+import org.olf.folio.order.entities.inventory.InstanceIdentifier;
+import org.olf.folio.order.entities.inventory.Item;
+import org.olf.folio.order.entities.orders.ProductIdentifier;
+import org.olf.folio.order.importhistory.RecordResult;
+import org.olf.folio.order.folioapis.FolioData;
+import org.olf.folio.order.folioapis.ValidationLookups;
 import org.olf.folio.order.utils.Utils;
 
 import java.util.ArrayList;
@@ -27,7 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static org.olf.folio.order.Constants.CONTRIBUTOR_NAME_TYPES_MAP;
+import static org.olf.folio.order.mapping.Constants.CONTRIBUTOR_NAME_TYPES_MAP;
 
 public abstract class MarcToFolio {
   Record marcRecord;

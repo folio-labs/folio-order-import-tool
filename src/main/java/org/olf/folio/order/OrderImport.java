@@ -9,19 +9,20 @@ import org.marc4j.MarcReader;
 import org.marc4j.MarcStreamReader;
 import org.marc4j.marc.Record;
 import org.apache.log4j.Logger;
-import org.olf.folio.order.entities.CompositePurchaseOrder;
-import org.olf.folio.order.entities.HoldingsRecord;
-import org.olf.folio.order.entities.Instance;
-import org.olf.folio.order.entities.Item;
-import org.olf.folio.order.entities.Link;
-import org.olf.folio.order.entities.Note;
-import org.olf.folio.order.imports.FileStorageHelper;
+import org.olf.folio.order.entities.orders.CompositePurchaseOrder;
+import org.olf.folio.order.entities.inventory.HoldingsRecord;
+import org.olf.folio.order.entities.inventory.Instance;
+import org.olf.folio.order.entities.inventory.Item;
+import org.olf.folio.order.entities.orders.Link;
+import org.olf.folio.order.entities.orders.Note;
+import org.olf.folio.order.importhistory.FileStorageHelper;
 import org.olf.folio.order.mapping.MarcToFolio;
+import org.olf.folio.order.misc.InvoiceBuilder;
 import org.olf.folio.order.validation.RecordChecker;
-import org.olf.folio.order.imports.RecordResult;
-import org.olf.folio.order.imports.Results;
-import org.olf.folio.order.storage.FolioAccess;
-import org.olf.folio.order.storage.FolioData;
+import org.olf.folio.order.importhistory.RecordResult;
+import org.olf.folio.order.importhistory.Results;
+import org.olf.folio.order.folioapis.FolioAccess;
+import org.olf.folio.order.folioapis.FolioData;
 
 public class OrderImport {
 
