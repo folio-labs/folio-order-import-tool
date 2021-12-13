@@ -862,13 +862,11 @@ public abstract class MarcToFolio {
                         "No expense class with the code (" + expenseClassCode() + ") found in FOLIO.");
       } else {
         if (hasBudgetId()) {
-          /*
           if (ValidationLookups.validateBudgetExpenseClass(budgetId(), expenseClassId()) != null) {
             outcome.addValidationMessageIfAny(
                     String.format("No budget expense class found for fund code (%s) and expense class (%s).",
                             fundCode(), expenseClassCode()));
           }
-          */
         }
       }
     }
