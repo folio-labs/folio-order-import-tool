@@ -177,7 +177,6 @@ The desired mapping is selected at startup by setting the parameter `marcMapping
 
 | Target properties                                            | Value                                        |
 |--------------------------------------------------------------|----------------------------------------------|
-| orderLine.cost.currency                                      | "USD" (but see 980$k for UC)                 |
 | order.orderType                                              | "One-Time"                                   |
 | order.reEncumber                                             | true                                         |
 | order.approved                                               | true                                         |
@@ -185,9 +184,8 @@ The desired mapping is selected at startup by setting the parameter `marcMapping
 | orderLine.source                                             | "User"                                       |
 | orderLine.receiptStatus                                      | "Receipt Not Required" if 980$z = ELECTRONIC |
 | orderLine.fundDistribution.funds[].fundDist.distributionType | "percentage"                                 |
-| orderLine.acquisitionMethod                                  | "Purchase" (but see 980$t for UC)            |
 | orderLine.fundDistribution.funds[].fundDist.value            | 100                                          |
-| instance.source                                              | "MARC"                                       |
+| instance.source                                              | "FOLIO"                                      |
 | instance.instanceTypeId                                      | UUID for 'text'                              |
 | instance.discoverySuppress                                   | false                                        |
 | IF ELECTRONIC                                                |
