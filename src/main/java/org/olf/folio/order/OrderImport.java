@@ -16,7 +16,7 @@ import org.olf.folio.order.entities.Item;
 import org.olf.folio.order.entities.Link;
 import org.olf.folio.order.entities.Note;
 import org.olf.folio.order.imports.FileStorageHelper;
-import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 import org.olf.folio.order.validation.RecordChecker;
 import org.olf.folio.order.imports.RecordResult;
 import org.olf.folio.order.imports.Results;
@@ -66,7 +66,7 @@ public class OrderImport {
 			RecordResult outcome = results.nextResult();
 			try {
 				Record record = reader.next();
-				BaseMapping mappedMarc = Config.getMarcMapping(record);
+				MarcToFolio mappedMarc = Config.getMarcMapping(record);
   			RecordChecker.validateMarcRecord(mappedMarc, outcome);
 				if (!outcome.isSkipped()) {
 					// RECORD VALIDATION PASSED OR SERVICE IS CONFIGURED TO ATTEMPT IMPORT IN ANY CASE
@@ -97,7 +97,7 @@ public class OrderImport {
 		return results.markDone();
 	}
 
-	private CompositePurchaseOrder importPurchaseOrderAndNote(BaseMapping mappedMarc, RecordResult outcome)
+	private CompositePurchaseOrder importPurchaseOrderAndNote(MarcToFolio mappedMarc, RecordResult outcome)
 					throws Exception {
 		CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
 
@@ -117,7 +117,7 @@ public class OrderImport {
 		return CompositePurchaseOrder.fromJson(persistedPo);
 	}
 
-	private void updateInventory(String instanceId, BaseMapping mappedMarc, RecordResult outcome)
+	private void updateInventory(String instanceId, MarcToFolio mappedMarc, RecordResult outcome)
 					throws Exception {
 		// RETRIEVE, UPDATE, AND PUT THE RELATED INSTANCE
 		Instance instance = Instance.fromJson(
@@ -132,7 +132,7 @@ public class OrderImport {
 							.setInstanceUiUrl(Config.folioUiUrl, Config.folioUiInventoryPath,
 											instance.getId(), instance.getHrid());
 		} else {
-			mappedMarc.populateInstanceFromMarc(instance);
+			mappedMarc.populateInstance(instance);
 			FolioAccess.callApiPut(FolioData.INSTANCES_PATH, instance);
 			outcome.setInstanceHrid(instance.getHrid()).setInstanceUiUrl(Config.folioUiUrl, Config.folioUiInventoryPath, instance.getId(), instance.getHrid());
 		}
@@ -142,7 +142,7 @@ public class OrderImport {
 						FolioAccess.callApiGetFirstObjectOfArray(
 										FolioData.HOLDINGS_STORAGE_PATH + "?query=(instanceId==" + instance.getId() + ")",
 										FolioData.HOLDINGS_RECORDS_ARRAY));
-    mappedMarc.populateHoldingsRecordFromMarc(holdingsRecord);
+    mappedMarc.populateHoldingsRecord(holdingsRecord);
 		FolioAccess.callApiPut(FolioData.HOLDINGS_STORAGE_PATH, holdingsRecord);
 
 		if (mappedMarc.updateItem()) {
@@ -151,14 +151,14 @@ public class OrderImport {
 															FolioData.ITEMS_PATH + "?query=(holdingsRecordId=="
 																			+ holdingsRecord.getId() + ")",
 															FolioData.ITEMS_ARRAY));
-			mappedMarc.populateItemFromMarc(item);
+			mappedMarc.populateItem(item);
 			FolioAccess.callApiPut(FolioData.ITEMS_PATH, item);
 		}
 	}
 
 	public static void maybeImportInvoice(
 							   CompositePurchaseOrder po,
-							   BaseMapping marc) throws Exception {
+							   MarcToFolio marc) throws Exception {
 
 		if (Config.importInvoice && marc.hasInvoice()) {
 			UUID orderLineUUID = UUID.fromString(po.getCompositePoLines().get(0).getId());

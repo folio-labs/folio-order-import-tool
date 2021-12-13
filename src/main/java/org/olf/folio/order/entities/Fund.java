@@ -1,6 +1,6 @@
 package org.olf.folio.order.entities;
 
-import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 
 public class Fund extends FolioEntity {
   public static final String P_DISTRIBUTION_TYPE = "distributionType";
@@ -10,7 +10,7 @@ public class Fund extends FolioEntity {
   public static final String P_CODE = "code";
   public static final String P_EXPENSE_CLASS_ID = "expenseClassId";
 
-  public static Fund fromMarcRecord(BaseMapping mappedMarc) throws Exception{
+  public static Fund fromMarcRecord(MarcToFolio mappedMarc) throws Exception{
     return new Fund()
             .putDistributionType(V_PERCENTAGE)
             .putValue(100)

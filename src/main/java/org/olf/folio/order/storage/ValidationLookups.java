@@ -35,6 +35,14 @@ public class ValidationLookups extends FolioData {
     return null;
   }
 
+  public static String validateLocationName (String locationName) throws Exception {
+    if (getLocationIdByName(locationName) == null) {
+      return String.format("Not found. No location with name (%s) found in FOLIO.", locationName);
+    } else {
+      return null;
+    }
+  }
+
   public static String validateOrganization(String orgCode) throws Exception {
     if (getOrganizationId(orgCode) == null) {
       return "No organization with the code (" + orgCode + ") found in FOLIO";
@@ -49,8 +57,15 @@ public class ValidationLookups extends FolioData {
     return null;
   }
 
-  public static String validateRequiredValuesForInvoice(String title, Record record) {
+  public static String validateMaterialTypeName (String name) throws  Exception {
+    if (getMaterialTypeId(name) == null) {
+      return String.format("Not found. No material type by name %s found in FOLIO.", name);
+    } else {
+      return null;
+    }
+  }
 
+  public static String validateRequiredValuesForInvoice(String title, Record record) {
     DataField nineEighty = (DataField) record.getVariableField("980");
     String vendorInvoiceNo = nineEighty.getSubfieldsAsString("h");
     String invoiceDate = nineEighty.getSubfieldsAsString("i");

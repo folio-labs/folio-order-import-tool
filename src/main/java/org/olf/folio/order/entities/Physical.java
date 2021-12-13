@@ -1,10 +1,7 @@
 package org.olf.folio.order.entities;
 
 import org.json.JSONObject;
-import org.olf.folio.order.Config;
-import org.olf.folio.order.Constants;
-import org.olf.folio.order.mapping.BaseMapping;
-import org.olf.folio.order.mapping.MarcMapSigma;
+import org.olf.folio.order.mapping.MarcToFolio;
 
 public class Physical extends FolioEntity {
   public static final String P_CREATE_INVENTORY = "createInventory";
@@ -16,15 +13,10 @@ public class Physical extends FolioEntity {
    * startup config.
    * @param mappedMarc not yet used
    */
-  public static Physical fromMarcRecord(BaseMapping mappedMarc) throws Exception {
-    Physical physical =  new Physical()
-            .putCreateInventory(V_INSTANCE_HOLDING_ITEM);
-    if (mappedMarc instanceof MarcMapSigma) {
-      physical.putMaterialType(((MarcMapSigma) mappedMarc).materialTypeId());
-    } else {
-      physical.putMaterialType(Constants.MATERIAL_TYPES_MAP.get(Config.materialType));
-    }
-    return physical;
+  public static Physical fromMarcRecord(MarcToFolio mappedMarc) throws Exception {
+    return new Physical()
+            .putCreateInventory(V_INSTANCE_HOLDING_ITEM)
+            .putMaterialType(mappedMarc.materialTypeId());
   }
 
   public static Physical fromJson(JSONObject physicalJson) {

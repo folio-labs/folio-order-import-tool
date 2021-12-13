@@ -3,8 +3,9 @@ package org.olf.folio.order.mapping;
 import org.marc4j.marc.Record;
 import org.olf.folio.order.imports.RecordResult;
 import org.olf.folio.order.storage.FolioData;
+import org.olf.folio.order.storage.ValidationLookups;
 
-public class MarcMapSigma extends BaseMapping {
+public class MarcMapSigma extends MarcToFolio {
 
   protected static final String LOCATION = "a";
   protected static final String MATERIAL_TYPE = "d";
@@ -21,6 +22,7 @@ public class MarcMapSigma extends BaseMapping {
   }
 
   public String locationId() throws Exception {
+    // TODO: fallback to config?
     return FolioData.getLocationIdByName(location());
   }
 
@@ -37,6 +39,7 @@ public class MarcMapSigma extends BaseMapping {
   }
 
   public String materialTypeId () throws Exception {
+    // TODO: fallback to config?
     if (has(materialType())) {
       return FolioData.getMaterialTypeId(materialType());
     } else {
@@ -44,17 +47,20 @@ public class MarcMapSigma extends BaseMapping {
     }
   }
 
-  public boolean hasMaterialTypeId () throws Exception {
-    return has(materialTypeId());
+  public boolean updateItem () {
+    return true;
   }
 
   public boolean validate(RecordResult outcome) throws Exception {
     super.validate(outcome);
     if (has980()) {
       if (! hasLocation()) {
-        outcome.setFlagIfNotNull("Record is missing location (looked in 980$a");
-      } else if (! hasLocationId()) {
-        outcome.setFlagIfNotNull("Could not find a location in FOLIO for the given location identifier (" + location() + ")");
+        outcome.addValidationMessageIfAny("Record is missing location (looked in 980$a");
+      } else {
+        outcome.addValidationMessageIfAny(ValidationLookups.validateLocationName(location()));
+      }
+      if (has(materialType())) {
+        outcome.addValidationMessageIfAny(ValidationLookups.validateMaterialTypeName(materialType()));
       }
     }
     return !outcome.failedValidation();

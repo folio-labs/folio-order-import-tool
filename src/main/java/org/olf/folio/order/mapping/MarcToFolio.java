@@ -29,7 +29,7 @@ import java.util.Map;
 
 import static org.olf.folio.order.Constants.CONTRIBUTOR_NAME_TYPES_MAP;
 
-public abstract class BaseMapping {
+public abstract class MarcToFolio {
   Record marcRecord;
   DataField d245;
   DataField d250;
@@ -86,7 +86,7 @@ public abstract class BaseMapping {
   public static final String MARC_980_V = "980$v";
   public static final String MARC_980_M = "980$m";
 
-  public BaseMapping(Record marcRecord) {
+  public MarcToFolio(Record marcRecord) {
     this.marcRecord = marcRecord;
     if (FOLIO_TO_MARC_FIELD_MAP.isEmpty()) {
       FOLIO_TO_MARC_FIELD_MAP.put(PRICE_LABEL, MARC_980_M);
@@ -564,6 +564,22 @@ public abstract class BaseMapping {
     return ElectronicAccessUrl.getElectronicAccessFromMarcRecord( this, defaultLinkText);
   }
 
+  public String locationName() {
+    return ( electronic() ?
+            (Config.importInvoice && hasInvoice()) ?
+                    Config.permELocationWithInvoiceImport : Config.permELocationName
+            : ( Config.importInvoice && hasInvoice() ) ?
+                    Config.permLocationWithInvoiceImport : Config.permLocationName);
+  }
+
+  public String locationId() throws Exception {
+      return FolioData.getLocationIdByName(locationName());
+  }
+
+  public String materialTypeId() throws Exception {
+    return Constants.MATERIAL_TYPES_MAP.get(Config.materialType);
+  }
+
   public boolean hasISBN() {
     return !getDataFieldsForIdentifierType(Constants.ISBN).isEmpty();
   }
@@ -783,7 +799,7 @@ public abstract class BaseMapping {
     return true;
   }
 
-  public void populateInstanceFromMarc(Instance instance) throws Exception {
+  public void populateInstance(Instance instance) throws Exception {
     instance.putTitle(title())
             .putSource(Instance.V_FOLIO)
             .putInstanceTypeId(FolioData.getInstanceTypeId("text"))
@@ -796,7 +812,7 @@ public abstract class BaseMapping {
             .putSucceedingTitles(new JSONArray());
   }
 
-  public void populateHoldingsRecordFromMarc (HoldingsRecord holdingsRecord) throws Exception {
+  public void populateHoldingsRecord(HoldingsRecord holdingsRecord) throws Exception {
     holdingsRecord.putElectronicAccess(getElectronicAccess(Config.textForElectronicResources));
     if (electronic()) {
       holdingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName("Electronic"));
@@ -811,7 +827,7 @@ public abstract class BaseMapping {
     return (hasDonor() && !electronic());
   }
 
-  public void populateItemFromMarc (Item item) {
+  public void populateItem(Item item) throws Exception {
     item.addBookplateNote(BookplateNote.createPhysicalBookplateNote(donor()));
   }
 
@@ -847,11 +863,13 @@ public abstract class BaseMapping {
                         "No expense class with the code (" + expenseClassCode() + ") found in FOLIO.");
       } else {
         if (hasBudgetId()) {
+          /*
           if (ValidationLookups.validateBudgetExpenseClass(budgetId(), expenseClassId()) != null) {
             outcome.addValidationMessageIfAny(
                     String.format("No budget expense class found for fund code (%s) and expense class (%s).",
                             fundCode(), expenseClassCode()));
           }
+          */
         }
       }
     }

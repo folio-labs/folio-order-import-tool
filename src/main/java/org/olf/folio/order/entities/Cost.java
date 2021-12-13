@@ -1,6 +1,6 @@
 package org.olf.folio.order.entities;
 
-import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 
 public class Cost extends FolioEntity {
   public static final String P_QUANTITY_PHYSICAL = "quantityPhysical";
@@ -9,7 +9,7 @@ public class Cost extends FolioEntity {
   public static final String P_LIST_UNIT_PRICE_ELECTRONIC = "listUnitPriceElectronic";
   public static final String P_CURRENCY = "currency";
 
-  public static Cost fromMarcRecord(BaseMapping mappedMarc) {
+  public static Cost fromMarcRecord(MarcToFolio mappedMarc) {
     Cost cost = new Cost();
     if (mappedMarc.electronic()) {
       cost.putQuantityElectronic(1);

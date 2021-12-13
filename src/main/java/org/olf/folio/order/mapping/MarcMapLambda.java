@@ -4,7 +4,7 @@ import org.marc4j.marc.Record;
 import org.olf.folio.order.imports.RecordResult;
 import org.olf.folio.order.storage.ValidationLookups;
 
-public class MarcMapLambda extends BaseMapping {
+public class MarcMapLambda extends MarcToFolio {
   protected static final String OBJECT_CODE           = "o";
   protected static final String PROJECT_CODE          = "r";
 

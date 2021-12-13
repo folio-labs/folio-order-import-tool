@@ -6,6 +6,7 @@ import org.json.JSONObject;
 public class Item extends FolioEntity {
   public static final String P_NOTES = "notes";
   public static final String P_BARCODE = "barcode";
+  public static final String P_MATERIAL_TYPE_ID = "materialTypeId";
 
   public static Item fromJson (JSONObject itemJson) {
     Item item = new Item();

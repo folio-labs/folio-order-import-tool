@@ -2,7 +2,7 @@ package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +11,7 @@ public class OrderLineDetails extends FolioEntity {
   public static final String P_RECEIVING_NOTE = "receivingNote";
   public static final String P_PRODUCT_IDS = "productIds";
 
-  public static OrderLineDetails fromMarcRecord(BaseMapping mappedMarc) {
+  public static OrderLineDetails fromMarcRecord(MarcToFolio mappedMarc) {
     return new OrderLineDetails()
             .putReceivingNoteIfPresent(mappedMarc.receivingNote())
             .putProductIdsIfPresent(mappedMarc.productIdentifiers());

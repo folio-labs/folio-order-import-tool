@@ -1,7 +1,7 @@
 package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
-import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 
 public class VendorDetail extends FolioEntity {
 
@@ -9,7 +9,7 @@ public class VendorDetail extends FolioEntity {
   public static final String P_VENDOR_ACCOUNT = "vendorAccount";
   public static final String P_REFERENCE_NUMBERS = "referenceNumbers";
 
-  public static VendorDetail fromMarcRecord (BaseMapping mappedMarc) {
+  public static VendorDetail fromMarcRecord (MarcToFolio mappedMarc) {
     return new VendorDetail()
             .putInstructions("")
             .putVendorAccount(

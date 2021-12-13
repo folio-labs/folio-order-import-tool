@@ -5,7 +5,7 @@ import org.olf.folio.order.entities.Item;
 import org.olf.folio.order.imports.RecordResult;
 import org.olf.folio.order.storage.ValidationLookups;
 
-public class MarcMapChi extends BaseMapping {
+public class MarcMapChi extends MarcToFolio {
   protected static final String BARCODE  = "o";
 
   public MarcMapChi(Record marcRecord) {
@@ -27,9 +27,9 @@ public class MarcMapChi extends BaseMapping {
     return true;
   }
 
-  public void populateItemFromMarc (Item item) {
+  public void populateItem(Item item) throws Exception{
     if (super.updateItem()) {
-      super.populateItemFromMarc(item);
+      super.populateItem(item);
     }
     if (hasBarcode()) {
       item.putBarcode(barcode());

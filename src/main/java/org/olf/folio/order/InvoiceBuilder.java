@@ -3,7 +3,7 @@ package org.olf.folio.order;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 import org.olf.folio.order.mapping.MarcMapLambda;
 import org.olf.folio.order.storage.FolioData;
 
@@ -24,7 +24,7 @@ public class InvoiceBuilder {
   final static String INVOICE_LINE_STATUS = "Open";
   final static boolean RELEASE_ENCUMBRANCE = true;
 
-  static JSONObject createInvoiceJson(String poNumber, BaseMapping marc) throws Exception {
+  static JSONObject createInvoiceJson(String poNumber, MarcToFolio marc) throws Exception {
     JSONObject invoice = new JSONObject();
     invoice.put("id", UUID.randomUUID());
     invoice.put("poNumbers", (new JSONArray()).put(poNumber)); // optional
@@ -39,7 +39,7 @@ public class InvoiceBuilder {
     return invoice;
   }
 
-  static JSONObject createInvoiceLineJson(UUID orderLineUUID, BaseMapping marc, JSONObject invoice) {
+  static JSONObject createInvoiceLineJson(UUID orderLineUUID, MarcToFolio marc, JSONObject invoice) {
     JSONObject invoiceLine = new JSONObject();
     invoiceLine.put("description", marc.title());  // required
     invoiceLine.put("invoiceId", UUID.fromString(invoice.get("id").toString())); // required
@@ -52,7 +52,7 @@ public class InvoiceBuilder {
   }
 
   // Previous JSON builder - create the JSON is now done by BaseMapping and the entity objects in entities.
-  public static JSONObject createCompositePoJson(BaseMapping mappedMarc, Config config, Logger logger) throws Exception {
+  public static JSONObject createCompositePoJson(MarcToFolio mappedMarc, Config config, Logger logger) throws Exception {
     JSONObject order = new JSONObject();
     order.put("poNumber", FolioData.getNextPoNumberFromOrders());
     logger.info("NEXT PO NUMBER: " + order.getString("poNumber"));

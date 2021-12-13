@@ -1,7 +1,7 @@
 package org.olf.folio.order;
 
 import org.marc4j.marc.Record;
-import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 import org.olf.folio.order.mapping.MarcMapChi;
 import org.olf.folio.order.mapping.MarcMapLambda;
 import org.olf.folio.order.mapping.MarcMapSigma;
@@ -266,7 +266,7 @@ public class Config {
     }
   }
 
-  public static BaseMapping getMarcMapping (Record record) {
+  public static MarcToFolio getMarcMapping (Record record) {
     switch (marcMapping) {
       case V_MARC_MAPPING_LAMBDA:
         return new MarcMapLambda(record);

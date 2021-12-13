@@ -7,7 +7,7 @@ import org.olf.folio.order.Config;
 import org.olf.folio.order.imports.FileStorageHelper;
 import org.olf.folio.order.imports.RecordResult;
 import org.olf.folio.order.imports.Results;
-import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 
 import java.io.FileNotFoundException;
 
@@ -27,7 +27,7 @@ public class RecordChecker {
     return validationResults;
   }
 
-  public static void validateMarcRecord (BaseMapping mappedMarc, RecordResult outcome) {
+  public static void validateMarcRecord (MarcToFolio mappedMarc, RecordResult outcome) {
     try {
       outcome.setInputMarcData(mappedMarc);
       mappedMarc.validate(outcome);

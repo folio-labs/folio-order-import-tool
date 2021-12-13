@@ -1,10 +1,7 @@
 package org.olf.folio.order.entities;
 
 import org.json.JSONObject;
-import org.olf.folio.order.Config;
-import org.olf.folio.order.mapping.BaseMapping;
-import org.olf.folio.order.mapping.MarcMapSigma;
-import org.olf.folio.order.storage.FolioData;
+import org.olf.folio.order.mapping.MarcToFolio;
 
 public class PoLineLocation extends FolioEntity {
 
@@ -18,39 +15,15 @@ public class PoLineLocation extends FolioEntity {
     return loc;
   }
 
-  public static PoLineLocation fromMarcRecord(BaseMapping mappedMarc) throws Exception {
+  public static PoLineLocation fromMarcRecord(MarcToFolio mappedMarc) throws Exception {
     if (mappedMarc.electronic()) {
       return new PoLineLocation()
               .putQuantityElectronic(1)
-              .putLocationId(getLocationId(mappedMarc));
+              .putLocationId(mappedMarc.locationId());
     } else {
       return new PoLineLocation()
               .putQuantityPhysical(1)
-              .putLocationId(getLocationId(mappedMarc));
-    }
-  }
-
-  /**
-   * Gets a location name from configuration based on whether resource is electronic or not
-   * and whether this is an import with an invoice.
-   * @param mappedMarc the MARC record, for determining if an invoice is present
-   * @return  the name of the location from the startup configuration
-   */
-  private static String getLocationName (BaseMapping mappedMarc)  {
-    return (mappedMarc.electronic() ?
-            (Config.importInvoice && mappedMarc.hasInvoice()) ?
-                    Config.permELocationWithInvoiceImport : Config.permELocationName
-            :
-            (Config.importInvoice && mappedMarc.hasInvoice()) ?
-                    Config.permLocationWithInvoiceImport : Config.permLocationName
-    );
-  }
-
-  private static String getLocationId (BaseMapping mappedMarc) throws Exception {
-    if (mappedMarc instanceof MarcMapSigma) {
-      return ((MarcMapSigma) mappedMarc).locationId();
-    } else {
-      return FolioData.getLocationIdByName(getLocationName(mappedMarc));
+              .putLocationId(mappedMarc.locationId());
     }
   }
 

@@ -2,7 +2,7 @@ package org.olf.folio.order.imports;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.olf.folio.order.mapping.BaseMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 
 public class RecordResult {
 
@@ -56,7 +56,7 @@ public class RecordResult {
     return recordResultJson.getJSONArray(P_FLAGS);
   }
 
-  public RecordResult setInputMarcData(BaseMapping mappedMarc) {
+  public RecordResult setInputMarcData(MarcToFolio mappedMarc) {
     data().put(P_TITLE, mappedMarc.title());
     data().put(P_ISBN, mappedMarc.hasISBN() ? mappedMarc.getISBN() : "No ISBN");
     data().put(P_SOURCE, mappedMarc.getRecord().toString());
