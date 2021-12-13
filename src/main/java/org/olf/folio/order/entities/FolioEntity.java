@@ -2,13 +2,13 @@ package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.olf.folio.order.Constants;
+import org.olf.folio.order.mapping.Constants;
 
 public abstract class FolioEntity {
 
   public static String P_ID = "id";
 
-  JSONObject json = new JSONObject();
+  protected JSONObject json = new JSONObject();
 
   protected FolioEntity putString(String key, String value) {
     json.put(key, value);

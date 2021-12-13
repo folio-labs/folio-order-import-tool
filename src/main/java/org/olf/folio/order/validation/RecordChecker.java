@@ -4,9 +4,9 @@ import org.marc4j.MarcReader;
 import org.marc4j.MarcStreamReader;
 import org.marc4j.marc.Record;
 import org.olf.folio.order.Config;
-import org.olf.folio.order.imports.FileStorageHelper;
-import org.olf.folio.order.imports.RecordResult;
-import org.olf.folio.order.imports.Results;
+import org.olf.folio.order.importhistory.FileStorageHelper;
+import org.olf.folio.order.importhistory.RecordResult;
+import org.olf.folio.order.importhistory.Results;
 import org.olf.folio.order.mapping.MarcToFolio;
 
 import java.io.FileNotFoundException;

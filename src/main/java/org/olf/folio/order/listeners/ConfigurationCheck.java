@@ -3,9 +3,9 @@ package org.olf.folio.order.listeners;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.log4j.Logger;
 import org.olf.folio.order.Config;
-import org.olf.folio.order.Constants;
-import org.olf.folio.order.storage.FolioAccess;
-import org.olf.folio.order.storage.FolioData;
+import org.olf.folio.order.mapping.Constants;
+import org.olf.folio.order.folioapis.FolioAccess;
+import org.olf.folio.order.folioapis.FolioData;
 
 import javax.servlet.ServletContext;
 import java.io.File;

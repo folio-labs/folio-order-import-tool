@@ -1,9 +1,9 @@
 package org.olf.folio.order.mapping;
 
 import org.marc4j.marc.Record;
-import org.olf.folio.order.entities.Item;
-import org.olf.folio.order.imports.RecordResult;
-import org.olf.folio.order.storage.ValidationLookups;
+import org.olf.folio.order.entities.inventory.Item;
+import org.olf.folio.order.importhistory.RecordResult;
+import org.olf.folio.order.folioapis.ValidationLookups;
 
 public class MarcMapChi extends MarcToFolio {
   protected static final String BARCODE  = "o";

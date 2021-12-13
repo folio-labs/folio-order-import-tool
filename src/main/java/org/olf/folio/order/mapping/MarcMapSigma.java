@@ -1,9 +1,9 @@
 package org.olf.folio.order.mapping;
 
 import org.marc4j.marc.Record;
-import org.olf.folio.order.imports.RecordResult;
-import org.olf.folio.order.storage.FolioData;
-import org.olf.folio.order.storage.ValidationLookups;
+import org.olf.folio.order.importhistory.RecordResult;
+import org.olf.folio.order.folioapis.FolioData;
+import org.olf.folio.order.folioapis.ValidationLookups;
 
 public class MarcMapSigma extends MarcToFolio {
 
