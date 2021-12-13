@@ -1,7 +1,8 @@
-## 1.3.0 SNAPSHOT
+## 1.3.0 2021-12-13
 
-* The tool adapts to coming schema change in Orders for acquisition method
-* For now the tool will support both the coming and the existing schema
+* Chi mapping: maps barcode from 980$o
+* Provides three sets of MARC-to-FOLIO mappings: Chi, Lambda, Sigma.
+* The tool adapts to coming schema change in Orders wrt acquisition method
 * The validation logic checks fund, budget, budget expense class, and price.
 
 ## 1.2.0 2021-12-09
