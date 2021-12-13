@@ -1,8 +1,8 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 
-public class EResource extends JsonDataObject {
+public class EResource extends FolioEntity {
 
   public static final String P_ACTIVATED = "activated";
   public static final String P_CREATE_INVENTORY = "createInventory";
@@ -15,7 +15,7 @@ public class EResource extends JsonDataObject {
   public static final String P_PUBLIC_NOTE = "publicNote";
   public static final String P_RELATIONSHIP_ID = "relationshipId";
 
-  public static EResource fromMarcRecord(MarcRecordMapping mappedMarc)
+  public static EResource fromMarcRecord(MarcToFolio mappedMarc)
           throws Exception {
 
     return new EResource()

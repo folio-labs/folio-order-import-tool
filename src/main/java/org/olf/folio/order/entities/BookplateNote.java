@@ -1,9 +1,8 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.olf.folio.order.Constants;
-import org.olf.folio.order.MarcRecordMapping;
 
-public class BookplateNote extends JsonDataObject {
+public class BookplateNote extends FolioEntity {
   public static final String P_HOLDINGS_NOTE_TYPE_ID = "holdingsNoteTypeId";
   public static final String P_ITEM_NOTE_TYPE_ID = "itemNoteTypeId";
   public static final String P_NOTE = "note";

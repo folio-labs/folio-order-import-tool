@@ -2,7 +2,7 @@ package org.olf.folio.order.imports;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 
 public class RecordResult {
 
@@ -56,7 +56,7 @@ public class RecordResult {
     return recordResultJson.getJSONArray(P_FLAGS);
   }
 
-  public RecordResult setInputMarcData(MarcRecordMapping mappedMarc) {
+  public RecordResult setInputMarcData(MarcToFolio mappedMarc) {
     data().put(P_TITLE, mappedMarc.title());
     data().put(P_ISBN, mappedMarc.hasISBN() ? mappedMarc.getISBN() : "No ISBN");
     data().put(P_SOURCE, mappedMarc.getRecord().toString());
@@ -96,7 +96,7 @@ public class RecordResult {
     return this;
   }
 
-  public RecordResult addValidationMessage(String errorMessage) {
+  public RecordResult addValidationMessageIfAny(String errorMessage) {
     if (errorMessage != null) {
       recordResultJson.put(P_HAS_VALIDATION_ERRORS,true);
       validationErrors().put(errorMessage);

@@ -1,15 +1,15 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 
-public class VendorDetail extends JsonDataObject {
+public class VendorDetail extends FolioEntity {
 
   public static final String P_INSTRUCTIONS = "instructions";
   public static final String P_VENDOR_ACCOUNT = "vendorAccount";
   public static final String P_REFERENCE_NUMBERS = "referenceNumbers";
 
-  public static VendorDetail fromMarcRecord (MarcRecordMapping mappedMarc) {
+  public static VendorDetail fromMarcRecord (MarcToFolio mappedMarc) {
     return new VendorDetail()
             .putInstructions("")
             .putVendorAccount(

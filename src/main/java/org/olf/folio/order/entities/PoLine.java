@@ -1,14 +1,15 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
+import org.olf.folio.order.mapping.MarcMapLambda;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class PoLine extends JsonDataObject {
+public class PoLine extends FolioEntity {
   public static final String P_ID = "id";
   public static final String P_PURCHASE_ORDER_ID = "purchaseOrderId";
   public static final String P_ORDER_FORMAT = "orderFormat";
@@ -39,7 +40,7 @@ public class PoLine extends JsonDataObject {
   public static final String P_TAGS = "tags";
   public static final String P_INSTANCE_ID = "instanceId";
 
-  public static PoLine fromMarcRecord(UUID orderId, MarcRecordMapping mappedMarc)
+  public static PoLine fromMarcRecord(UUID orderId, MarcToFolio mappedMarc)
           throws Exception {
 
     PoLine poLine = new PoLine()
@@ -58,8 +59,10 @@ public class PoLine extends JsonDataObject {
     if (mappedMarc.hasVendorItemId()) {
       poLine.putVendorDetail(VendorDetail.fromMarcRecord(mappedMarc));
     }
-    poLine.putTagsIfPresent(Tags.fromMarcRecord(mappedMarc))
-            .putCost(Cost.fromMarcRecord(mappedMarc))
+    if (mappedMarc instanceof MarcMapLambda) {
+      poLine.putTagsIfPresent(Tags.fromMarcRecord((MarcMapLambda) mappedMarc));
+    }
+    poLine.putCost(Cost.fromMarcRecord(mappedMarc))
             .putLocations(new JSONArray().put(PoLineLocation.fromMarcRecord(mappedMarc).asJson()))
             .putTitleOrPackage(mappedMarc.title())
             .putAcquisitionMethod(mappedMarc.acquisitionMethodId())

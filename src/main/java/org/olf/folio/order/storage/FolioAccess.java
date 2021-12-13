@@ -15,7 +15,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.olf.folio.order.Config;
-import org.olf.folio.order.dataobjects.JsonDataObject;
+import org.olf.folio.order.entities.FolioEntity;
 
 import java.nio.charset.Charset;
 
@@ -109,8 +109,7 @@ public class FolioAccess {
     try {
       return callApiGet(url).getJSONArray(nameOfArray);
     } catch (ClassCastException cce) {
-      logger.error("GET result from " + url + " did not return an array by the name " + nameOfArray);
-      return null;
+      throw new Exception ("GET result from " + url + " did not return an array by the name " + nameOfArray);
     }
   }
 
@@ -128,7 +127,7 @@ public class FolioAccess {
     }
   }
 
-  public static String callApiPut(String apiPath, JsonDataObject object) throws Exception {
+  public static String callApiPut(String apiPath, FolioEntity object) throws Exception {
     return callApiPut(apiPath + "/" + object.getId(), object.asJson());
   }
 
@@ -154,19 +153,21 @@ public class FolioAccess {
     HttpResponse response = client.execute(request);
     int responseCode = response.getStatusLine().getStatusCode();
 
-    String feedback = String.format(
+    logger.debug(String.format(
             "PUT to %s. Response %s%n response body %s",
-            uri, responseCode, body.toString(2));
-    logger.info(feedback);
+            uri, responseCode, body.toString(2)));
 
     if (responseCode > 399) {
-      throw new Exception(feedback);
+      String message = String.format("API error. Status code %s, message %s%n%s",
+              responseCode, response.getStatusLine().getReasonPhrase(),body.toString(2));
+      logger.info(message);
+      throw new Exception(message);
     }
 
     return "ok";
   }
 
-  public static JSONObject callApiPostWithUtf8(String apiPath, JsonDataObject object) throws Exception {
+  public static JSONObject callApiPostWithUtf8(String apiPath, FolioEntity object) throws Exception {
     return callApiPostWithUtf8(apiPath, object.asJson());
   }
 

@@ -1,12 +1,12 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.MarcMapLambda;
 
-public class Tags extends JsonDataObject {
+public class Tags extends FolioEntity {
   public static final String P_TAG_LIST = "tagList";
 
-  public static Tags fromMarcRecord(MarcRecordMapping mappedMarc) {
+  public static Tags fromMarcRecord(MarcMapLambda mappedMarc) {
     JSONArray tagList = new JSONArray();
     if (mappedMarc.hasObjectCode()) {
       tagList.put(mappedMarc.objectCode());

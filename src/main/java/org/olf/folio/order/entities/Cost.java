@@ -1,15 +1,15 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 
-public class Cost extends JsonDataObject {
+public class Cost extends FolioEntity {
   public static final String P_QUANTITY_PHYSICAL = "quantityPhysical";
   public static final String P_LIST_UNIT_PRICE = "listUnitPrice";
   public static final String P_QUANTITY_ELECTRONIC = "quantityElectronic";
   public static final String P_LIST_UNIT_PRICE_ELECTRONIC = "listUnitPriceElectronic";
   public static final String P_CURRENCY = "currency";
 
-  public static Cost fromMarcRecord(MarcRecordMapping mappedMarc) {
+  public static Cost fromMarcRecord(MarcToFolio mappedMarc) {
     Cost cost = new Cost();
     if (mappedMarc.electronic()) {
       cost.putQuantityElectronic(1);

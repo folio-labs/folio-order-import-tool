@@ -1,8 +1,8 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
-import org.olf.folio.order.MarcRecordMapping;
+import org.olf.folio.order.mapping.MarcToFolio;
 
-public class Fund extends JsonDataObject {
+public class Fund extends FolioEntity {
   public static final String P_DISTRIBUTION_TYPE = "distributionType";
   public static final String V_PERCENTAGE = "percentage";
   public static final String P_VALUE = "value";
@@ -10,7 +10,7 @@ public class Fund extends JsonDataObject {
   public static final String P_CODE = "code";
   public static final String P_EXPENSE_CLASS_ID = "expenseClassId";
 
-  public static Fund fromMarcRecord(MarcRecordMapping mappedMarc) throws Exception{
+  public static Fund fromMarcRecord(MarcToFolio mappedMarc) throws Exception{
     return new Fund()
             .putDistributionType(V_PERCENTAGE)
             .putValue(100)

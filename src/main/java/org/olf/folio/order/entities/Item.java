@@ -1,10 +1,12 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class Item extends JsonDataObject {
+public class Item extends FolioEntity {
   public static final String P_NOTES = "notes";
+  public static final String P_BARCODE = "barcode";
+  public static final String P_MATERIAL_TYPE_ID = "materialTypeId";
 
   public static Item fromJson (JSONObject itemJson) {
     Item item = new Item();
@@ -18,6 +20,10 @@ public class Item extends JsonDataObject {
     }
     getNotes().put(note);
     return this;
+  }
+
+  public Item putBarcode (String barcode) {
+    return (Item) putString(P_BARCODE, barcode);
   }
 
   public Item addBookplateNote (BookplateNote note) {

@@ -1,8 +1,8 @@
-package org.olf.folio.order.dataobjects;
+package org.olf.folio.order.entities;
 
 import org.json.JSONArray;
 
-public class Note extends JsonDataObject {
+public class Note extends FolioEntity {
 
   public static final String P_LINKS = "links";
   public static final String P_TYPE_ID = "typeId";

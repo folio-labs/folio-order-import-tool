@@ -1,4 +1,4 @@
-package org.olf.folio.order;
+package org.olf.folio.order.mapping;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -6,8 +6,19 @@ import org.marc4j.marc.DataField;
 import org.marc4j.marc.Record;
 import org.marc4j.marc.Subfield;
 import org.marc4j.marc.VariableField;
-import org.olf.folio.order.dataobjects.ElectronicAccessUrl;
+import org.olf.folio.order.Config;
+import org.olf.folio.order.Constants;
+import org.olf.folio.order.entities.BookplateNote;
+import org.olf.folio.order.entities.ElectronicAccessUrl;
+import org.olf.folio.order.entities.HoldingsRecord;
+import org.olf.folio.order.entities.Instance;
+import org.olf.folio.order.entities.InstanceIdentifier;
+import org.olf.folio.order.entities.Item;
+import org.olf.folio.order.entities.ProductIdentifier;
+import org.olf.folio.order.imports.RecordResult;
 import org.olf.folio.order.storage.FolioData;
+import org.olf.folio.order.storage.ValidationLookups;
+import org.olf.folio.order.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,8 +29,7 @@ import java.util.Map;
 
 import static org.olf.folio.order.Constants.CONTRIBUTOR_NAME_TYPES_MAP;
 
-public class MarcRecordMapping {
-
+public abstract class MarcToFolio {
   Record marcRecord;
   DataField d245;
   DataField d250;
@@ -30,44 +40,42 @@ public class MarcRecordMapping {
   boolean has856;
 
   // Mappings 245
-  private static final String TITLE_ONE = "a";
-  private static final String TITLE_TWO = "b";
-  private static final String TITLE_THREE = "c";
+  protected static final String TITLE_ONE = "a";
+  protected static final String TITLE_TWO = "b";
+  protected static final String TITLE_THREE = "c";
 
   // Mappings 250
-  private static final String EDITION = "a";
+  protected static final String EDITION = "a";
 
   // Mappings 260, 264
-  private static final String PUBLISHER        = "b";
-  private static final String PUBLICATION_DATE = "c";
+  protected static final String PUBLISHER        = "b";
+  protected static final String PUBLICATION_DATE = "c";
 
   // Mappings 980
-  private static final String FUND_CODE             = "b";
-  private static final String VENDOR_ITEM_ID        = "c";
-  private static final String DESCRIPTION           = "e";
-  private static final String SELECTOR              = "f";
-  private static final String VENDOR_ACCOUNT        = "g";
-  private static final String VENDOR_INVOICE_NO     = "h";
-  private static final String INVOICE_DATE          = "i";
-  private static final String SUB_TOTAL             = "j";
-  private static final String CURRENCY              = "k";
-  private static final String ACCESS_PROVIDER_CODE  = "l";
-  private static final String PRICE                 = "m";
-  private static final String NOTES                 = "n";
-  private static final String OBJECT_CODE           = "o";
-  private static final String DONOR                 = "p";
-  private static final String PROJECT_CODE          = "r";
-  private static final String BILL_TO               = "s";
-  private static final String ACQUISITION_METHOD    = "t";
-  private static final String REF_NUMBER_TYPE       = "u";
-  private static final String VENDOR_CODE           = "v";
-  private static final String RUSH                  = "w";
-  private static final String RECEIVING_NOTE        = "x";
-  private static final String EXPENSE_CLASS_CODE    = "y";
-  private static final String ELECTRONIC_INDICATOR  = "z";
+  protected static final String FUND_CODE             = "b";
+  protected static final String VENDOR_ITEM_ID        = "c";
+  protected static final String DESCRIPTION           = "e";
+  protected static final String SELECTOR              = "f";
+  protected static final String VENDOR_ACCOUNT        = "g";
+  protected static final String VENDOR_INVOICE_NO     = "h";
+  protected static final String INVOICE_DATE          = "i";
+  protected static final String SUB_TOTAL             = "j";
+  protected static final String CURRENCY              = "k";
+  protected static final String ACCESS_PROVIDER_CODE  = "l";
+  protected static final String PRICE                 = "m";
+  protected static final String NOTES                 = "n";
+  protected static final String DONOR                 = "p";
+  protected static final String BILL_TO               = "s";
+  protected static final String ACQUISITION_METHOD    = "t";
+  protected static final String REF_NUMBER_TYPE       = "u";
+  protected static final String VENDOR_CODE           = "v";
+  protected static final String RUSH                  = "w";
+  protected static final String RECEIVING_NOTE        = "x";
+  protected static final String EXPENSE_CLASS_CODE    = "y";
+  protected static final String ELECTRONIC_INDICATOR  = "z";
 
   // Mappings 856
-  private static final String USER_LIMIT           = "x";
+  protected static final String USER_LIMIT           = "x";
 
   // For reporting missing mandatory mappings in 980
   public static final Map<String, String> FOLIO_TO_MARC_FIELD_MAP = new HashMap<>();
@@ -78,7 +86,7 @@ public class MarcRecordMapping {
   public static final String MARC_980_V = "980$v";
   public static final String MARC_980_M = "980$m";
 
-  public MarcRecordMapping(Record marcRecord) {
+  public MarcToFolio(Record marcRecord) {
     this.marcRecord = marcRecord;
     if (FOLIO_TO_MARC_FIELD_MAP.isEmpty()) {
       FOLIO_TO_MARC_FIELD_MAP.put(PRICE_LABEL, MARC_980_M);
@@ -206,27 +214,7 @@ public class MarcRecordMapping {
     return null;
   }
 
-  /**
-   * @return 980$o
-   */
-  public String objectCode() {
-    return d980.getSubfieldsAsString(OBJECT_CODE);
-  }
 
-  public boolean hasObjectCode() {
-    return objectCode() != null && !objectCode().isEmpty();
-  }
-
-  /**
-   * @return 980$r
-   */
-  public String projectCode() {
-    return d980.getSubfieldsAsString(PROJECT_CODE);
-  }
-
-  public boolean hasProjectCode() {
-    return projectCode() != null && !projectCode().isEmpty();
-  }
 
   /**
    * @return 980$b
@@ -529,6 +517,7 @@ public class MarcRecordMapping {
     return contributors;
   }
 
+
   private JSONObject makeContributorForOrderLine(DataField field, String contributorNameType) {
     Subfield subfield = field.getSubfield( 'a' );
     JSONObject contributor = new JSONObject();
@@ -572,7 +561,23 @@ public class MarcRecordMapping {
   }
 
   public JSONArray getElectronicAccess (String defaultLinkText) {
-    return ElectronicAccessUrl.getElectronicAccessFromMarcRecord(this, defaultLinkText);
+    return ElectronicAccessUrl.getElectronicAccessFromMarcRecord( this, defaultLinkText);
+  }
+
+  public String locationName() {
+    return ( electronic() ?
+            (Config.importInvoice && hasInvoice()) ?
+                    Config.permELocationWithInvoiceImport : Config.permELocationName
+            : ( Config.importInvoice && hasInvoice() ) ?
+                    Config.permLocationWithInvoiceImport : Config.permLocationName);
+  }
+
+  public String locationId() throws Exception {
+      return FolioData.getLocationIdByName(locationName());
+  }
+
+  public String materialTypeId() throws Exception {
+    return Constants.MATERIAL_TYPES_MAP.get(Config.materialType);
   }
 
   public boolean hasISBN() {
@@ -595,11 +600,6 @@ public class MarcRecordMapping {
     return !getDataFieldsForIdentifierType(Constants.SYSTEM_CONTROL_NUMBER).isEmpty();
   }
 
-  public boolean has (String string) {
-    return string != null && !string.isEmpty();
-  }
-
-
   public String getISBN() {
     List<DataField> isbnFields =
             getDataFieldsForIdentifierType(Constants.ISBN);
@@ -610,13 +610,54 @@ public class MarcRecordMapping {
     }
   }
 
+  public JSONArray productIdentifiers () {
+    JSONArray identifiersJson = new JSONArray();
+    for (String identifierTypeId : Arrays.asList(
+            Constants.ISBN,
+            Constants.ISSN,
+            Constants.OTHER_STANDARD_IDENTIFIER,
+            Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER)) {
+      for (DataField identifierField : getDataFieldsForIdentifierType(identifierTypeId)) {
+        String value = getIdentifierValue( identifierTypeId, identifierField);
+        if (has(value) && doIncludeThisIdentifier(identifierTypeId, value)) {
+            identifiersJson.put(new ProductIdentifier()
+                    .putProductId(value)
+                    .putProductIdType(identifierTypeId).asJson());
+        }
+      }
+    }
+    return identifiersJson;
+  }
+
+  public JSONArray instanceIdentifiers () {
+    JSONArray identifiersJson = new JSONArray();
+    for (String identifierTypeId : Arrays.asList(
+            Constants.ISBN,
+            Constants.INVALID_ISBN,
+            Constants.ISSN,
+            Constants.INVALID_ISSN,
+            Constants.LINKING_ISSN,
+            Constants.OTHER_STANDARD_IDENTIFIER,
+            Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER,
+            Constants.SYSTEM_CONTROL_NUMBER)) {
+      for (DataField identifierField : getDataFieldsForIdentifierType(identifierTypeId)) {
+        String value = getIdentifierValueWithQualifiers( identifierTypeId, identifierField);
+        if (has(value) && doIncludeThisIdentifier(identifierTypeId, value)) {
+            identifiersJson.put(new InstanceIdentifier().putValue(value).putIdentifierTypeId(
+                    identifierTypeId).asJson());
+        }
+      }
+    }
+    return identifiersJson;
+  }
+
   /**
    * Finds identifier fields in the provided MARC records by tag, subfield tag(s) and possibly indicator2 -- all
    * dependent on the given identifier type
    * @param requestedIdentifierType The Identifier type to find data fields for
    * @return List of identifier fields matching the applicable criteria for the given identifier type
    */
-  public List<DataField> getDataFieldsForIdentifierType( String requestedIdentifierType) {
+  private List<DataField> getDataFieldsForIdentifierType( String requestedIdentifierType) {
     List<DataField> identifierFields = new ArrayList<>();
     switch(requestedIdentifierType)
     {
@@ -658,7 +699,7 @@ public class MarcRecordMapping {
    * @param withAnyOfTheseSubFields One or more subfield codes, of which at least one must be present for the field to be included
    * @return A list of Identifier fields matching the given tag and subfield code criteria
    */
-  public List<DataField> findIdentifierFieldsByTagAndSubFields( String tagToFind, char ...withAnyOfTheseSubFields) {
+  private List<DataField> findIdentifierFieldsByTagAndSubFields( String tagToFind, char ...withAnyOfTheseSubFields) {
     List<DataField> fieldsFound = new ArrayList<>();
     List<VariableField> fieldsFoundForTag = marcRecord.getVariableFields(tagToFind);
     for (VariableField field : fieldsFoundForTag) {
@@ -673,16 +714,12 @@ public class MarcRecordMapping {
     return fieldsFound;
   }
 
-  private static String getInitialDigits(String s) {
-    String trimmed = s.trim();
-    StringBuilder f = new StringBuilder();
-    for (int i = 0; i < trimmed.length(); i++)
-      if (Character.isDigit(trimmed.charAt(i))) {
-        f.append(trimmed.charAt(i));
-      } else {
-        break;
-      }
-    return f.length()>0 ? f.toString() : s;
+  private static String getIdentifierValue(String identifierType, DataField identifierField) {
+    return getIdentifierValue(identifierType, identifierField, false);
+  }
+
+  private static String getIdentifierValueWithQualifiers(String identifierType, DataField identifierField) {
+    return getIdentifierValue(identifierType, identifierField, true);
   }
 
   /**
@@ -693,7 +730,7 @@ public class MarcRecordMapping {
    * @param includeQualifiers Indication whether to add additional subfield(s) to the identifier value
    * @return The resulting identifier value
    */
-  public static String getIdentifierValue ( String identifierType, DataField identifierField, boolean includeQualifiers) {
+  private static String getIdentifierValue ( String identifierType, DataField identifierField, boolean includeQualifiers) {
     String identifierValue;
     switch ( identifierType ) {
       case Constants.ISBN:                           // 020 using $a, extend with c,q
@@ -739,6 +776,153 @@ public class MarcRecordMapping {
         break;
     }
     return identifierValue;
+  }
+
+  private static String getInitialDigits(String s) {
+    String trimmed = s.trim();
+    StringBuilder f = new StringBuilder();
+    for (int i = 0; i < trimmed.length(); i++)
+      if (Character.isDigit(trimmed.charAt(i))) {
+        f.append(trimmed.charAt(i));
+      } else {
+        break;
+      }
+    return f.length()>0 ? f.toString() : s;
+  }
+
+  private static boolean doIncludeThisIdentifier(String identifierTypeId, String value) {
+    if (identifierTypeId.equals(Constants.ISBN)) {
+      if (Utils.isInvalidIsbn(value)) {
+        return !Config.onIsbnInvalidRemoveIsbn;
+      }
+    }
+    return true;
+  }
+
+  public void populateInstance(Instance instance) throws Exception {
+    instance.putTitle(title())
+            .putSource(Instance.V_FOLIO)
+            .putInstanceTypeId(FolioData.getInstanceTypeId("text"))
+            .putIdentifiers(instanceIdentifiers())
+            .putContributors(getContributorsForInstance())
+            .putDiscoverySuppress(false)
+            .putElectronicAccess(getElectronicAccess(Config.textForElectronicResources))
+            .putNatureOfContentTermIds(new JSONArray())
+            .putPrecedingTitles(new JSONArray())
+            .putSucceedingTitles(new JSONArray());
+  }
+
+  public void populateHoldingsRecord(HoldingsRecord holdingsRecord) throws Exception {
+    holdingsRecord.putElectronicAccess(getElectronicAccess(Config.textForElectronicResources));
+    if (electronic()) {
+      holdingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName("Electronic"));
+      if (hasDonor()) {
+        holdingsRecord.addBookplateNote(
+                BookplateNote.createElectronicBookplateNote(donor()));
+      }
+    }
+  }
+
+  public boolean updateItem () {
+    return (hasDonor() && !electronic());
+  }
+
+  public void populateItem(Item item) throws Exception {
+    item.addBookplateNote(BookplateNote.createPhysicalBookplateNote(donor()));
+  }
+
+  public boolean validate(RecordResult outcome) throws Exception {
+
+    outcome.setInputMarcData(this);
+
+    // Sanity check
+    if (!has980()) {
+      outcome.addValidationMessageIfAny("Record is missing the 980 field");
+      return false;
+    }
+    // Check for mandatory fields. Check that mappings to FOLIO IDs resolve.
+    if (!hasFundCode()) {
+      outcome.addValidationMessageIfAny("Record is missing required fund code (908$b)");
+    } else {
+      outcome.addValidationMessageIfAny(ValidationLookups.validateFund(fundCode()));
+    }
+    if (! hasVendorCode()) {
+      outcome.addValidationMessageIfAny("Record is missing required vendor code");
+    } else {
+      outcome.addValidationMessageIfAny(ValidationLookups.validateOrganization(vendorCode()));
+    }
+    if (!hasPrice()) {
+      outcome.addValidationMessageIfAny("Record is missing required price info (980$m)");
+    }
+    if (hasBillTo()) {
+      outcome.addValidationMessageIfAny(ValidationLookups.validateAddress(billTo()));
+    }
+    if (hasExpenseClassCode()) {
+      if (FolioData.getExpenseClassId(expenseClassCode())==null) {
+        outcome.addValidationMessageIfAny(
+                        "No expense class with the code (" + expenseClassCode() + ") found in FOLIO.");
+      } else {
+        if (hasBudgetId()) {
+          /*
+          if (ValidationLookups.validateBudgetExpenseClass(budgetId(), expenseClassId()) != null) {
+            outcome.addValidationMessageIfAny(
+                    String.format("No budget expense class found for fund code (%s) and expense class (%s).",
+                            fundCode(), expenseClassCode()));
+          }
+          */
+        }
+      }
+    }
+    if (hasAcquisitionMethod()) {
+      if (Config.acquisitionMethodsApiPresent) {
+        if (FolioData.getAcquisitionMethodId(acquisitionMethodValue()) == null) {
+          outcome.addValidationMessageIfAny(
+                  "No acquisition method with the value (" + acquisitionMethodValue() + ") found in FOLIO.");
+        }
+      }
+    }
+    if (Config.importInvoice) {
+      outcome.addValidationMessageIfAny(
+              ValidationLookups.validateRequiredValuesForInvoice(title(), getRecord()));
+    }
+
+    // Flag issues with ISBN or other identifiers
+    if (hasISBN() && Utils.isInvalidIsbn(getISBN())) {
+      if (Config.V_ON_ISBN_INVALID_REMOVE_ISBN.equalsIgnoreCase(Config.onIsbnInvalid)) {
+        outcome.setFlagIfNotNull(
+                String.format("ISBN %s is not valid. Will remove the ISBN to continue.", getISBN())
+        );
+      } else if (Config.V_ON_ISBN_INVALID_REPORT_ERROR.equalsIgnoreCase(Config.onIsbnInvalid)) {
+        outcome.addValidationMessageIfAny("ISBN is invalid")
+                .markSkipped(Config.onValidationErrorsSKipFailed);
+      }
+    } else if (!hasISBN() && !hasISSN() && !hasPublisherOrDistributorNumber() &&
+            !hasSystemControlNumber() && !hasOtherStandardIdentifier()) {
+      String existingInstancesMessage;
+      JSONObject instances = FolioData.getInstancesByQuery("title=\"" + title() + "\"");
+      int totalRecords = instances.getInt("totalRecords");
+      if (totalRecords > 0) {
+        Instance firstExistingInstance  = Instance.fromJson((JSONObject) instances.getJSONArray(FolioData.INSTANCES_ARRAY).get(0));
+        existingInstancesMessage = String.format(
+                "%s in Inventory with the same title%sHRID %s",
+                (totalRecords>1 ? " There are already " + totalRecords + " instances" : " There is already an Instance"),
+                (totalRecords>1 ? ", for example one with " : " and "),
+                firstExistingInstance.getHrid());
+      } else {
+        existingInstancesMessage = "Found no existing Instances with that exact title.";
+      }
+      outcome.setFlagIfNotNull(
+              "No ISBN, ISSN, Publisher number or distributor number, system control number," +
+                      " or other standard identifier found in the record." +
+                      " This order import might trigger the creation of a new Instance in FOLIO."
+                      + existingInstancesMessage);
+    }
+
+    return !outcome.failedValidation();
+  }
+
+  public boolean has (String string) {
+    return string != null && !string.isEmpty();
   }
 
 }
