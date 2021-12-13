@@ -11,15 +11,19 @@ import java.util.List;
 import java.util.UUID;
 
 public class CompositePurchaseOrder extends FolioEntity {
+  // Constant values
+  public static final String V_ONE_TIME = "One-Time";
+  public static final String V_OPEN = "Open";
+  public static final boolean V_RE_ENCUMBER = true;
+  public static final boolean V_APPROVED = true;
+
   public static final String P_PO_NUMBER = "poNumber";
   public static final String P_VENDOR = "vendor";
   public static final String P_ORDER_TYPE = "orderType";
-  public static final String V_ONE_TIME = "One-Time";
   public static final String P_RE_ENCUMBER = "reEncumber";
   public static final String P_ID = "id";
   public static final String P_APPROVED = "approved";
   public static final String P_WORKFLOW_STATUS = "workflowStatus";
-  public static final String V_OPEN = "Open";
   public static final String P_BILL_TO = "billTo";
   public static final String P_COMPOSITE_PO_LINES = "compositePoLines";
 
@@ -37,9 +41,9 @@ public class CompositePurchaseOrder extends FolioEntity {
                     .putPoNumber(FolioData.getNextPoNumberFromOrders())
                     .putVendor(mappedMarc.vendorUuid())
                     .putOrderType(V_ONE_TIME)
-                    .putReEncumber(true)
+                    .putReEncumber(V_RE_ENCUMBER)
                     .putId(orderId)
-                    .putApproved(true)
+                    .putApproved(V_APPROVED)
                     .putWorkflowStatus(V_OPEN)
                     .putBillToIfPresent(mappedMarc.billToUuid())
                     .putCompositePoLines(

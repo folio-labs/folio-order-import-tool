@@ -4,8 +4,11 @@ import org.olf.folio.order.entities.FolioEntity;
 import org.olf.folio.order.mapping.MarcToFolio;
 
 public class Fund extends FolioEntity {
-  public static final String P_DISTRIBUTION_TYPE = "distributionType";
+  // Constant values
   public static final String V_PERCENTAGE = "percentage";
+  public static final int DISTRIBUTION_VALUE = 100;
+
+  public static final String P_DISTRIBUTION_TYPE = "distributionType";
   public static final String P_VALUE = "value";
   public static final String P_FUND_ID = "fundId";
   public static final String P_CODE = "code";
@@ -14,7 +17,7 @@ public class Fund extends FolioEntity {
   public static Fund fromMarcRecord(MarcToFolio mappedMarc) throws Exception{
     return new Fund()
             .putDistributionType(V_PERCENTAGE)
-            .putValue(100)
+            .putValue(DISTRIBUTION_VALUE)
             .putFundId(mappedMarc.fundId())
             .putCode(mappedMarc.fundCode())
             .putExpenseClassIdIfPresent(mappedMarc.expenseClassId());

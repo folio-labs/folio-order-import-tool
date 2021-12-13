@@ -4,6 +4,9 @@ import org.olf.folio.order.entities.FolioEntity;
 import org.olf.folio.order.mapping.MarcToFolio;
 
 public class EResource extends FolioEntity {
+  // Constants
+  public static final boolean ACTIVATED = false;
+  public static final boolean TRIAL = false;
 
   public static final String P_ACTIVATED = "activated";
   public static final String P_CREATE_INVENTORY = "createInventory";
@@ -20,10 +23,10 @@ public class EResource extends FolioEntity {
           throws Exception {
 
     return new EResource()
-                    .putActivated(false)
+                    .putActivated(ACTIVATED)
                     .putCreateInventory(V_INSTANCE_HOLDING)
                     .putUserLimitIfPresent(mappedMarc.userLimit())
-                    .putTrial(false)
+                    .putTrial(TRIAL)
                     .putAccessProvider(mappedMarc.accessProviderUUID());
   }
 

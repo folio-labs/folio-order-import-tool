@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.UUID;
 
 public class PoLine extends FolioEntity {
+  // CONSTANT VALUES
+  public static final String V_USER = "User";
+
   public static final String P_ID = "id";
   public static final String P_PURCHASE_ORDER_ID = "purchaseOrderId";
   public static final String P_ORDER_FORMAT = "orderFormat";
@@ -22,7 +25,6 @@ public class PoLine extends FolioEntity {
   public static final String P_PHYSICAL = "physical";
   public static final String P_VENDOR_DETAIL = "vendorDetail";
   public static final String P_SOURCE = "source";
-  public static final String V_USER = "User";
   public static final String P_COST = "cost";
   public static final String P_LOCATIONS = "locations";
   public static final String P_TITLE_OR_PACKAGE = "titleOrPackage";

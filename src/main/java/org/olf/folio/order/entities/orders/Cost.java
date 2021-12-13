@@ -9,14 +9,16 @@ public class Cost extends FolioEntity {
   public static final String P_QUANTITY_ELECTRONIC = "quantityElectronic";
   public static final String P_LIST_UNIT_PRICE_ELECTRONIC = "listUnitPriceElectronic";
   public static final String P_CURRENCY = "currency";
+  public static final int QUANTITY_ELECTRONIC = 1;
+  public static final int QUANTITY_PHYSICAL = 1;
 
   public static Cost fromMarcRecord(MarcToFolio mappedMarc) {
     Cost cost = new Cost();
     if (mappedMarc.electronic()) {
-      cost.putQuantityElectronic(1);
+      cost.putQuantityElectronic(QUANTITY_ELECTRONIC);
       cost.putListUnitPriceElectronic(mappedMarc.price());
     } else {
-      cost.putQuantityPhysical(1);
+      cost.putQuantityPhysical(QUANTITY_PHYSICAL);
       cost.putListUnitPrice(mappedMarc.price());
     }
     cost.putCurrency(mappedMarc.currency());

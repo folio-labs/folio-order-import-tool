@@ -801,10 +801,10 @@ public abstract class MarcToFolio {
   public void populateInstance(Instance instance) throws Exception {
     instance.putTitle(title())
             .putSource(Instance.V_FOLIO)
-            .putInstanceTypeId(FolioData.getInstanceTypeId("text"))
+            .putInstanceTypeId(FolioData.getInstanceTypeId(Instance.INSTANCE_TYPE))
             .putIdentifiers(instanceIdentifiers())
             .putContributors(getContributorsForInstance())
-            .putDiscoverySuppress(false)
+            .putDiscoverySuppress(Instance.DISCOVERY_SUPPRESS)
             .putElectronicAccess(getElectronicAccess(Config.textForElectronicResources))
             .putNatureOfContentTermIds(new JSONArray())
             .putPrecedingTitles(new JSONArray())
@@ -814,7 +814,7 @@ public abstract class MarcToFolio {
   public void populateHoldingsRecord(HoldingsRecord holdingsRecord) throws Exception {
     holdingsRecord.putElectronicAccess(getElectronicAccess(Config.textForElectronicResources));
     if (electronic()) {
-      holdingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName("Electronic"));
+      holdingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName(HoldingsRecord.V_HOLDINGS_TYPE_ELECTRONIC));
       if (hasDonor()) {
         holdingsRecord.addBookplateNote(
                 BookplateNote.createElectronicBookplateNote(donor()));
