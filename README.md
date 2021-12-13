@@ -108,7 +108,7 @@ The startup configuration has parameters controlling FOLIO access, start-up beha
 3) if the provided config value is not a valid number, the default will apply
 
 ## What data are populated to FOLIO
-The tool populates FOLIO Orders, Inventory and utility modules with data from three different sources: 
+The tool populates FOLIO Orders and Inventory with data from three different sources: 
 1) The incoming MARC records
 2) Static values defined as configuration parameters
 3) Static values hard-coded in the program. 
