@@ -21,17 +21,17 @@ When running an actual import, the exact same checks are performed for each reco
 
 ## If you want to try it
 
-* It expects a properties file to be given as an environment variable on the command line, like `-Dconfig=/path/to/your.properties`. If no properties file is specified, it will look for one here: `/yourhomefolder/order/import.properties`.
-* You will have to add your Okapi address, FOLIO tenant, userid and password, and you may have to adjust the file upload path where it will save
+* Clone the repo.
+* The tool expects a properties file to be given as an environment variable on the command line, like `-Dconfig=/path/to/your.properties`, or -- if no properties file is specified -- it expects to find one here: `/yourhomefolder/order/import.properties`.
+* You will have to set your Okapi address, FOLIO tenant, userid and password in the properties, and you may have to adjust the file upload path where it will save
   the uploaded file and store a history of validations and imports, see the [How to configure the service](#how-to-configure-the-service)
-* clone the repo
-* call: `mvn jetty:run [-Dconfig=path-to-properties-file]`
-* It should start a jetty server, and you should be able to point your browser to http://localhost:8888/import and try
+* Call: `mvn jetty:run [-Dconfig=path-to-properties-file]`
+* If the configuration is okay, it should start a jetty server, and you should be able to point your browser to http://localhost:8888/import and try
   it
-* Unless `exitOnConfigErrors` is set to false in the properties, the service will stop if it detects fatal configuration problems
-* Unless `exitOnFailedIdLookups` is set to false, the service will stop if it could not find FOLIO UUIDs for names or codes
-  defined in the properties.
+* However, unless `exitOnConfigErrors` is set to false in the properties, the service will stop if it detects fatal configuration problems
 * Unless `exitOnAccessErrors` is set to false, the service will stop if it fails to log in to Okapi. 
+* And, unless `exitOnFailedIdLookups` is set to false, the service will stop if it could not find FOLIO UUIDs for names or codes
+  defined in the properties.
 * We've included example MARC files, but you will have to update them with your vendor, fund, object codes, etc.
 * To effectuate changes of import properties, restart the service
 
