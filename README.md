@@ -195,7 +195,7 @@ The desired mapping is selected at startup by setting the parameter `marcMapping
 
 ## Validation of incoming MARC records
 
-Each incoming will go through following checks on analyze or import:
+Each incoming record will go through following checks on analyze or import:
 
 * The record has a MARC field 980.
 * The record provides a fund code that exists in FOLIO Finance.
@@ -309,9 +309,6 @@ This is how the tool uses FOLIO's APIs:
   ]
 }
 ```
-
-
-
 
 ### Development notes
 
