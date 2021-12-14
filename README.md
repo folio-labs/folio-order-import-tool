@@ -1,40 +1,38 @@
 # FOLIO Order import tool
 
-Workaround for importing orders from MARC records until FOLIO data import supports importing MARC records to create
+Workaround for importing orders from MARC records until FOLIO Data Import supports importing MARC records to create
 orders.
 
 ## What does it do?
 
-* It takes an uploaded file that contains MARC records and creates orders, instances, holdings and items in FOLIO Orders and FOLIO Inventory.
-* It uses the 980 field to get the fund code, vendor code, price, tag, notes and electronic/print indicator
-* It only creates items if the material is print (which should be indicated in the 980$z field) - It looks for the
-  values ELECTRONIC or PRINT
+* It takes an uploaded file that contains MARC records, and creates orders, instances, holdings and items in FOLIO Orders and FOLIO Inventory.
+* It uses the 980 field to get fund code, vendor code, price, notes, electronic/print indicator, etc. to create the order.
 * It lets FOLIO Orders create the instance, holdings and item records using the "createInventory" value in the order line
-* It uses the property file to determine locations, fiscal year, note type, and
-  material type and default text for electronic resources (in case subfield z is missing)
+* It only asks FOLIO Orders to create items if the material is print
+* It uses a property file to determine constants such as locations, fiscal year, note type, and material type and default text for electronic resources
 
-For details, see [data populated to FOLIO](#what-data-are-populated-to-folio).
+For details, see [What data are populated to FOLIO](#what-data-are-populated-to-folio).
 
-### Two modes: Validate and Import
+### It has a second mode, validate only
 
-The MARC file can be run through validation without actually importing anything to FOLIO. Choose a MARC file in the tool's UI and click `Analyze MARC records`. For details about the checks, see [Validation of incoming MARC records](#validation-of-incoming-marc-records)
+The MARC file can be run through validation without actually importing anything to FOLIO. Choose a MARC file in the tool's UI and click `Analyze MARC records`. For details about the checks it performs, see [Validation of incoming MARC records](#validation-of-incoming-marc-records)
 
-When running an actual import, the exact same checks are performed for each record, and the tool then acts on the results according to the setting of configuration parameter `onValidationErrors`. See the [configuration table](#how-to-configure-the-service) 
+When running an actual import, the exact same checks are performed for each record, and the tool then acts on the results according to the setting of configuration parameter `onValidationErrors`. See options for this setting in the [configuration table](#how-to-configure-the-service) 
 
 ## If you want to try it
 
-* It expects the properties file to be here: `/yourhomefolder/order/import.properties` unless you specify an alternative
-  config file as an environment property on the command line: `-DconfigFile=/path/to/your.properties`
-* You will have to add the Okapi userid/password, and you may have to adjust the file upload path (where it will save
-  the uploaded file)
+* It expects a properties file to be given as an environment variable on the command line, like `-DconfigFile=/path/to/your.properties`. If no properties file is specified, it will look for one here: `/yourhomefolder/order/import.properties`.
+* You will have to add your Okapi address, FOLIO tenant, userid and password, and you may have to adjust the file upload path where it will save
+  the uploaded file and store a history of validations and imports, see the [How to configure the service](#how-to-configure-the-service)
 * clone the repo
 * call: `mvn jetty:run [-DconfigFile=path-to-properties-file]`
 * It should start a jetty server, and you should be able to point your browser to http://localhost:8888/import and try
   it
-* If `exitOnConfigFailes` is set to true in the properties, the service will stop if it detects configuration problems
-* If `exitOnFailedIdLookups` is set to true, the service will stop if it could not find FOLIO UUIDs for names or codes
+* Unless `exitOnConfigErrors` is set to false in the properties, the service will stop if it detects fatal configuration problems
+* Unless `exitOnFailedIdLookups` is set to false, the service will stop if it could not find FOLIO UUIDs for names or codes
   defined in the properties.
-* We've included example MARC files, but you will have to update them with your vendor, fund, object codes
+* Unless `exitOnAccessErrors` is set to false, the service will stop if it fails to log in to Okapi. 
+* We've included example MARC files, but you will have to update them with your vendor, fund, object codes, etc.
 * To effectuate changes of import properties, restart the service
 
 ### Docker image
@@ -63,7 +61,7 @@ The startup configuration has parameters controlling FOLIO access, start-up beha
 | Name                      | Values                                                                                                                                 | Default                      | What it does                                                                                                                                                                                                                                                                                                          |
 |---------------------------|----------------------------------------------------------------------------------------------------------------------------------------|------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **FOLIO access**          ||||
-| baseOkapiEndpoint         | Protocol and domain of the FOLIO backend REST service<br/>i.e. https://folio-snapshot.dev.folio.org/                                   || I.e.                         |
+| baseOkapiEndpoint         | Protocol and domain of the FOLIO backend REST service<br/>i.e. https://folio-snapshot.dev.folio.org/                                   ||                              |
 | tenant                    | FOLIO tenant, i.e. 'diku'                                                                                                              |||
 | okapi_username            | The FOLIO user name of the import user i.e. 'diku_admin'                                                                               |||
 | okapi_password            | The password for the import user                                                                                                       |||
