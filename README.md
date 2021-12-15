@@ -19,6 +19,15 @@ The MARC file can be run through validation without actually importing anything 
 
 When running an actual import, the exact same checks are performed for each record, and the tool then acts on the results according to the setting of configuration parameter `onValidationErrors`. See options for this setting in the [configuration table](#how-to-configure-the-service) 
 
+![ui-screen-shot](https://user-images.githubusercontent.com/11644885/146233019-fe7b87d0-a3a0-4372-b135-6a22d14c06e5.png)
+
+
+Imports can take a while for files with many MARC records, so imports are started in the back-ground. Right after starting an import, the UI will display a status with the state 'started' and a count of MARC records in the file and a 'Refresh' link that you can click to get updates on progress. 
+
+![ui-import-started](https://user-images.githubusercontent.com/11644885/146233538-9b19b43f-2875-491b-b41f-68631bcc66fd.png)
+
+Once the job is finished, clicking the 'Refresh' will display a state of 'done' and detailed results for each MARC record in the file.
+
 ## If you want to try it
 
 * Clone the repo.
