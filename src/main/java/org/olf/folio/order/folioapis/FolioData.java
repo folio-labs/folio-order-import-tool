@@ -85,7 +85,7 @@ public class FolioData extends FolioAccess {
   public static String getOrganizationId(String organizationCode) throws Exception {
     return getIdByKey(
             organizationCode,
-            ORGANIZATIONS_PATH +"?query=(code==%22" + organizationCode + "%22)",
+            ORGANIZATIONS_PATH +"?query=(code==%22" + encode(organizationCode) + "%22)",
             ORGANIZATIONS_ARRAY,
             organizationCodeToUuid);
   }
@@ -93,7 +93,7 @@ public class FolioData extends FolioAccess {
   public static String getExpenseClassId(String expenseClassCode) throws Exception {
     return getIdByKey(
             expenseClassCode,
-            EXPENSE_CLASSES_PATH + "?query=(code==%22" + expenseClassCode + "%22)",
+            EXPENSE_CLASSES_PATH + "?query=(code==%22" + encode(expenseClassCode) + "%22)",
             EXPENSE_CLASSES_ARRAY,
             expenseClassCodeToUuid);
   }
@@ -109,7 +109,7 @@ public class FolioData extends FolioAccess {
   public static String getInstanceTypeId(String instanceTypeName) throws Exception {
     return getIdByKey(
             instanceTypeName,
-            INSTANCE_TYPES_PATH + "?query=(name==%22" + instanceTypeName + "%22)",
+            INSTANCE_TYPES_PATH + "?query=(name==%22" + encode(instanceTypeName) + "%22)",
             INSTANCE_TYPES_ARRAY,
             instanceTypeNameToUuid);
   }
@@ -117,7 +117,7 @@ public class FolioData extends FolioAccess {
   public static String getMaterialTypeId (String materialTypeName) throws Exception {
     return getIdByKey(
             materialTypeName,
-            MATERIAL_TYPES_PATH + "?query=(name==%22" + materialTypeName + "%22)",
+            MATERIAL_TYPES_PATH + "?query=(name==%22" + encode(materialTypeName) + "%22)",
             MATERIAL_TYPES_ARRAY,
             materialTypeNameToUuid);
 
@@ -126,7 +126,7 @@ public class FolioData extends FolioAccess {
   public static String getContributorTypeIdByName (String contributorTypeName) throws Exception {
     return getIdByKey(
             contributorTypeName,
-            CONTRIBUTOR_TYPES_PATH + "?query=(name==%22" + contributorTypeName + "%22)",
+            CONTRIBUTOR_TYPES_PATH + "?query=(name==%22" + encode(contributorTypeName) + "%22)",
             CONTRIBUTOR_TYPES_ARRAY,
             contributorTypeNameToUuid);
   }
@@ -134,7 +134,7 @@ public class FolioData extends FolioAccess {
   public static String getContributorTypeIdByCode (String contributorTypeCode) throws Exception {
     return getIdByKey(
             contributorTypeCode,
-            CONTRIBUTOR_TYPES_PATH + "?query=(code==%22" + contributorTypeCode + "%22)",
+            CONTRIBUTOR_TYPES_PATH + "?query=(code==%22" + encode(contributorTypeCode) + "%22)",
             CONTRIBUTOR_TYPES_ARRAY,
             contributorTypeCodeToUuid);
   }
@@ -142,7 +142,7 @@ public class FolioData extends FolioAccess {
   public static String getHoldingsTypeIdByName (String holdingsTypeName) throws Exception {
     return getIdByKey(
             holdingsTypeName,
-            HOLDINGS_TYPES_PATH + "?query=(name==%22" + holdingsTypeName + "%22)",
+            HOLDINGS_TYPES_PATH + "?query=(name==%22" + encode(holdingsTypeName) + "%22)",
             HOLDINGS_TYPES_ARRAY,
             holdingsTypeNameToUuid);
   }
@@ -177,7 +177,7 @@ public class FolioData extends FolioAccess {
   public static String getFundId(String fundCode) throws Exception {
     return getIdByKey(
             fundCode,
-            FUNDS_PATH + "?query=(code='" + fundCode + "')",
+            FUNDS_PATH + "?query=(code='" + encode(fundCode) + "')",
             FUNDS_ARRAY,
             fundCodeToUuid);
   }
@@ -185,7 +185,7 @@ public class FolioData extends FolioAccess {
   public static String getFiscalYearId (String fiscalYearCode) throws Exception {
     return getIdByKey (
             fiscalYearCode,
-            FISCAL_YEARS_PATH + "?query=(code='" + fiscalYearCode + "')",
+            FISCAL_YEARS_PATH + "?query=(code='" + encode(fiscalYearCode) + "')",
             FISCAL_YEARS_ARRAY,
             fiscalYearCodeToUuid);
   }
@@ -211,7 +211,7 @@ public class FolioData extends FolioAccess {
   }
 
   public static JSONArray getTags (String objectCode) throws Exception {
-    String tagEndpoint = TAGS_PATH + "?query=(label==" + objectCode + ")";
+    String tagEndpoint = TAGS_PATH + "?query=(label==" + encode(objectCode) + ")";
     JSONObject tagResponse = callApiGet(tagEndpoint);
     if (tagResponse.has(TAGS_ARRAY)) {
       return tagResponse.getJSONArray(TAGS_ARRAY);
@@ -230,7 +230,7 @@ public class FolioData extends FolioAccess {
   }
 
   public static JSONObject getInstancesByQuery (String query) throws Exception {
-    return callApiGet(INSTANCES_PATH + "?query=(" + URLEncoder.encode(query, StandardCharsets.UTF_8) + ")");
+    return callApiGet(INSTANCES_PATH + "?query=(" +encode(query) + ")");
   }
 
   private static String getFirstId(JSONArray array) {

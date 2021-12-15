@@ -55,7 +55,7 @@ public class MarcMapSigma extends MarcToFolio {
     super.validate(outcome);
     if (has980()) {
       if (! hasLocation()) {
-        outcome.addValidationMessageIfAny("Record is missing location (looked in 980$a");
+        outcome.addValidationMessageIfAny("Record is missing location (looked in 980$a)");
       } else {
         outcome.addValidationMessageIfAny(ValidationLookups.validateLocationName(location()));
       }
