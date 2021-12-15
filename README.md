@@ -13,7 +13,7 @@ orders.
 
 For details, see [What data are populated to FOLIO](#what-data-are-populated-to-folio).
 
-### It has a second mode, validate only
+### It has two modes, 'validate only' or 'validate and import'
 
 The MARC file can be run through validation without actually importing anything to FOLIO. Choose a MARC file in the tool's UI and click `Analyze MARC records`. For details about the checks it performs, see [Validation of incoming MARC records](#validation-of-incoming-marc-records)
 
