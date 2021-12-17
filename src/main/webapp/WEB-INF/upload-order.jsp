@@ -240,7 +240,6 @@ function requestImportHistory () {
 		success: showHistoryResponse,
 		error: requestFailed
 	});
-	return false;
 }
 
 function showHistoryResponse (historyJson) {
@@ -260,7 +259,6 @@ function requestImportResults (importName) {
 		success: showImportResultsResponse,
 		error: requestFailed
 	});
-	return false;
 }
 
 function showImportResultsResponse(resultsJson) {

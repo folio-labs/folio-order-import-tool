@@ -1,6 +1,7 @@
 package org.olf.folio.order;
 
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.UUID;
 
 import org.json.JSONException;
@@ -87,9 +88,11 @@ public class OrderImport {
 				}
 
 			} catch (JSONException je) {
-				outcome.setImportError("Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
+				outcome.setImportError("Application error. Unexpected error occurred in the MARC parsing logic: "
+								+ je.getMessage());
 			} catch (NullPointerException npe) {
-				outcome.setImportError("Application error. Null pointer encountered. " + npe.getMessage());
+				outcome.setImportError("Application error. Null pointer encountered. " + npe.getMessage()
+								+ Arrays.toString(npe.getStackTrace()));
 			}	catch(Exception e) {
 				outcome.setImportError(e.getMessage() + (e.getCause() != null ? " " + e.getCause() : ""));
 			}
@@ -152,8 +155,14 @@ public class OrderImport {
 															FolioData.ITEMS_PATH + "?query=(holdingsRecordId=="
 																			+ holdingsRecord.getId() + ")",
 															FolioData.ITEMS_ARRAY));
-			mappedMarc.populateItem(item);
-			FolioAccess.callApiPut(FolioData.ITEMS_PATH, item);
+			if (item.isEmpty()) {
+				outcome.setImportError(
+								String.format("Warning: The tool attempted to find and update an Item " +
+												"but no Item was found for holdingsRecordId (%s)", holdingsRecord.getId()));
+			} else {
+				mappedMarc.populateItem(item);
+				FolioAccess.callApiPut(FolioData.ITEMS_PATH, item);
+			}
 		}
 	}
 
