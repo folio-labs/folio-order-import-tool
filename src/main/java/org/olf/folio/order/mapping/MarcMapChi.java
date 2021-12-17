@@ -24,7 +24,7 @@ public class MarcMapChi extends MarcToFolio {
   }
 
   public boolean updateItem () {
-    return true;
+    return (!electronic());
   }
 
   public void populateItem(Item item) throws Exception{

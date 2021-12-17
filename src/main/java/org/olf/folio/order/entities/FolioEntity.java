@@ -69,4 +69,7 @@ public abstract class FolioEntity {
     return ( str != null && Constants.UUID_PATTERN.matcher( str ).matches() );
   }
 
+  public boolean isEmpty () {
+    return json == null || json.isEmpty();
+  }
 }
