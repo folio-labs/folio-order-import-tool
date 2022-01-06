@@ -16,7 +16,7 @@ public class CompositePurchaseOrder extends FolioEntity {
   public static final String V_OPEN = "Open";
   public static final boolean V_RE_ENCUMBER = true;
   public static final boolean V_APPROVED = true;
-
+  // Property names
   public static final String P_PO_NUMBER = "poNumber";
   public static final String P_VENDOR = "vendor";
   public static final String P_ORDER_TYPE = "orderType";

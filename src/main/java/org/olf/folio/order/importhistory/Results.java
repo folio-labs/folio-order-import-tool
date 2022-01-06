@@ -1,5 +1,6 @@
 package org.olf.folio.order.importhistory;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.time.Instant;
@@ -10,6 +11,7 @@ import java.util.List;
 
 import org.olf.folio.order.Config;
 
+@CanIgnoreReturnValue
 public class Results {
 
   public static final String P_SCHEMA = "schema";
@@ -190,12 +192,20 @@ public class Results {
     return summary().getJSONObject(P_IMPORT);
   }
 
+  /**
+   * Initiate next results element
+   * @return the new results element
+   */
   public RecordResult nextResult () {
     RecordResult result = new RecordResult(++recNo, importing);
     recordResults.add(result);
     return result;
   }
 
+  /**
+   * Find out if any one record failed validation
+   * @return true if one or more records failed validation
+   */
   public boolean hasValidationErrors () {
     for (RecordResult result : recordResults) {
       if (result.failedValidation()) return true;
@@ -203,6 +213,10 @@ public class Results {
     return false;
   }
 
+  /**
+   * Find out if any one record had an error during import
+   * @return true if one or more errors occurred during import of records
+   */
   public boolean hasImportErrors () {
     for (RecordResult result : recordResults) {
       if (result.hasImportError()) return true;
@@ -210,6 +224,10 @@ public class Results {
     return false;
   }
 
+  /**
+   * Find out if any one record has a note attached
+   * @return true if one or more records had notes attached
+   */
   public boolean hasFlags () {
     for (RecordResult outcome : recordResults) {
       if (outcome.hasFlags()) return true;
@@ -217,6 +235,10 @@ public class Results {
     return false;
   }
 
+  /**
+   * Count records that had notes attached
+   * @return record count
+   */
   public int getFlagsCount () {
     int flags = 0;
     for (RecordResult outcome : recordResults) {
@@ -229,6 +251,10 @@ public class Results {
     return recordResults.size();
   }
 
+  /**
+   * Count records that passed validation
+   * @return record count
+   */
   private int getPassedValidationCount() {
     int passedCount = 0;
     for (RecordResult result : recordResults) {
@@ -237,6 +263,10 @@ public class Results {
     return passedCount;
   }
 
+  /**
+   * Count records that failed validation
+   * @return record count
+   */
   private int getFailedValidationCount() {
     int failedCount = 0;
     for (RecordResult result : recordResults) {
@@ -245,6 +275,10 @@ public class Results {
     return failedCount;
   }
 
+  /**
+   * Count records that triggered exceptions during import
+   * @return record count
+   */
   private int getImportExceptionsCount () {
     int exceptions = 0;
     for (RecordResult result : recordResults) {
@@ -253,6 +287,10 @@ public class Results {
     return exceptions;
   }
 
+  /**
+   * Count records that were successfully imported
+   * @return record count
+   */
   private int getSuccessfulImportsCount () {
     int passed = 0;
     for (RecordResult result : recordResults) {
@@ -263,12 +301,20 @@ public class Results {
     return passed;
   }
 
+  /**
+   * Mark import initialized
+   * @return this
+   */
   public Results markStarted() {
     summary().put(P_STATUS, V_STATUS_STARTED);
     summary().put(P_IS_NOT_DONE, true);
     return this;
   }
 
+  /**
+   * Mark import complete, without fatal error.
+   * @return this
+   */
   public Results markDone() {
     summary().put(P_STATUS, V_STATUS_DONE);
     summary().put(P_IS_NOT_DONE, false);
@@ -276,6 +322,10 @@ public class Results {
     return this;
   }
 
+  /**
+   * Flag that import has ended but with an error
+   * @return this
+   */
   public Results markEndedWithError () {
     summary().put(P_STATUS, V_STATUS_ERROR);
     summary().put(P_IS_NOT_DONE, false);
@@ -283,12 +333,20 @@ public class Results {
     return this;
   }
 
+  /**
+   * Mark import partially done.
+   * @return this
+   */
   public Results markPartial() {
     summary().put(P_STATUS, V_STATUS_PARTIAL);
     summary().put(P_IS_NOT_DONE, true);
     return this;
   }
 
+  /**
+   * Return complete results as JSON object
+   * @return results JSON
+   */
   public JSONObject toJson() {
     // set derived/calculated values
     validation().put(P_HAS_ERRORS, hasValidationErrors());
@@ -310,6 +368,10 @@ public class Results {
     return resultsJson;
   }
 
+  /**
+   * Return complete results as pretty printed JSON string
+   * @return results as indented JSON string
+   */
   public String toJsonString() {
     return toJson().toString(2);
   }

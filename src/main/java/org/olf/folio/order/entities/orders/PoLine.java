@@ -1,5 +1,6 @@
 package org.olf.folio.order.entities.orders;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.olf.folio.order.entities.FolioEntity;
@@ -10,17 +11,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@CanIgnoreReturnValue
 public class PoLine extends FolioEntity {
-  // CONSTANT VALUES
+  // Constant values
   public static final String V_USER = "User";
-
+  public static final String V_ELECTRONIC_RESOURCE = "Electronic Resource";
+  public static final String V_PHYSICAL_RESOURCE = "Physical Resource";
+  public static final String V_RECEIPT_NOT_REQUIRED = "Receipt Not Required";
+  // Property names
   public static final String P_ID = "id";
   public static final String P_PURCHASE_ORDER_ID = "purchaseOrderId";
   public static final String P_ORDER_FORMAT = "orderFormat";
-  public static final String V_ELECTRONIC_RESOURCE = "Electronic Resource";
-  public static final String V_PHYSICAL_RESOURCE = "Physical Resource";
   public static final String P_RECEIPT_STATUS = "receiptStatus";
-  public static final String V_RECEIPT_NOT_REQUIRED = "Receipt Not Required";
   public static final String P_ERESOURCE = "eresource";
   public static final String P_PHYSICAL = "physical";
   public static final String P_VENDOR_DETAIL = "vendorDetail";
@@ -174,26 +176,11 @@ public class PoLine extends FolioEntity {
   public PoLine putContributors (JSONArray contributors) {
     return (PoLine) putArray(P_CONTRIBUTORS, contributors);
   }
-  public PoLine putProductIds (JSONArray productIds) {
-    return (PoLine) putArray(P_PRODUCT_IDS, productIds);
-  }
   public PoLine putDetails (JSONObject details) {
     return (PoLine) putObject(P_DETAILS, details);
   }
   public PoLine putDetailsIfPresent(JSONObject details) {
     return present(details) ? putDetails(details) : this;
-  }
-
-  public boolean hasDetails () {
-    return json.has(P_DETAILS);
-  }
-
-  public OrderLineDetails getDetails() {
-    if (json.has(P_DETAILS)) {
-      return OrderLineDetails.fromJson(getJSONObject(P_DETAILS));
-    } else {
-      return null;
-    }
   }
 
   public PoLine putEdition (String edition) {

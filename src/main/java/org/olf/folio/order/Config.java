@@ -250,6 +250,11 @@ public class Config {
     }
   }
 
+  /**
+   * Ensure ending slash
+   * @param str string to check for ending slash
+   * @return string with ending slash
+   */
   public static String withEndingSlash(String str) {
     if (str == null || str.isEmpty()) {
       return str;
@@ -258,6 +263,10 @@ public class Config {
     }
   }
 
+  /**
+   * Retrive ID of the time zone
+   * @return time zone ID
+   */
   public static ZoneId getZoneId () {
     try {
       return ZoneId.of(getText(P_TZ_TIME_ZONE, V_DEFAULT_TIME_ZONE));
@@ -266,6 +275,11 @@ public class Config {
     }
   }
 
+  /**
+   * Retrieve a given MARC-to-FOLIO mapping for a record, given the mapping selected in configuration.
+   * @param record MARC record to map to FOLIO
+   * @return selected mapping to FOLIO
+   */
   public static MarcToFolio getMarcMapping (Record record) {
     switch (marcMapping) {
       case V_MARC_MAPPING_LAMBDA:

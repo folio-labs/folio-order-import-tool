@@ -4,13 +4,13 @@ import org.olf.folio.order.entities.FolioEntity;
 import org.olf.folio.order.mapping.MarcToFolio;
 
 public class EResource extends FolioEntity {
-  // Constants
-  public static final boolean ACTIVATED = false;
-  public static final boolean TRIAL = false;
-
+  // Constant values
+  public static final boolean V_ACTIVATED = false;
+  public static final boolean V_TRIAL = false;
+  public static final String V_INSTANCE_HOLDING = "Instance, Holding";
+  // Property names
   public static final String P_ACTIVATED = "activated";
   public static final String P_CREATE_INVENTORY = "createInventory";
-  public static final String V_INSTANCE_HOLDING = "Instance, Holding";
   public static final String P_USER_LIMIT = "userLimit";
   public static final String P_TRIAL = "trial";
   public static final String P_ACCESS_PROVIDER = "accessProvider";
@@ -23,10 +23,10 @@ public class EResource extends FolioEntity {
           throws Exception {
 
     return new EResource()
-                    .putActivated(ACTIVATED)
+                    .putActivated(V_ACTIVATED)
                     .putCreateInventory(V_INSTANCE_HOLDING)
                     .putUserLimitIfPresent(mappedMarc.userLimit())
-                    .putTrial(TRIAL)
+                    .putTrial(V_TRIAL)
                     .putAccessProvider(mappedMarc.accessProviderUUID());
   }
 

@@ -1,16 +1,20 @@
 package org.olf.folio.order.entities.orders;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.olf.folio.order.entities.FolioEntity;
 import org.olf.folio.order.mapping.MarcToFolio;
 
+@CanIgnoreReturnValue
 public class Cost extends FolioEntity {
+  // Constant values
+  public static final int QUANTITY_ELECTRONIC = 1;
+  public static final int QUANTITY_PHYSICAL = 1;
+  // Property names
   public static final String P_QUANTITY_PHYSICAL = "quantityPhysical";
   public static final String P_LIST_UNIT_PRICE = "listUnitPrice";
   public static final String P_QUANTITY_ELECTRONIC = "quantityElectronic";
   public static final String P_LIST_UNIT_PRICE_ELECTRONIC = "listUnitPriceElectronic";
   public static final String P_CURRENCY = "currency";
-  public static final int QUANTITY_ELECTRONIC = 1;
-  public static final int QUANTITY_PHYSICAL = 1;
 
   public static Cost fromMarcRecord(MarcToFolio mappedMarc) {
     Cost cost = new Cost();
@@ -40,6 +44,5 @@ public class Cost extends FolioEntity {
   public Cost putCurrency (String currency) {
     return (Cost) putString(P_CURRENCY, currency);
   }
-
 
 }

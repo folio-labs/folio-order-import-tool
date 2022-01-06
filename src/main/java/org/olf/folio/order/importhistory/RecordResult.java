@@ -1,9 +1,14 @@
 package org.olf.folio.order.importhistory;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.olf.folio.order.mapping.MarcToFolio;
 
+/**
+ * Represents the outcome of the validation/import of a single record
+ */
+@CanIgnoreReturnValue
 public class RecordResult {
 
   private static final String P_REC_NO = "recNo";

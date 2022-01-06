@@ -5,8 +5,10 @@ import org.olf.folio.order.entities.FolioEntity;
 import org.olf.folio.order.mapping.MarcToFolio;
 
 public class Physical extends FolioEntity {
+  // Property names
   public static final String P_CREATE_INVENTORY = "createInventory";
   public static final String P_MATERIAL_TYPE = "materialType";
+  // Constant value
   public static final String V_INSTANCE_HOLDING_ITEM = "Instance, Holding, Item";
 
   /**
@@ -33,9 +35,6 @@ public class Physical extends FolioEntity {
     return (Physical) putString(P_MATERIAL_TYPE, materialType);
   }
 
-  public String getCreateInventory() {
-    return (String) json.get(P_CREATE_INVENTORY);
-  }
   public String getMaterialType () {
     return getString(P_MATERIAL_TYPE);
   }

@@ -1,15 +1,18 @@
 package org.olf.folio.order.entities.inventory;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.olf.folio.order.entities.FolioEntity;
 
+@CanIgnoreReturnValue
 public class HoldingsRecord extends FolioEntity {
-
+  // Constant value
+  public static final String V_HOLDINGS_TYPE_ELECTRONIC = "Electronic";
+  // Property names
   public static final String P_ID = "id";
   public static final String P_ELECTRONIC_ACCESS = "electronicAccess";
   public static final String P_HOLDINGS_TYPE_ID = "holdingsTypeId";
-  public static final String V_HOLDINGS_TYPE_ELECTRONIC = "Electronic";
   public static final String P_NOTES = "notes";
 
   public static HoldingsRecord fromJson(JSONObject holdingsJson) {
