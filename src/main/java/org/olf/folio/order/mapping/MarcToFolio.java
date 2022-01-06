@@ -401,7 +401,11 @@ public abstract class MarcToFolio {
   }
 
   public String expenseClassId() throws Exception {
-    return FolioData.getExpenseClassId(expenseClassCode());
+    if (hasExpenseClassCode()) {
+      return FolioData.getExpenseClassId(expenseClassCode());
+    } else {
+      return null;
+    }
   }
 
   /**
