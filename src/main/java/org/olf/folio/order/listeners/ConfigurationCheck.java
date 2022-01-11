@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.olf.folio.order.Config.*;
+
 public class ConfigurationCheck {
 
   private final CompositeConfiguration compositeConfiguration;
@@ -51,6 +53,7 @@ public class ConfigurationCheck {
       }
       fileSystemPathIsWriteable = checkUploadFilePath();
     }
+    boolean validUnitOfPurchaseOrderImport = purchaseOrderUnitIsValid();
     boolean timeZoneValid = checkTimeZone();
     validOnAnalysisErrorsSetting = configOnValidationErrorsIsValid();
     // temporary check for the presence of an API:
@@ -62,7 +65,8 @@ public class ConfigurationCheck {
             && validMarcMappingChoice
             && validOnAnalysisErrorsSetting
             && fileSystemPathIsWriteable
-            && timeZoneValid );
+            && timeZoneValid
+            && validUnitOfPurchaseOrderImport);
   }
 
   public boolean configOnValidationErrorsIsValid() {
@@ -81,6 +85,20 @@ public class ConfigurationCheck {
       }
     }
     return true;
+  }
+
+  public boolean purchaseOrderUnitIsValid() {
+    if  ((!compositeConfiguration.containsKey(Config.P_PURCHASE_ORDER_UNIT)) ||
+      Arrays.asList(V_PURCHASE_ORDER_UNIT_FILE,V_PURCHASE_ORDER_UNIT_RECORD).contains(compositeConfiguration.getString(P_PURCHASE_ORDER_UNIT).toLowerCase())) {
+      return true;
+    } else {
+      addPropertyError(P_PURCHASE_ORDER_UNIT,
+              String.format("[%s] not a valid unit of purchase order import. Valid options are one purchase order per [%s] or one purchase order per [%s]",
+                      compositeConfiguration.getString(P_PURCHASE_ORDER_UNIT),
+                      V_PURCHASE_ORDER_UNIT_FILE,
+                      V_PURCHASE_ORDER_UNIT_RECORD));
+      return false;
+    }
   }
 
   public boolean specifiedMarcMappingExists() {

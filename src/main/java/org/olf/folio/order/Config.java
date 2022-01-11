@@ -45,6 +45,9 @@ public class Config {
   public static final String V_MARC_MAPPING_LAMBDA = "lambda";
   public static final String V_MARC_MAPPING_SIGMA = "sigma";
   // PROCESSING INSTRUCTIONS
+  public static final String P_PURCHASE_ORDER_UNIT = "purchaseOrderUnit";
+  public static final String V_PURCHASE_ORDER_UNIT_FILE = "file";
+  public static final String V_PURCHASE_ORDER_UNIT_RECORD = "record";
   public static final String P_IMPORT_INVOICE = "importInvoice";
   public static final String P_FAIL_IF_NO_INVOICE_DATA = "failIfNoInvoiceData";
   public static final String P_EXIT_ON_CONFIG_ERRORS = "exitOnConfigErrors";
@@ -89,6 +92,7 @@ public class Config {
           P_PERM_LOCATION,
           P_PERM_E_LOCATION_WITH_INVOICE_IMPORT,
           P_PERM_LOCATION_WITH_INVOICE_IMPORT,
+          P_PURCHASE_ORDER_UNIT,
           P_TENANT,
           P_TEXT_FOR_ELECTRONIC_RESOURCES,
           P_TZ_TIME_ZONE,
@@ -132,6 +136,7 @@ public class Config {
   public static boolean onValidationErrorsCancelAll;
   public static boolean onValidationErrorsSKipFailed;
   public static boolean onValidationErrorsAttemptImport;
+  public static String purchaseOrderUnit;
 
   private static final String EMPTY = "";
   private static final String NOT_APPLICABLE = "NA";
@@ -145,6 +150,7 @@ public class Config {
   private static final int V_DEFAULT_DAYS_TO_DISPLAY_RESULTS = 14;
   private static final String V_DEFAULT_TIME_ZONE = "Europe/Stockholm";
   private static final String V_DEFAULT_LOCALE = "sv-SE";
+  private static final String V_DEFAULT_PURCHASE_ORDER_UNIT = V_PURCHASE_ORDER_UNIT_RECORD;
 
   public static boolean acquisitionMethodsApiPresent = true;
 
@@ -179,6 +185,7 @@ public class Config {
       textForElectronicResources = getText(P_TEXT_FOR_ELECTRONIC_RESOURCES);
 
       // Processing instructions
+      purchaseOrderUnit = getText(P_PURCHASE_ORDER_UNIT, V_DEFAULT_PURCHASE_ORDER_UNIT).toLowerCase();
       exitOnConfigErrors = getBoolean(P_EXIT_ON_CONFIG_ERRORS,true);
       exitOnAccessErrors = getBoolean(P_EXIT_ON_ACCESS_ERRORS, true);
       exitOnFailedIdLookups = getBoolean(P_EXIT_ON_FAILED_ID_LOOKUPS,true);
