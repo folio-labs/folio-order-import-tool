@@ -61,6 +61,8 @@ public class MarcMapSigma extends MarcToFolio {
       }
       if (has(materialType())) {
         outcome.addValidationMessageIfAny(ValidationLookups.validateMaterialTypeName(materialType()));
+      } else {
+        outcome.addValidationMessageIfAny("Record is missing material type (looked in 980$d)");
       }
     }
     return !outcome.failedValidation();

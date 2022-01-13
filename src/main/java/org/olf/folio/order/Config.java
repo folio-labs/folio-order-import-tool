@@ -137,6 +137,8 @@ public class Config {
   public static boolean onValidationErrorsSKipFailed;
   public static boolean onValidationErrorsAttemptImport;
   public static String purchaseOrderUnit;
+  public static boolean createOnePurchaseOrderPerFile;
+  public static boolean createOnePurchaseOrderPerRecord;
 
   private static final String EMPTY = "";
   private static final String NOT_APPLICABLE = "NA";
@@ -186,6 +188,8 @@ public class Config {
 
       // Processing instructions
       purchaseOrderUnit = getText(P_PURCHASE_ORDER_UNIT, V_DEFAULT_PURCHASE_ORDER_UNIT).toLowerCase();
+      createOnePurchaseOrderPerFile = purchaseOrderUnit.equals(V_PURCHASE_ORDER_UNIT_FILE);
+      createOnePurchaseOrderPerRecord = purchaseOrderUnit.equals(V_PURCHASE_ORDER_UNIT_RECORD);
       exitOnConfigErrors = getBoolean(P_EXIT_ON_CONFIG_ERRORS,true);
       exitOnAccessErrors = getBoolean(P_EXIT_ON_ACCESS_ERRORS, true);
       exitOnFailedIdLookups = getBoolean(P_EXIT_ON_FAILED_ID_LOOKUPS,true);

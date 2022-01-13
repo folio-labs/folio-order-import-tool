@@ -2,6 +2,9 @@ package org.olf.folio.order;
 
 import java.io.FileNotFoundException;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.json.JSONException;
@@ -16,6 +19,7 @@ import org.olf.folio.order.entities.inventory.Instance;
 import org.olf.folio.order.entities.inventory.Item;
 import org.olf.folio.order.entities.orders.Link;
 import org.olf.folio.order.entities.orders.Note;
+import org.olf.folio.order.entities.orders.PoLine;
 import org.olf.folio.order.importhistory.FileStorageHelper;
 import org.olf.folio.order.mapping.MarcToFolio;
 import org.olf.folio.order.misc.InvoiceBuilder;
@@ -25,9 +29,10 @@ import org.olf.folio.order.importhistory.Results;
 import org.olf.folio.order.folioapis.FolioAccess;
 import org.olf.folio.order.folioapis.FolioData;
 
+
 public class OrderImport {
 
-	private static final Logger logger = Logger.getLogger("OrderImport");
+	private static final Logger logger = Logger.getLogger(OrderImport.class);
 
 	public Results runAnalyzeJob(FileStorageHelper fileStore) throws Exception {
 		logger.info("...starting...");
@@ -64,61 +69,140 @@ public class OrderImport {
 
 		MarcReader reader = new MarcStreamReader(fileStore.getMarcInputStream());
 		results.markPartial();
-		while (reader.hasNext()) {
-			RecordResult outcome = results.nextResult();
-			try {
+
+		if (Config.createOnePurchaseOrderPerFile) {
+			CompositePurchaseOrder multilinePo = CompositePurchaseOrder.initiateEmptyOrder();
+			ImportDataPark dataPark = new ImportDataPark(multilinePo.getId());
+			while (reader.hasNext()) {
+				RecordResult outcome = results.nextResult();
 				Record record = reader.next();
-				MarcToFolio mappedMarc = Config.getMarcMapping(record);
-  			RecordChecker.validateMarcRecord(mappedMarc, outcome);
-				if (!outcome.isSkipped()) {
-					// RECORD VALIDATION PASSED OR SERVICE IS CONFIGURED TO ATTEMPT IMPORT IN ANY CASE
+				try {
+					MarcToFolio mappedMarc = Config.getMarcMapping(record);
+					RecordChecker.validateMarcRecord(mappedMarc, outcome);
+					if (!outcome.isSkipped()) {
+						if (!multilinePo.hasPoLines()) {
+							// Set PO vendor from first PO line
+							multilinePo.putVendor(mappedMarc.vendorUuid());
+						}
+						PoLine poLine = PoLine.fromMarcRecord(multilinePo.getId(), mappedMarc);
+						multilinePo.addPoLine(poLine);
+						dataPark.addLine(poLine.getId(), mappedMarc, outcome);
+					}
+				} catch (JSONException je) {
+					outcome.setImportError(
+									"Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
+				}
+				catch (NullPointerException npe) {
+					outcome.setImportError(
+									"Application error. Null pointer encountered. " + npe.getMessage() + Arrays.toString(
+													npe.getStackTrace()));
+				}
+				catch (Exception e) {
+					outcome.setImportError(e.getMessage() + ( e.getCause() != null ? " " + e.getCause() : "" ));
+				}
+			}
+			CompositePurchaseOrder importedPo;
+			try {
+				importedPo = importPurchaseOrder(multilinePo);
+			} catch (Exception e) {
+				results.setFatalError(String.format("Failed to import purchase order: %s", e.getMessage()));
+				return results.markEndedWithError();
+			}
 
-					// CREATE AND POST THE PURCHASE ORDER AND LINE
-					CompositePurchaseOrder importedPo = importPurchaseOrderAndNote(mappedMarc, outcome);
+			try {
+				for (PoLine line : importedPo.getCompositePoLines()) {
+					dataPark.putInstanceId(line.getId(), line.getInstanceId());
+				}
+			} catch (NullPointerException npe) {
+				results.setFatalError(String.format("Internal error in the import tool: %s", npe.getMessage()));
+				npe.printStackTrace();
+				return results.markEndedWithError();
+			}
 
-					outcome.setPoNumber(importedPo.getPoNumber())
+			for (ImportDataPark.PoLineData data : dataPark.getDataLines()) {
+				try {
+					updateInventory(data.instanceId, data.mappedMarc, data.recordResult);
+					importNotesIfAny(data.mappedMarc, data.poLineId);
+					data.recordResult.setPoNumber(importedPo.getPoNumber()).setPoUiUrl(Config.folioUiUrl,
+									Config.folioUiOrdersPath, importedPo.getId(), importedPo.getPoNumber());
+				}
+				catch (JSONException je) {
+					data.recordResult.setImportError(
+									"Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
+				}
+				catch (NullPointerException npe) {
+					data.recordResult.setImportError(
+									"Application error. Null pointer encountered. " + npe.getMessage() + Arrays.toString(
+													npe.getStackTrace()));
+				}
+				catch (Exception e) {
+					data.recordResult.setImportError(e.getMessage() + ( e.getCause() != null ? " " + e.getCause() : "" ));
+				}
+			}
+			fileStore.storeResults(results);
+		} else {
+			while (reader.hasNext()) {
+				RecordResult outcome = results.nextResult();
+				try {
+					Record record = reader.next();
+					MarcToFolio mappedMarc = Config.getMarcMapping(record);
+					RecordChecker.validateMarcRecord(mappedMarc, outcome);
+					if (!outcome.isSkipped()) {
+						// RECORD VALIDATION PASSED OR SERVICE IS CONFIGURED TO ATTEMPT IMPORT IN ANY CASE
+
+						// CREATE PURCHASE ORDER AND LINE
+						CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
+						// IMPORT THE CREATED PO
+						CompositePurchaseOrder importedPo = importPurchaseOrder(compositePo);
+
+						//INSERT A NOTE IF THERE IS ONE IN THE MARC RECORD
+  					String poLineId = compositePo.getFirstPoLineId();
+ 						importNotesIfAny(mappedMarc, poLineId);
+
+						outcome.setPoNumber(importedPo.getPoNumber())
 									.setPoUiUrl(Config.folioUiUrl, Config.folioUiOrdersPath,
 													importedPo.getId(), importedPo.getPoNumber());
 
-					// FETCH, UPDATE, AND PUT SELECT INVENTORY INSTANCE/HOLDINGS RECORD/ITEM
-					updateInventory(importedPo.getInstanceId(), mappedMarc, outcome);
+						// FETCH, UPDATE, AND PUT SELECT INVENTORY INSTANCE/HOLDINGS RECORD/ITEM
+						updateInventory(importedPo.getInstanceId(), mappedMarc, outcome);
 
-					// IMPORT INVOICE IF CONFIGURED FOR IT AND PRESENT
-					maybeImportInvoice(importedPo, mappedMarc);
+						// IMPORT INVOICE IF CONFIGURED FOR IT AND PRESENT
+						maybeImportInvoice(importedPo, mappedMarc);
+					}
+
 				}
-
-			} catch (JSONException je) {
-				outcome.setImportError("Application error. Unexpected error occurred in the MARC parsing logic: "
-								+ je.getMessage());
-			} catch (NullPointerException npe) {
-				outcome.setImportError("Application error. Null pointer encountered. " + npe.getMessage()
-								+ Arrays.toString(npe.getStackTrace()));
-			}	catch(Exception e) {
-				outcome.setImportError(e.getMessage() + (e.getCause() != null ? " " + e.getCause() : ""));
+				catch (JSONException je) {
+					outcome.setImportError(
+									"Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
+				}
+				catch (NullPointerException npe) {
+					outcome.setImportError(
+									"Application error. Null pointer encountered. " + npe.getMessage() + Arrays.toString(
+													npe.getStackTrace()));
+				}
+				catch (Exception e) {
+					outcome.setImportError(e.getMessage() + ( e.getCause() != null ? " " + e.getCause() : "" ));
+				}
+				fileStore.storeResults(results);
 			}
-			fileStore.storeResults(results);
 		}
 		return results.markDone();
 	}
 
-	private CompositePurchaseOrder importPurchaseOrderAndNote(MarcToFolio mappedMarc, RecordResult outcome)
+	private CompositePurchaseOrder importPurchaseOrder(CompositePurchaseOrder compositePurchaseOrder)
 					throws Exception {
-		CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
+		logger.debug(String.format("POSTing purchase order [%s]", compositePurchaseOrder.asJson().toString(2)));
+		JSONObject persistedPo = FolioAccess.callApiPostWithUtf8(FolioData.COMPOSITE_ORDERS_PATH, compositePurchaseOrder);
+		logger.debug(String.format("Response on POSTing of purchase order: [%s]", persistedPo.toString(2)));
+		return CompositePurchaseOrder.fromJson(persistedPo);
+	}
 
-		JSONObject persistedPo = FolioAccess.callApiPostWithUtf8(FolioData.COMPOSITE_ORDERS_PATH, compositePo);
-
-		//INSERT A NOTE IF THERE IS ONE IN THE MARC RECORD
-		if (mappedMarc.hasNotes() && compositePo.hasPoLines() && Config.noteTypeName != null) {
-			Note note = new Note().addLink(new Link().putType(Link.V_PO_LINE)
-							.putId(compositePo.getCompositePoLines().get(0).getId()))
-							.putTypeId(FolioData.getNoteTypeIdByName(Config.noteTypeName))
-							.putDomain(Note.V_ORDERS)
-							.putContent(mappedMarc.notes())
-							.putTitle(mappedMarc.notes());
+	private void importNotesIfAny(MarcToFolio mappedMarc, String poLineId) throws Exception {
+		if (mappedMarc.hasNotes() && Config.noteTypeName != null && poLineId != null) {
+			Note note = new Note().addLink(new Link().putType(Link.V_PO_LINE).putId(poLineId)).putTypeId(
+							FolioData.getNoteTypeIdByName(Config.noteTypeName)).putDomain(Note.V_ORDERS).putContent(mappedMarc.notes()).putTitle(mappedMarc.notes());
 			FolioAccess.callApiPostWithUtf8(FolioData.NOTES_PATH, note.asJson());
 		}
-
-		return CompositePurchaseOrder.fromJson(persistedPo);
 	}
 
 	private void updateInventory(String instanceId, MarcToFolio mappedMarc, RecordResult outcome)
@@ -187,5 +271,47 @@ public class OrderImport {
 			records++;
 		}
 		return records;
+	}
+
+	static class ImportDataPark {
+		String poId;
+		Map<String,PoLineData> map = new HashMap<>();
+
+		ImportDataPark(String purchaseOrderId) {
+			poId = purchaseOrderId;
+		}
+
+		void addLine(String poLineId, MarcToFolio mappedMarc, RecordResult outcome) {
+			map.put(poLineId, new PoLineData(poLineId, mappedMarc, outcome));
+		}
+
+		void putInstanceId(String poLineId, String instanceId) {
+			if (map.containsKey(poLineId)) {
+				map.get(poLineId).putInstanceId(instanceId);
+			} else {
+				logger.error(String.format("ImportDataPark has no entry for PO line ID [%s]: %s", poLineId, map.keySet()));
+			}
+		}
+
+		Collection<PoLineData> getDataLines () {
+			return map.values();
+		}
+
+		static class PoLineData {
+			String poLineId;
+			MarcToFolio mappedMarc;
+			RecordResult recordResult;
+			String instanceId;
+
+			PoLineData (String poLineId, MarcToFolio mappedMarc, RecordResult recordResult) {
+				this.poLineId = poLineId;
+				this.mappedMarc = mappedMarc;
+				this.recordResult = recordResult;
+			}
+
+			void putInstanceId (String instanceId) {
+				this.instanceId = instanceId;
+			}
+		}
 	}
 }

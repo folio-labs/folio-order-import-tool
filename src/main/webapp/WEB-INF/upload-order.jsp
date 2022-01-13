@@ -344,6 +344,7 @@ function showName() {
   {{#if summary.hasFlags}}
     <br> {{summary.flagged}} record(s) with notes/warnings
   {{/if}}
+  <br>{{summary.fatalError}}
   {{#each records}}
     <br>
     <br>Rec# {{recNo}} PO number <a href={{data.uiUrlPo}} target=orders>{{data.poNumber}}</a>

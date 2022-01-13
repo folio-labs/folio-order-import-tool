@@ -45,6 +45,10 @@ public class PoLine extends FolioEntity {
   public static final String P_TAGS = "tags";
   public static final String P_INSTANCE_ID = "instanceId";
 
+  public static PoLine fromMarcRecord(String orderId, MarcToFolio mappedMarc) throws Exception {
+    return fromMarcRecord(UUID.fromString(orderId), mappedMarc);
+  }
+
   public static PoLine fromMarcRecord(UUID orderId, MarcToFolio mappedMarc)
           throws Exception {
 

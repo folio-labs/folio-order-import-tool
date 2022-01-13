@@ -1,5 +1,6 @@
 package org.olf.folio.order.entities.orders;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.olf.folio.order.entities.FolioEntity;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@CanIgnoreReturnValue
 public class CompositePurchaseOrder extends FolioEntity {
   // Constant values
   public static final String V_ONE_TIME = "One-Time";
@@ -51,6 +53,18 @@ public class CompositePurchaseOrder extends FolioEntity {
                     );
   }
 
+  public static CompositePurchaseOrder initiateEmptyOrder () throws Exception {
+    UUID orderId = UUID.randomUUID();
+    return new CompositePurchaseOrder()
+            .putPoNumber(FolioData.getNextPoNumberFromOrders())
+            .putOrderType(V_ONE_TIME)
+            .putReEncumber(V_RE_ENCUMBER)
+            .putId(orderId)
+            .putApproved(V_APPROVED)
+            .putWorkflowStatus(V_OPEN)
+            .putCompositePoLines(new JSONArray());
+  }
+
   public CompositePurchaseOrder putId(UUID id) {
     return (CompositePurchaseOrder) putString(P_ID, id.toString());
   }
@@ -78,14 +92,22 @@ public class CompositePurchaseOrder extends FolioEntity {
   public CompositePurchaseOrder putBillToIfPresent(String billTo) {
     return present(billTo) ? putBillTo(billTo) : this;
   }
-
   public CompositePurchaseOrder putCompositePoLines (JSONArray poLines) {
     return (CompositePurchaseOrder) putArray(P_COMPOSITE_PO_LINES, poLines);
+  }
+
+  public CompositePurchaseOrder addPoLine (PoLine poLine) {
+    if (!json.has(P_COMPOSITE_PO_LINES)) {
+      json.put(P_COMPOSITE_PO_LINES, new JSONArray());
+    }
+    json.getJSONArray(P_COMPOSITE_PO_LINES).put(poLine.asJson());
+    return this;
   }
 
   public String getPoNumber() {
     return getString(P_PO_NUMBER);
   }
+
   public String getInstanceId () {
     if (hasPoLines()) {
       return getCompositePoLines().get(0).getInstanceId();
@@ -94,21 +116,14 @@ public class CompositePurchaseOrder extends FolioEntity {
     }
   }
 
-  public String getVendor() {
-    return getString(P_VENDOR);
+  public String getFirstPoLineId () {
+    if (hasPoLines()) {
+      return getCompositePoLines().get(0).getId();
+    } else {
+      return null;
+    }
   }
-  public String getOrderType() {
-    return getString(P_ORDER_TYPE);
-  }
-  public boolean getReEncumber() {
-    return getBoolean(P_RE_ENCUMBER);
-  }
-  public boolean getApproved() {
-    return getBoolean(P_APPROVED);
-  }
-  public String getBillTo() {
-    return getString(P_BILL_TO);
-  }
+
   public JSONArray getCompositePoLinesJsonArray() {
     return getArray(P_COMPOSITE_PO_LINES);
   }

@@ -21,6 +21,7 @@ public class Results {
   public static final String V_SCHEMA_VERSION = "1.0";
 
   public static final String P_FATAL_ERROR = "fatalError";
+  public static final String P_HAS_FATAL_ERROR = "hasFatalError";
   public static final String P_SUMMARY = "summary";
   public static final String P_TYPE = "type";
   public static final String P_FILES_IDENTIFIER = "filesIdentifier";
@@ -106,6 +107,7 @@ public class Results {
 
   public Results setFatalError (String message) {
     summary().put(P_FATAL_ERROR, message);
+    summary().put(P_HAS_FATAL_ERROR, true);
     return this;
   }
 
@@ -202,6 +204,9 @@ public class Results {
     return result;
   }
 
+  public boolean hasFatalError () {
+    return summary().has(P_FATAL_ERROR);
+  }
   /**
    * Find out if any one record failed validation
    * @return true if one or more records failed validation
@@ -292,13 +297,17 @@ public class Results {
    * @return record count
    */
   private int getSuccessfulImportsCount () {
-    int passed = 0;
-    for (RecordResult result : recordResults) {
-      if (!result.hasImportError() && !result.isSkipped()) {
-        passed++;
+    if (hasFatalError()) {
+      return 0;
+    } else {
+      int passed = 0;
+      for (RecordResult result : recordResults) {
+        if (!result.hasImportError() && !result.isSkipped()) {
+          passed++;
+        }
       }
+      return passed;
     }
-    return passed;
   }
 
   /**
