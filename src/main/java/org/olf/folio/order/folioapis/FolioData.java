@@ -23,6 +23,7 @@ public class FolioData extends FolioAccess {
   public static final String ACQUISITION_METHODS_PATH = "orders/acquisition-methods";
   public static final String INSTANCE_TYPES_PATH = "instance-types";
   public static final String MATERIAL_TYPES_PATH = "material-types";
+  public static final String LOAN_TYPES_PATH = "loan-types";
   public static final String CONTRIBUTOR_TYPES_PATH = "contributor-types";
   public static final String HOLDINGS_TYPES_PATH = "holdings-types";
   public static final String NOTE_TYPES_PATH = "note-types";
@@ -45,6 +46,7 @@ public class FolioData extends FolioAccess {
   public static final String BUDGET_EXPENSE_CLASSES_ARRAY = "budgetExpenseClasses";
   public static final String ACQUISITION_METHODS_ARRAY = "acquisitionMethods";
   public static final String LOCATIONS_ARRAY = "locations";
+  public static final String LOAN_TYPES_ARRAY = "loantypes";
   public static final String FISCAL_YEARS_ARRAY = "fiscalYears";
   public static final String INSTANCE_TYPES_ARRAY = "instanceTypes";
   public static final String CONTRIBUTOR_TYPES_ARRAY = "contributorTypes";
@@ -60,6 +62,7 @@ public class FolioData extends FolioAccess {
   public static final Map<String,String> locationNameToUuid = new HashMap<>();
   public static final Map<String,String> instanceTypeNameToUuid = new HashMap<>();
   public static final Map<String,String> materialTypeNameToUuid = new HashMap<>();
+  public static final Map<String,String> loanTypeNameToUuid = new HashMap<>();
   public static final Map<String,String> contributorTypeNameToUuid = new HashMap<>();
   public static final Map<String,String> contributorTypeCodeToUuid = new HashMap<>();
   public static final Map<String,String> holdingsTypeNameToUuid = new HashMap<>();
@@ -121,6 +124,15 @@ public class FolioData extends FolioAccess {
             MATERIAL_TYPES_ARRAY,
             materialTypeNameToUuid);
 
+  }
+
+  public static String getLoanTypeId (String loanTypeName) throws Exception {
+    return getIdByKey(
+            loanTypeName,
+            LOAN_TYPES_PATH + "?query=(name==%22" + encode(loanTypeName) + "%22)",
+            LOAN_TYPES_ARRAY,
+            loanTypeNameToUuid
+    );
   }
 
   public static String getContributorTypeIdByName (String contributorTypeName) throws Exception {

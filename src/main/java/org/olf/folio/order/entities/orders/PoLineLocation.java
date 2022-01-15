@@ -19,11 +19,11 @@ public class PoLineLocation extends FolioEntity {
   public static PoLineLocation fromMarcRecord(MarcToFolio mappedMarc) throws Exception {
     if (mappedMarc.electronic()) {
       return new PoLineLocation()
-              .putQuantityElectronic(1)
+              .putQuantityElectronic(mappedMarc.quantity())
               .putLocationId(mappedMarc.locationId());
     } else {
       return new PoLineLocation()
-              .putQuantityPhysical(1)
+              .putQuantityPhysical(mappedMarc.quantity())
               .putLocationId(mappedMarc.locationId());
     }
   }

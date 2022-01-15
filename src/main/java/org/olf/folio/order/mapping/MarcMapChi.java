@@ -36,11 +36,10 @@ public class MarcMapChi extends MarcToFolio {
     }
   }
 
-  public boolean validate (RecordResult outcome) throws Exception {
+  public void validate (RecordResult outcome) throws Exception {
     super.validate(outcome);
     if (hasBarcode()) {
       outcome.addValidationMessageIfAny(ValidationLookups.validateBarcodeUniqueness(barcode()));
     }
-    return !outcome.failedValidation();
   }
 }

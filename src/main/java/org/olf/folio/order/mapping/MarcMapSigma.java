@@ -1,6 +1,7 @@
 package org.olf.folio.order.mapping;
 
 import org.marc4j.marc.Record;
+import org.olf.folio.order.entities.inventory.Item;
 import org.olf.folio.order.importhistory.RecordResult;
 import org.olf.folio.order.folioapis.FolioData;
 import org.olf.folio.order.folioapis.ValidationLookups;
@@ -9,6 +10,9 @@ public class MarcMapSigma extends MarcToFolio {
 
   protected static final String LOCATION = "a";
   protected static final String MATERIAL_TYPE = "d";
+  protected static final String QUANTITY = "q";
+  protected static final String LOAN_TYPE = "r";
+
 
   public MarcMapSigma(Record marcRecord) {
     super(marcRecord);
@@ -17,21 +21,12 @@ public class MarcMapSigma extends MarcToFolio {
   /**
    * @return 980$a
    */
-  public String location() {
+  public String locationName() {
     return d980.getSubfieldsAsString(LOCATION);
   }
 
-  public String locationId() throws Exception {
-    // TODO: fallback to config?
-    return FolioData.getLocationIdByName(location());
-  }
-
   public boolean hasLocation() {
-    return has(location());
-  }
-
-  public boolean hasLocationId() throws Exception {
-    return has(locationId());
+    return has(locationName());
   }
 
   public String materialType () {
@@ -47,17 +42,48 @@ public class MarcMapSigma extends MarcToFolio {
     }
   }
 
+  public int quantity () {
+    String quantity = d980.getSubfieldsAsString(QUANTITY);
+    if (has(quantity)) {
+      try {
+        return Integer.parseInt(quantity);
+      } catch (NumberFormatException nfe) {
+        return -1;
+      }
+    } else {
+      return 1;
+    }
+  }
+
+  public String loanType () {
+    return d980.getSubfieldsAsString(LOAN_TYPE);
+  }
+
+  // TODO: default to config loan type? mod-orders already does defaulting
+  public String loanTypeId () throws Exception {
+    if (has(loanType())) {
+      return FolioData.getLoanTypeId(loanType());
+    } else {
+      return null;
+    }
+  }
+
+  public void populateItem(Item item) throws Exception {
+    super.populateItem(item);
+    item.putPermanentLoanTypeId(loanTypeId());
+  }
+
   public boolean updateItem () {
     return true;
   }
 
-  public boolean validate(RecordResult outcome) throws Exception {
+  public void validate(RecordResult outcome) throws Exception {
     super.validate(outcome);
     if (has980()) {
       if (! hasLocation()) {
         outcome.addValidationMessageIfAny("Record is missing location (looked in 980$a)");
       } else {
-        outcome.addValidationMessageIfAny(ValidationLookups.validateLocationName(location()));
+        outcome.addValidationMessageIfAny(ValidationLookups.validateLocationName(locationName()));
       }
       if (has(materialType())) {
         outcome.addValidationMessageIfAny(ValidationLookups.validateMaterialTypeName(materialType()));
@@ -65,6 +91,5 @@ public class MarcMapSigma extends MarcToFolio {
         outcome.addValidationMessageIfAny("Record is missing material type (looked in 980$d)");
       }
     }
-    return !outcome.failedValidation();
   }
 }

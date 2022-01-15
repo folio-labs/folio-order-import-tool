@@ -213,7 +213,9 @@ public abstract class MarcToFolio {
     return null;
   }
 
-
+  public int quantity() {
+    return 1;
+  }
 
   /**
    * @return 980$b
@@ -834,92 +836,79 @@ public abstract class MarcToFolio {
     item.addBookplateNote(BookplateNote.createPhysicalBookplateNote(donor()));
   }
 
-  public boolean validate(RecordResult outcome) throws Exception {
+  public void validate(RecordResult outcome) throws Exception {
 
     outcome.setInputMarcData(this);
 
     // Sanity check
     if (!has980()) {
       outcome.addValidationMessageIfAny("Record is missing the 980 field");
-      return false;
-    }
-    // Check for mandatory fields. Check that mappings to FOLIO IDs resolve.
-    if (!hasFundCode()) {
-      outcome.addValidationMessageIfAny("Record is missing required fund code (908$b)");
     } else {
-      outcome.addValidationMessageIfAny(ValidationLookups.validateFund(fundCode()));
-    }
-    if (! hasVendorCode()) {
-      outcome.addValidationMessageIfAny("Record is missing required vendor code");
-    } else {
-      outcome.addValidationMessageIfAny(ValidationLookups.validateOrganization(vendorCode()));
-    }
-    if (!hasPrice()) {
-      outcome.addValidationMessageIfAny("Record is missing required price info (980$m)");
-    }
-    if (hasBillTo()) {
-      outcome.addValidationMessageIfAny(ValidationLookups.validateAddress(billTo()));
-    }
-    if (hasExpenseClassCode()) {
-      if (FolioData.getExpenseClassId(expenseClassCode())==null) {
-        outcome.addValidationMessageIfAny(
-                        "No expense class with the code (" + expenseClassCode() + ") found in FOLIO.");
+      // Check for mandatory fields. Check that mappings to FOLIO IDs resolve.
+      if (!hasFundCode()) {
+        outcome.addValidationMessageIfAny("Record is missing required fund code (908$b)");
       } else {
-        if (hasBudgetId()) {
-          if (ValidationLookups.validateBudgetExpenseClass(budgetId(), expenseClassId()) != null) {
-            outcome.addValidationMessageIfAny(
-                    String.format("No budget expense class found for fund code (%s) and expense class (%s).",
-                            fundCode(), expenseClassCode()));
+        outcome.addValidationMessageIfAny(ValidationLookups.validateFund(fundCode()));
+      }
+      if (!hasVendorCode()) {
+        outcome.addValidationMessageIfAny("Record is missing required vendor code");
+      } else {
+        outcome.addValidationMessageIfAny(ValidationLookups.validateOrganization(vendorCode()));
+      }
+      if (!hasPrice()) {
+        outcome.addValidationMessageIfAny("Record is missing required price info (980$m)");
+      }
+      if (hasBillTo()) {
+        outcome.addValidationMessageIfAny(ValidationLookups.validateAddress(billTo()));
+      }
+      if (hasExpenseClassCode()) {
+        if (FolioData.getExpenseClassId(expenseClassCode()) == null) {
+          outcome.addValidationMessageIfAny("No expense class with the code (" + expenseClassCode() + ") found in FOLIO.");
+        } else {
+          if (hasBudgetId()) {
+            if (ValidationLookups.validateBudgetExpenseClass(budgetId(), expenseClassId()) != null) {
+              outcome.addValidationMessageIfAny(String.format(
+                      "No budget expense class found for fund code (%s) and expense class (%s).",
+                      fundCode(), expenseClassCode()));
+            }
           }
         }
       }
-    }
-    if (hasAcquisitionMethod()) {
-      if (Config.acquisitionMethodsApiPresent) {
-        if (FolioData.getAcquisitionMethodId(acquisitionMethodValue()) == null) {
-          outcome.addValidationMessageIfAny(
-                  "No acquisition method with the value (" + acquisitionMethodValue() + ") found in FOLIO.");
+      if (hasAcquisitionMethod()) {
+        if (Config.acquisitionMethodsApiPresent) {
+          if (FolioData.getAcquisitionMethodId(acquisitionMethodValue()) == null) {
+            outcome.addValidationMessageIfAny("No acquisition method with the value (" + acquisitionMethodValue() + ") found in FOLIO.");
+          }
         }
       }
-    }
-    if (Config.importInvoice) {
-      outcome.addValidationMessageIfAny(
-              ValidationLookups.validateRequiredValuesForInvoice(title(), getRecord()));
-    }
+      if (Config.importInvoice) {
+        outcome.addValidationMessageIfAny(ValidationLookups.validateRequiredValuesForInvoice(title(), getRecord()));
+      }
 
-    // Flag issues with ISBN or other identifiers
-    if (hasISBN() && Utils.isInvalidIsbn(getISBN())) {
-      if (Config.V_ON_ISBN_INVALID_REMOVE_ISBN.equalsIgnoreCase(Config.onIsbnInvalid)) {
+      // Flag issues with ISBN or other identifiers
+      if (hasISBN() && Utils.isInvalidIsbn(getISBN())) {
+        if (Config.V_ON_ISBN_INVALID_REMOVE_ISBN.equalsIgnoreCase(Config.onIsbnInvalid)) {
+          outcome.setFlagIfNotNull(
+                  String.format("ISBN %s is not valid. Will remove the ISBN to continue.", getISBN()));
+        } else if (Config.V_ON_ISBN_INVALID_REPORT_ERROR.equalsIgnoreCase(Config.onIsbnInvalid)) {
+          outcome.addValidationMessageIfAny("ISBN is invalid").markSkipped(Config.onValidationErrorsSKipFailed);
+        }
+      } else if (!hasISBN() && !hasISSN() && !hasPublisherOrDistributorNumber() && !hasSystemControlNumber() && !hasOtherStandardIdentifier()) {
+        String existingInstancesMessage;
+        JSONObject instances = FolioData.getInstancesByQuery("title=\"" + title() + "\"");
+        int totalRecords = instances.getInt("totalRecords");
+        if (totalRecords > 0) {
+          Instance firstExistingInstance = Instance.fromJson((JSONObject) instances.getJSONArray(FolioData.INSTANCES_ARRAY).get(0));
+          existingInstancesMessage = String.format("%s in Inventory with the same title%sHRID %s",
+                  ( totalRecords > 1 ? " There are already " + totalRecords + " instances" : " There is already an Instance" ),
+                  ( totalRecords > 1 ? ", for example one with " : " and " ), firstExistingInstance.getHrid());
+        } else {
+          existingInstancesMessage = "Found no existing Instances with that exact title.";
+        }
         outcome.setFlagIfNotNull(
-                String.format("ISBN %s is not valid. Will remove the ISBN to continue.", getISBN())
-        );
-      } else if (Config.V_ON_ISBN_INVALID_REPORT_ERROR.equalsIgnoreCase(Config.onIsbnInvalid)) {
-        outcome.addValidationMessageIfAny("ISBN is invalid")
-                .markSkipped(Config.onValidationErrorsSKipFailed);
+                "No ISBN, ISSN, Publisher number or distributor number, system control number," + " or other standard identifier found in the record." + " This order import might trigger the creation of a new Instance in FOLIO." + existingInstancesMessage);
       }
-    } else if (!hasISBN() && !hasISSN() && !hasPublisherOrDistributorNumber() &&
-            !hasSystemControlNumber() && !hasOtherStandardIdentifier()) {
-      String existingInstancesMessage;
-      JSONObject instances = FolioData.getInstancesByQuery("title=\"" + title() + "\"");
-      int totalRecords = instances.getInt("totalRecords");
-      if (totalRecords > 0) {
-        Instance firstExistingInstance  = Instance.fromJson((JSONObject) instances.getJSONArray(FolioData.INSTANCES_ARRAY).get(0));
-        existingInstancesMessage = String.format(
-                "%s in Inventory with the same title%sHRID %s",
-                (totalRecords>1 ? " There are already " + totalRecords + " instances" : " There is already an Instance"),
-                (totalRecords>1 ? ", for example one with " : " and "),
-                firstExistingInstance.getHrid());
-      } else {
-        existingInstancesMessage = "Found no existing Instances with that exact title.";
-      }
-      outcome.setFlagIfNotNull(
-              "No ISBN, ISSN, Publisher number or distributor number, system control number," +
-                      " or other standard identifier found in the record." +
-                      " This order import might trigger the creation of a new Instance in FOLIO."
-                      + existingInstancesMessage);
     }
-
-    return !outcome.failedValidation();
   }
 
   public boolean has (String string) {
