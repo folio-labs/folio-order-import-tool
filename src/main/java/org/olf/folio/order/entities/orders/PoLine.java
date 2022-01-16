@@ -72,7 +72,7 @@ public class PoLine extends FolioEntity {
       poLine.putTagsIfPresent(Tags.fromMarcRecord((MarcMapLambda) mappedMarc));
     }
     poLine.putCost(Cost.fromMarcRecord(mappedMarc))
-            .putLocations(new JSONArray().put(PoLineLocation.fromMarcRecord(mappedMarc).asJson()))
+            .putLocations(mappedMarc.poLineLocations())
             .putTitleOrPackage(mappedMarc.title())
             .putAcquisitionMethod(mappedMarc.acquisitionMethodId())
             .putRush(mappedMarc.rush())

@@ -1,5 +1,6 @@
 package org.olf.folio.order.mapping;
 
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.marc4j.marc.DataField;
@@ -13,6 +14,7 @@ import org.olf.folio.order.entities.inventory.HoldingsRecord;
 import org.olf.folio.order.entities.inventory.Instance;
 import org.olf.folio.order.entities.inventory.InstanceIdentifier;
 import org.olf.folio.order.entities.inventory.Item;
+import org.olf.folio.order.entities.orders.PoLineLocation;
 import org.olf.folio.order.entities.orders.ProductIdentifier;
 import org.olf.folio.order.importhistory.RecordResult;
 import org.olf.folio.order.folioapis.FolioData;
@@ -76,6 +78,8 @@ public abstract class MarcToFolio {
   // Mappings 856
   protected static final String USER_LIMIT           = "x";
 
+  protected static final String V_ELECTRONIC = "ELECTRONIC";
+
   // For reporting missing mandatory mappings in 980
   public static final Map<String, String> FOLIO_TO_MARC_FIELD_MAP = new HashMap<>();
   public static final String FUND_CODE_LABEL = "Fund code";
@@ -85,6 +89,7 @@ public abstract class MarcToFolio {
   public static final String MARC_980_V = "980$v";
   public static final String MARC_980_M = "980$m";
 
+  public static final Logger logger = Logger.getLogger(MarcToFolio.class);
   public MarcToFolio(Record marcRecord) {
     this.marcRecord = marcRecord;
     if (FOLIO_TO_MARC_FIELD_MAP.isEmpty()) {
@@ -303,7 +308,7 @@ public abstract class MarcToFolio {
   }
 
   public boolean electronic() {
-    return "ELECTRONIC".equalsIgnoreCase(electronicIndicator());
+    return V_ELECTRONIC.equalsIgnoreCase(electronicIndicator());
   }
 
   public boolean physical() {
@@ -483,6 +488,19 @@ public abstract class MarcToFolio {
    */
   public String invoiceDate() {
     return d980.getSubfieldsAsString(INVOICE_DATE);
+  }
+
+  public JSONArray poLineLocations () throws Exception {
+    JSONArray locationsJson = new JSONArray();
+    PoLineLocation poLoc = new PoLineLocation();
+    poLoc.putLocationId(locationId());
+    if (electronic()) {
+      poLoc.putQuantityElectronic(quantity());
+    } else {
+      poLoc.putQuantityPhysical(quantity());
+    }
+    locationsJson.put(poLoc.asJson());
+    return locationsJson;
   }
 
   /**
@@ -846,7 +864,7 @@ public abstract class MarcToFolio {
     } else {
       // Check for mandatory fields. Check that mappings to FOLIO IDs resolve.
       if (!hasFundCode()) {
-        outcome.addValidationMessageIfAny("Record is missing required fund code (908$b)");
+        outcome.addValidationMessageIfAny("Record is missing required fund code (980$b)");
       } else {
         outcome.addValidationMessageIfAny(ValidationLookups.validateFund(fundCode()));
       }

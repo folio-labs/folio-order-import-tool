@@ -26,8 +26,8 @@ public class Cost extends FolioEntity {
     return cost;
   }
 
-  public Cost putQuantityElectronic (int i) {
-    return (Cost) putInteger(P_QUANTITY_ELECTRONIC, i);
+  public Cost putQuantityElectronic (int qe) {
+    return (Cost) putInteger(P_QUANTITY_ELECTRONIC, qe);
   }
   public Cost putListUnitPriceElectronic (String price) {
     return (Cost) putString(P_LIST_UNIT_PRICE_ELECTRONIC, price);
@@ -35,8 +35,8 @@ public class Cost extends FolioEntity {
   public Cost putListUnitPrice (String price) {
     return (Cost) putString(P_LIST_UNIT_PRICE, price);
   }
-  public Cost putQuantityPhysical (int i) {
-    return (Cost) putInteger (P_QUANTITY_PHYSICAL, i);
+  public Cost putQuantityPhysical (int qp) {
+    return (Cost) putInteger (P_QUANTITY_PHYSICAL, qp);
   }
   public Cost putCurrency (String currency) {
     return (Cost) putString(P_CURRENCY, currency);
