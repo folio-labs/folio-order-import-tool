@@ -48,8 +48,8 @@ public class MarcMapSigma extends MarcToFolio {
     return FolioData.getLocationIdByName(locationName(i));
   }
 
-  public boolean hasLocation() {
-    return has(locationName());
+  public boolean hasLocation(int i) {
+    return has(locationName(i));
   }
 
   public String materialType () {
@@ -137,10 +137,12 @@ public class MarcMapSigma extends MarcToFolio {
   public void validate(RecordResult outcome) throws Exception {
     super.validate(outcome);
     if (has980()) {
-      if (! hasLocation()) {
-        outcome.addValidationMessageIfAny("Record is missing location (looked in 980$a)");
-      } else {
-        outcome.addValidationMessageIfAny(ValidationLookups.validateLocationName(locationName()));
+      for (int i=0; i<d980s.size(); i++) {
+        if (!hasLocation(i)) {
+          outcome.addValidationMessageIfAny("MARC field 980 #" + i + " is missing location (looked in 980$a)");
+        } else {
+          outcome.addValidationMessageIfAny(ValidationLookups.validateLocationName(locationName()));
+        }
       }
       if (has(materialType())) {
         outcome.addValidationMessageIfAny(ValidationLookups.validateMaterialTypeName(materialType()));

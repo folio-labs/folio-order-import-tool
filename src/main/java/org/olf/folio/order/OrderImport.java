@@ -101,42 +101,46 @@ public class OrderImport {
 					outcome.setImportError(e.getMessage() + ( e.getCause() != null ? " " + e.getCause() : "" ));
 				}
 			}
-			CompositePurchaseOrder importedPo;
-			try {
-				importedPo = importPurchaseOrder(multilinePo);
-			} catch (Exception e) {
-				results.setFatalError(String.format("Failed to import purchase order: %s", e.getMessage()));
-				return results.markEndedWithError();
-			}
-
-			try {
-				for (PoLine line : importedPo.getCompositePoLines()) {
-					dataPark.putInstanceId(line.getId(), line.getInstanceId());
-				}
-			} catch (NullPointerException npe) {
-				results.setFatalError(String.format("Internal error in the import tool: %s", npe.getMessage()));
-				npe.printStackTrace();
-				return results.markEndedWithError();
-			}
-
-			for (ImportDataPark.PoLineData data : dataPark.getDataLines()) {
+			if (!results.hasValidationErrors()) {
+				CompositePurchaseOrder importedPo;
 				try {
-					updateInventory(data.instanceId, data.mappedMarc, data.recordResult);
-					importNotesIfAny(data.mappedMarc, data.poLineId);
-					data.recordResult.setPoNumber(importedPo.getPoNumber()).setPoUiUrl(Config.folioUiUrl,
-									Config.folioUiOrdersPath, importedPo.getId(), importedPo.getPoNumber());
-				}
-				catch (JSONException je) {
-					data.recordResult.setImportError(
-									"Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
-				}
-				catch (NullPointerException npe) {
-					data.recordResult.setImportError(
-									"Application error. Null pointer encountered. " + npe.getMessage() + Arrays.toString(
-													npe.getStackTrace()));
+					importedPo = importPurchaseOrder(multilinePo);
 				}
 				catch (Exception e) {
-					data.recordResult.setImportError(e.getMessage() + ( e.getCause() != null ? " " + e.getCause() : "" ));
+					results.setFatalError(String.format("Failed to import purchase order: %s", e.getMessage()));
+					return results.markEndedWithError();
+				}
+
+				try {
+					for (PoLine line : importedPo.getCompositePoLines()) {
+						dataPark.putInstanceId(line.getId(), line.getInstanceId());
+					}
+				}
+				catch (NullPointerException npe) {
+					results.setFatalError(String.format("Internal error in the import tool: %s", npe.getMessage()));
+					npe.printStackTrace();
+					return results.markEndedWithError();
+				}
+
+				for (ImportDataPark.PoLineData data : dataPark.getDataLines()) {
+					try {
+						updateInventory(data.instanceId, data.mappedMarc, data.recordResult);
+						importNotesIfAny(data.mappedMarc, data.poLineId);
+						data.recordResult.setPoNumber(importedPo.getPoNumber()).setPoUiUrl(Config.folioUiUrl,
+										Config.folioUiOrdersPath, importedPo.getId(), importedPo.getPoNumber());
+					}
+					catch (JSONException je) {
+						data.recordResult.setImportError(
+										"Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
+					}
+					catch (NullPointerException npe) {
+						data.recordResult.setImportError(
+										"Application error. Null pointer encountered. " + npe.getMessage() + Arrays.toString(
+														npe.getStackTrace()));
+					}
+					catch (Exception e) {
+						data.recordResult.setImportError(e.getMessage() + ( e.getCause() != null ? " " + e.getCause() : "" ));
+					}
 				}
 			}
 			fileStore.storeResults(results);
