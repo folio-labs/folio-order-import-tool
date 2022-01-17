@@ -1,3 +1,7 @@
+## 1.3.2 2022-01-18
+
+* Bug-fix: Validates Instance ISBNs without including any qualifiers.
+
 ## 1.3.1 2021-12-17
 
 * Bug-fix: Removes mistaken attempt to update Item for electronic
