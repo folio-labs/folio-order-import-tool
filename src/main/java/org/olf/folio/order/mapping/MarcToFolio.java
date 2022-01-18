@@ -815,7 +815,7 @@ public abstract class MarcToFolio {
 
   private static boolean doIncludeThisIdentifier(String identifierTypeId, String value) {
     if (identifierTypeId.equals(Constants.ISBN)) {
-      if (Utils.isInvalidIsbn(value)) {
+      if (Utils.isInvalidIsbn(getInitialDigits(value))) {
         return !Config.onIsbnInvalidRemoveIsbn;
       }
     }
