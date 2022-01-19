@@ -1,3 +1,8 @@
+## 1.4.0 2022-01-19
+
+* Supports one-PO-per-file and multiple-locations-per-MARC-record
+* Adds MARC mapping extension 'sigma'
+
 ## 1.3.2 2022-01-18
 
 * Bug-fix: Validates Instance ISBNs without including any qualifiers.
