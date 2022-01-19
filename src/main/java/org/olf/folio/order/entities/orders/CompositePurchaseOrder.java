@@ -118,7 +118,15 @@ public class CompositePurchaseOrder extends FolioEntity {
 
   public String getFirstPoLineId () {
     if (hasPoLines()) {
-      return getCompositePoLines().get(0).getId();
+      return getFirstPoLine().getId();
+    } else {
+      return null;
+    }
+  }
+
+  public PoLine getFirstPoLine () {
+    if (hasPoLines()) {
+      return PoLine.fromJson(getCompositePoLinesJsonArray().getJSONObject(0));
     } else {
       return null;
     }

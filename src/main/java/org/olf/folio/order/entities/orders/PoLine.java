@@ -43,7 +43,10 @@ public class PoLine extends FolioEntity {
   public static final String P_PUBLISHER = "publisher";
   public static final String P_PUBLICATION_DATE = "publicationDate";
   public static final String P_TAGS = "tags";
+
+  // Properties in PO line of PO response
   public static final String P_INSTANCE_ID = "instanceId";
+  public static final String P_HOLDING_ID = "holdingId";
 
   public static PoLine fromMarcRecord(String orderId, MarcToFolio mappedMarc) throws Exception {
     return fromMarcRecord(UUID.fromString(orderId), mappedMarc);
@@ -211,6 +214,17 @@ public class PoLine extends FolioEntity {
 
   public String getInstanceId () {
     return getString(P_INSTANCE_ID);
+  }
+
+  public List<String> getHoldingsRecordIds () {
+    List<String> holdingsRecordIds = new ArrayList<>();
+    JSONArray locations = json.getJSONArray(P_LOCATIONS);
+    if (locations != null && !locations.isEmpty()) {
+      for (Object o : locations) {
+        holdingsRecordIds.add(((JSONObject) o).getString(P_HOLDING_ID));
+      }
+    }
+    return holdingsRecordIds;
   }
 
   public List<PoLineLocation> getLocations() {

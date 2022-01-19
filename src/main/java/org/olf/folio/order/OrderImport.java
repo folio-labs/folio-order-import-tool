@@ -4,9 +4,11 @@ import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.marc4j.MarcReader;
@@ -67,130 +69,142 @@ public class OrderImport {
 			}
 		}
 
-		MarcReader reader = new MarcStreamReader(fileStore.getMarcInputStream());
+		MarcReader marcReader = new MarcStreamReader(fileStore.getMarcInputStream());
 		results.markPartial();
 
 		if (Config.createOnePurchaseOrderPerFile) {
-			CompositePurchaseOrder multilinePo = CompositePurchaseOrder.initiateEmptyOrder();
-			ImportDataPark dataPark = new ImportDataPark(multilinePo.getId());
-			while (reader.hasNext()) {
-				RecordResult outcome = results.nextResult();
+			importOnePurchaseOrderForEntireFile(marcReader, results, fileStore);
+		} else {
+			importOnePurchaseOrderPerMarcRecord(marcReader, results, fileStore);
+		}
+		return results.markDone();
+	}
+
+	private void importOnePurchaseOrderPerMarcRecord(MarcReader reader, Results results, FileStorageHelper fileStore) throws Exception {
+		while (reader.hasNext()) {
+			RecordResult outcome = results.nextResult();
+			try {
 				Record record = reader.next();
-				try {
-					MarcToFolio mappedMarc = Config.getMarcMapping(record);
-					RecordChecker.validateMarcRecord(mappedMarc, outcome);
-					if (!outcome.isSkipped()) {
-						if (!multilinePo.hasPoLines()) {
-							// Set PO vendor from first PO line
-							multilinePo.putVendor(mappedMarc.vendorUuid());
-						}
-						PoLine poLine = PoLine.fromMarcRecord(multilinePo.getId(), mappedMarc);
-						multilinePo.addPoLine(poLine);
-						dataPark.addLine(poLine.getId(), mappedMarc, outcome);
-					}
-				} catch (JSONException je) {
-					outcome.setImportError(
-									"Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
-				}
-				catch (NullPointerException npe) {
-					outcome.setImportError(
-									"Application error. Null pointer encountered. " + npe.getMessage() + Arrays.toString(
-													npe.getStackTrace()));
-				}
-				catch (Exception e) {
-					outcome.setImportError(e.getMessage() + ( e.getCause() != null ? " " + e.getCause() : "" ));
-				}
-			}
-			if (!results.hasValidationErrors()) {
-				CompositePurchaseOrder importedPo;
-				try {
-					importedPo = importPurchaseOrder(multilinePo);
-				}
-				catch (Exception e) {
-					results.setFatalError(String.format("Failed to import purchase order: %s", e.getMessage()));
-					return results.markEndedWithError();
+				MarcToFolio mappedMarc = Config.getMarcMapping(record);
+				RecordChecker.validateMarcRecord(mappedMarc, outcome);
+				if (!outcome.isSkipped()) {
+					// RECORD VALIDATION PASSED OR SERVICE IS CONFIGURED TO ATTEMPT IMPORT IN ANY CASE
+
+					// CREATE PURCHASE ORDER AND LINE
+					CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
+					// IMPORT THE CREATED PO
+					CompositePurchaseOrder importedPo = importPurchaseOrder(compositePo);
+
+					//INSERT A NOTE IF THERE IS ONE IN THE MARC RECORD
+					String poLineId = compositePo.getFirstPoLineId();
+					importNotesIfAny(mappedMarc, poLineId);
+
+					outcome.setPoNumber(importedPo.getPoNumber())
+								.setPoUiUrl(Config.folioUiUrl, Config.folioUiOrdersPath,
+												importedPo.getId(), importedPo.getPoNumber());
+
+					// FETCH, UPDATE, AND PUT SELECT INVENTORY INSTANCE/HOLDINGS RECORD/ITEM
+					updateInventory(importedPo.getFirstPoLine(), mappedMarc, outcome);
+
+					// IMPORT INVOICE IF CONFIGURED FOR IT AND PRESENT
+					maybeImportInvoice(importedPo, mappedMarc);
 				}
 
+			}
+			catch (JSONException je) {
+				outcome.setImportError(
+								"Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
+			}
+			catch (NullPointerException npe) {
+				outcome.setImportError(
+								"Application error. Null pointer encountered. " + npe.getMessage() + Arrays.toString(
+												npe.getStackTrace()));
+			}
+			catch (Exception e) {
+				outcome.setImportError(e.getMessage() + ( e.getCause() != null ? " " + e.getCause() : "" ));
+			}
+			fileStore.storeResults(results);
+		}
+	}
+
+	private void importOnePurchaseOrderForEntireFile(MarcReader reader, Results results, FileStorageHelper fileStore) throws Exception {
+		CompositePurchaseOrder multilinePo = CompositePurchaseOrder.initiateEmptyOrder();
+		PurchaseOrderDataShelf poDataShelf = new PurchaseOrderDataShelf(multilinePo.getId());
+		while (reader.hasNext()) {
+			RecordResult outcome = results.nextResult();
+			Record record = reader.next();
+			try {
+				MarcToFolio mappedMarc = Config.getMarcMapping(record);
+				RecordChecker.validateMarcRecord(mappedMarc, outcome);
+				if (!outcome.isSkipped()) {
+					if (!multilinePo.hasPoLines()) {
+						// Set PO vendor from first PO line
+						multilinePo.putVendor(mappedMarc.vendorUuid());
+					}
+					PoLine poLine = PoLine.fromMarcRecord(multilinePo.getId(), mappedMarc);
+					multilinePo.addPoLine(poLine);
+					poDataShelf.putPoLineFolderOnShelf(poLine.getId(), mappedMarc, outcome);
+				}
+			} catch (JSONException je) {
+				outcome.setImportError(
+								"Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
+			}
+			catch (NullPointerException npe) {
+				outcome.setImportError(
+								"Application error. Null pointer encountered. " + npe.getMessage() + Arrays.toString(
+												npe.getStackTrace()));
+			}
+			catch (Exception e) {
+				outcome.setImportError(e.getMessage() + ( e.getCause() != null ? " " + e.getCause() : "" ));
+			}
+		}
+
+		CompositePurchaseOrder importedPo = null;
+		if (!results.hasValidationErrors()) {
+			try {
+				importedPo = importPurchaseOrder(multilinePo);
+			}
+			catch (Exception e) {
+				results.setFatalError(String.format("Failed to import purchase order: %s", e.getMessage()));
+				results.markEndedWithError();
+			}
+
+			if (! (importedPo == null)) {
 				try {
 					for (PoLine line : importedPo.getCompositePoLines()) {
-						dataPark.putInstanceId(line.getId(), line.getInstanceId());
+						poDataShelf.putPoLineResponseInFolder(line.getId(), line);
 					}
 				}
 				catch (NullPointerException npe) {
 					results.setFatalError(String.format("Internal error in the import tool: %s", npe.getMessage()));
 					npe.printStackTrace();
-					return results.markEndedWithError();
+					results.markEndedWithError();
 				}
 
-				for (ImportDataPark.PoLineData data : dataPark.getDataLines()) {
-					try {
-						updateInventory(data.instanceId, data.mappedMarc, data.recordResult);
-						importNotesIfAny(data.mappedMarc, data.poLineId);
-						data.recordResult.setPoNumber(importedPo.getPoNumber()).setPoUiUrl(Config.folioUiUrl,
-										Config.folioUiOrdersPath, importedPo.getId(), importedPo.getPoNumber());
+				if (!results.hasFatalError()) {
+					for (PurchaseOrderDataShelf.PoLineFolder poLineFolder : poDataShelf.getPoLineFolder()) {
+						try {
+							updateInventory(poLineFolder.poLine, poLineFolder.mappedMarc, poLineFolder.recordResult);
+							importNotesIfAny(poLineFolder.mappedMarc, poLineFolder.poLineId);
+							poLineFolder.recordResult.setPoNumber(importedPo.getPoNumber()).setPoUiUrl(Config.folioUiUrl,
+											Config.folioUiOrdersPath, importedPo.getId(), importedPo.getPoNumber());
+						}
+						catch (JSONException je) {
+							poLineFolder.recordResult.setImportError(
+											"Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
+						}
+						catch (NullPointerException npe) {
+							poLineFolder.recordResult.setImportError("Application error. Null pointer encountered. " + npe.getMessage() + Arrays.toString(
+											npe.getStackTrace()));
+						}
+						catch (Exception e) {
+							poLineFolder.recordResult.setImportError(e.getMessage() + ( e.getCause() != null ? " " + e.getCause() : "" ));
+						}
 					}
-					catch (JSONException je) {
-						data.recordResult.setImportError(
-										"Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
-					}
-					catch (NullPointerException npe) {
-						data.recordResult.setImportError(
-										"Application error. Null pointer encountered. " + npe.getMessage() + Arrays.toString(
-														npe.getStackTrace()));
-					}
-					catch (Exception e) {
-						data.recordResult.setImportError(e.getMessage() + ( e.getCause() != null ? " " + e.getCause() : "" ));
-					}
 				}
-			}
-			fileStore.storeResults(results);
-		} else {
-			while (reader.hasNext()) {
-				RecordResult outcome = results.nextResult();
-				try {
-					Record record = reader.next();
-					MarcToFolio mappedMarc = Config.getMarcMapping(record);
-					RecordChecker.validateMarcRecord(mappedMarc, outcome);
-					if (!outcome.isSkipped()) {
-						// RECORD VALIDATION PASSED OR SERVICE IS CONFIGURED TO ATTEMPT IMPORT IN ANY CASE
-
-						// CREATE PURCHASE ORDER AND LINE
-						CompositePurchaseOrder compositePo = CompositePurchaseOrder.fromMarcRecord(mappedMarc);
-						// IMPORT THE CREATED PO
-						CompositePurchaseOrder importedPo = importPurchaseOrder(compositePo);
-
-						//INSERT A NOTE IF THERE IS ONE IN THE MARC RECORD
-  					String poLineId = compositePo.getFirstPoLineId();
- 						importNotesIfAny(mappedMarc, poLineId);
-
-						outcome.setPoNumber(importedPo.getPoNumber())
-									.setPoUiUrl(Config.folioUiUrl, Config.folioUiOrdersPath,
-													importedPo.getId(), importedPo.getPoNumber());
-
-						// FETCH, UPDATE, AND PUT SELECT INVENTORY INSTANCE/HOLDINGS RECORD/ITEM
-						updateInventory(importedPo.getInstanceId(), mappedMarc, outcome);
-
-						// IMPORT INVOICE IF CONFIGURED FOR IT AND PRESENT
-						maybeImportInvoice(importedPo, mappedMarc);
-					}
-
-				}
-				catch (JSONException je) {
-					outcome.setImportError(
-									"Application error. Unexpected error occurred in the MARC parsing logic: " + je.getMessage());
-				}
-				catch (NullPointerException npe) {
-					outcome.setImportError(
-									"Application error. Null pointer encountered. " + npe.getMessage() + Arrays.toString(
-													npe.getStackTrace()));
-				}
-				catch (Exception e) {
-					outcome.setImportError(e.getMessage() + ( e.getCause() != null ? " " + e.getCause() : "" ));
-				}
-				fileStore.storeResults(results);
 			}
 		}
-		return results.markDone();
+		fileStore.storeResults(results);
 	}
 
 	private CompositePurchaseOrder importPurchaseOrder(CompositePurchaseOrder compositePurchaseOrder)
@@ -209,11 +223,11 @@ public class OrderImport {
 		}
 	}
 
-	private void updateInventory(String instanceId, MarcToFolio mappedMarc, RecordResult outcome)
+	private void updateInventory(PoLine poLine, MarcToFolio mappedMarc, RecordResult outcome)
 					throws Exception {
 		// RETRIEVE, UPDATE, AND PUT THE RELATED INSTANCE
 		Instance instance = Instance.fromJson(
-						FolioAccess.callApiGetById(FolioData.INSTANCES_PATH, instanceId));
+						FolioAccess.callApiGetById(FolioData.INSTANCES_PATH, poLine.getInstanceId()));
 		if (instance.getSource().equals(Instance.V_MARC)) {
 			String feedback =
 							String.format("Purchase order and line were created and linked to records in " +
@@ -229,27 +243,26 @@ public class OrderImport {
 			outcome.setInstanceHrid(instance.getHrid()).setInstanceUiUrl(Config.folioUiUrl, Config.folioUiInventoryPath, instance.getId(), instance.getHrid());
 		}
 
-		// RETRIEVE, UPDATE, AND PUT THE RELATED HOLDINGS RECORD
-		HoldingsRecord holdingsRecord = HoldingsRecord.fromJson(
-						FolioAccess.callApiGetFirstObjectOfArray(
-										FolioData.HOLDINGS_STORAGE_PATH + "?query=(instanceId==" + instance.getId() + ")",
-										FolioData.HOLDINGS_RECORDS_ARRAY));
-    mappedMarc.populateHoldingsRecord(holdingsRecord);
-		FolioAccess.callApiPut(FolioData.HOLDINGS_STORAGE_PATH, holdingsRecord);
-
-		if (mappedMarc.updateItem()) {
-			Item item =Item.fromJson(
-											FolioAccess.callApiGetFirstObjectOfArray(
-															FolioData.ITEMS_PATH + "?query=(holdingsRecordId=="
-																			+ holdingsRecord.getId() + ")",
-															FolioData.ITEMS_ARRAY));
-			if (item.isEmpty()) {
-				outcome.setImportError(
-								String.format("Warning: The tool attempted to find and update an Item " +
-												"but no Item was found for holdingsRecordId (%s)", holdingsRecord.getId()));
-			} else {
-				mappedMarc.populateItem(item);
-				FolioAccess.callApiPut(FolioData.ITEMS_PATH, item);
+		List<String> generatedHoldings = poLine.getHoldingsRecordIds();
+		for (String holdingsRecordId : generatedHoldings) {
+			HoldingsRecord holdingsRecord = HoldingsRecord.fromJson(FolioAccess.callApiGetById(FolioData.HOLDINGS_STORAGE_PATH,holdingsRecordId));
+			mappedMarc.populateHoldingsRecord(holdingsRecord);
+			FolioAccess.callApiPut(FolioData.HOLDINGS_STORAGE_PATH, holdingsRecord);
+			if (mappedMarc.updateItem()) {
+				JSONArray items = FolioAccess.callApiGetArray(FolioData.ITEMS_PATH + "?query=(holdingsRecordId=="
+												+ holdingsRecord.getId() + ")",
+								FolioData.ITEMS_ARRAY);
+				for (Object itemObject : items) {
+					Item item = Item.fromJson((JSONObject) itemObject);
+					if (item.isEmpty()) {
+						outcome.setImportError(String.format(
+										"Warning: The tool attempted to find and update an Item " + "but no Item was found for holdingsRecordId (%s)",
+										holdingsRecord.getId()));
+					} else {
+						mappedMarc.populateItem(item);
+						FolioAccess.callApiPut(FolioData.ITEMS_PATH, item);
+					}
+				}
 			}
 		}
 	}
@@ -277,44 +290,49 @@ public class OrderImport {
 		return records;
 	}
 
-	static class ImportDataPark {
+	/**
+	 * Helper classes for caching import data: A 'shelf' for the entire purchase order,
+	 * holding a 'folder' for each PO line, containing the source data, the imported data,
+	 * and the result feedback.
+	 */
+	static class PurchaseOrderDataShelf {
 		String poId;
-		Map<String,PoLineData> map = new HashMap<>();
+		Map<String, PoLineFolder> map = new HashMap<>();
 
-		ImportDataPark(String purchaseOrderId) {
+		PurchaseOrderDataShelf(String purchaseOrderId) {
 			poId = purchaseOrderId;
 		}
 
-		void addLine(String poLineId, MarcToFolio mappedMarc, RecordResult outcome) {
-			map.put(poLineId, new PoLineData(poLineId, mappedMarc, outcome));
+		void putPoLineFolderOnShelf(String poLineId, MarcToFolio mappedMarc, RecordResult outcome) {
+			map.put(poLineId, new PoLineFolder(poLineId, mappedMarc, outcome));
 		}
 
-		void putInstanceId(String poLineId, String instanceId) {
+		void putPoLineResponseInFolder(String poLineId, PoLine poLine) {
 			if (map.containsKey(poLineId)) {
-				map.get(poLineId).putInstanceId(instanceId);
+				map.get(poLineId).putPoLine(poLine);
 			} else {
 				logger.error(String.format("ImportDataPark has no entry for PO line ID [%s]: %s", poLineId, map.keySet()));
 			}
 		}
 
-		Collection<PoLineData> getDataLines () {
+		Collection<PoLineFolder> getPoLineFolder() {
 			return map.values();
 		}
 
-		static class PoLineData {
+		static class PoLineFolder {
 			String poLineId;
 			MarcToFolio mappedMarc;
 			RecordResult recordResult;
-			String instanceId;
+			PoLine poLine;
 
-			PoLineData (String poLineId, MarcToFolio mappedMarc, RecordResult recordResult) {
+			PoLineFolder(String poLineId, MarcToFolio mappedMarc, RecordResult recordResult) {
 				this.poLineId = poLineId;
 				this.mappedMarc = mappedMarc;
 				this.recordResult = recordResult;
 			}
 
-			void putInstanceId (String instanceId) {
-				this.instanceId = instanceId;
+			void putPoLine (PoLine poLine) {
+				this.poLine = poLine;
 			}
 		}
 	}

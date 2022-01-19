@@ -30,7 +30,6 @@ public class MarcMapSigma extends MarcToFolio {
   }
 
   private void setAll980s() {
-    logger.debug("Caching all 980s from MARC file");
     List<VariableField> variableFields = marcRecord.getVariableFields("980");
     for (VariableField field : variableFields) {
       d980s.add((DataField) field);
