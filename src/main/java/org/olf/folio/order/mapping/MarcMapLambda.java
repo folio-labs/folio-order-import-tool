@@ -34,7 +34,7 @@ public class MarcMapLambda extends MarcToFolio {
     return projectCode() != null && !projectCode().isEmpty();
   }
 
-  public boolean validate(RecordResult outcome) throws Exception {
+  public void validate(RecordResult outcome) throws Exception {
     super.validate(outcome);
     if (has980()) {
       if (!hasObjectCode()) {
@@ -53,6 +53,5 @@ public class MarcMapLambda extends MarcToFolio {
         }
       }
     }
-    return !outcome.failedValidation();
   }
 }

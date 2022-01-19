@@ -195,6 +195,7 @@ public class FolioAccess {
     logger.info("Path: " + apiPath);
     logger.info("Response code: " + responseCode);
     if (responseCode > 399) {
+      logger.error(String.format("Error POSTing JSON object [%s]: %s", body.toString(2), responseString));
       throw new Exception(responseString);
     }
     JSONObject responseJson = new JSONObject(responseString);

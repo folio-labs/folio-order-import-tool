@@ -1,12 +1,15 @@
 package org.olf.folio.order.entities.inventory;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.olf.folio.order.entities.FolioEntity;
 
+@CanIgnoreReturnValue
 public class Instance extends FolioEntity {
   // Constant values
   public static final String V_FOLIO = "FOLIO";
+  public static final String V_MARC = "MARC";
   public static final boolean DISCOVERY_SUPPRESS = false;
   public static final String INSTANCE_TYPE = "text";
 
@@ -14,7 +17,6 @@ public class Instance extends FolioEntity {
   public static final String P_HRID = "hrid";
   public static final String P_TITLE = "title";
   public static final String P_SOURCE = "source";
-  public static final String V_MARC = "MARC";
   public static final String P_INSTANCE_TYPE_ID = "instanceTypeId";
   public static final String P_IDENTIFIERS = "identifiers";
   public static final String P_CONTRIBUTORS = "contributors";

@@ -38,22 +38,4 @@ public class OrderLineDetails extends FolioEntity {
     return present(productIds) ? putProductIds(productIds) : this;
   }
 
-  public boolean hasProductIdentifiers () {
-    return json.has(P_PRODUCT_IDS);
-  }
-
-  public List<ProductIdentifier> getProductIdentifiers () {
-    List<ProductIdentifier> list = new ArrayList<>();
-    JSONArray ids = getArray(P_PRODUCT_IDS);
-    if (ids != null) {
-      for (Object o : ids) {
-        list.add(ProductIdentifier.fromJson((JSONObject) o));
-      }
-    }
-    return list;
-  }
-  public JSONArray getProductIdentifiersAsJson () {
-    return getArray(P_PRODUCT_IDS);
-  }
-
 }

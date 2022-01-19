@@ -1,9 +1,11 @@
 package org.olf.folio.order.entities.orders;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.json.JSONObject;
 import org.olf.folio.order.entities.FolioEntity;
 import org.olf.folio.order.mapping.MarcToFolio;
 
+@CanIgnoreReturnValue
 public class PoLineLocation extends FolioEntity {
 
   public static final String P_QUANTITY_PHYSICAL = "quantityPhysical";
@@ -16,24 +18,12 @@ public class PoLineLocation extends FolioEntity {
     return loc;
   }
 
-  public static PoLineLocation fromMarcRecord(MarcToFolio mappedMarc) throws Exception {
-    if (mappedMarc.electronic()) {
-      return new PoLineLocation()
-              .putQuantityElectronic(1)
-              .putLocationId(mappedMarc.locationId());
-    } else {
-      return new PoLineLocation()
-              .putQuantityPhysical(1)
-              .putLocationId(mappedMarc.locationId());
-    }
+  public PoLineLocation putQuantityPhysical(int qp) {
+    return (PoLineLocation) putInteger(P_QUANTITY_PHYSICAL, qp);
   }
 
-  public PoLineLocation putQuantityPhysical(int i) {
-    return (PoLineLocation) putInteger(P_QUANTITY_PHYSICAL, i);
-  }
-
-  public PoLineLocation putQuantityElectronic(int i) {
-    return (PoLineLocation) putInteger(P_QUANTITY_ELECTRONIC, i);
+  public PoLineLocation putQuantityElectronic(int qe) {
+    return (PoLineLocation) putInteger(P_QUANTITY_ELECTRONIC, qe);
   }
 
   public PoLineLocation putLocationId (String locationId) {
