@@ -163,7 +163,7 @@ The desired mapping is selected at startup by setting the parameter `marcMapping
 | 980 $o        | Object code    | orderLine tag list    | Yes      |         | The object code must exist as a Tag in FOLIO.  | 
 | 980 $r        | Project code   | orderLine tag list    | No       |         | The project code must exist as a Tag in FOLIO. |
 
-#### `Sigma` mapping extension (!! work-in-progress !!)
+#### `Sigma` mapping extension 
 
 | MARC_fields¹ | Description   | Target properties                                             | Required           | Default                  | Content (incoming) |
 |--------------|---------------|---------------------------------------------------------------|--------------------|--------------------------|--------------------|
