@@ -140,7 +140,7 @@ public class MarcMapSigma extends MarcToFolio {
         if (!hasLocation(i)) {
           outcome.addValidationMessageIfAny("MARC field 980 #" + i + " is missing location (looked in 980$a)");
         } else {
-          outcome.addValidationMessageIfAny(ValidationLookups.validateLocationName(locationName()));
+          outcome.addValidationMessageIfAny(ValidationLookups.validateLocationName(locationName(i)));
         }
       }
       if (has(materialType())) {
