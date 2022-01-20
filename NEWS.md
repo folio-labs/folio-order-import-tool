@@ -1,3 +1,7 @@
+## 1.4.1 2022-01-20
+
+* Fixes bug in location validation for MARC records with multiple 980s
+
 ## 1.4.0 2022-01-19
 
 * Supports one-PO-per-file and multiple-locations-per-MARC-record
