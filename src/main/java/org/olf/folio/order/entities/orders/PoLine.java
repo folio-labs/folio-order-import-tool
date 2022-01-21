@@ -4,6 +4,9 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.olf.folio.order.entities.FolioEntity;
+import org.olf.folio.order.entities.inventory.HoldingsRecord;
+import org.olf.folio.order.folioapis.FolioAccess;
+import org.olf.folio.order.folioapis.FolioData;
 import org.olf.folio.order.mapping.MarcToFolio;
 import org.olf.folio.order.mapping.MarcMapLambda;
 
@@ -216,12 +219,23 @@ public class PoLine extends FolioEntity {
     return getString(P_INSTANCE_ID);
   }
 
-  public List<String> getHoldingsRecordIds () {
+  public List<String> getHoldingsRecordIds () throws Exception {
     List<String> holdingsRecordIds = new ArrayList<>();
     JSONArray locations = json.getJSONArray(P_LOCATIONS);
     if (locations != null && !locations.isEmpty()) {
       for (Object o : locations) {
-        holdingsRecordIds.add(((JSONObject) o).getString(P_HOLDING_ID));
+        JSONObject loc = (JSONObject) o;
+        if (loc.has(P_HOLDING_ID)) { // v12.2.0 of mod-orders
+          holdingsRecordIds.add(loc.getString(P_HOLDING_ID));
+        } else { // pre v12.2.0 of mod-orders
+          HoldingsRecord holdingsRecord = HoldingsRecord.fromJson(
+                  FolioAccess.callApiGetFirstObjectOfArray(
+                          FolioData.HOLDINGS_STORAGE_PATH + "?query=(instanceId==" + getInstanceId() + "+and+permanentLocationId=" + loc.getString("locationId") +")",
+                          FolioData.HOLDINGS_RECORDS_ARRAY));
+          if (!holdingsRecord.isEmpty()) {
+            holdingsRecordIds.add(holdingsRecord.getId());
+          }
+        }
       }
     }
     return holdingsRecordIds;
