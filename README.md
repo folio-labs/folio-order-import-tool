@@ -169,7 +169,7 @@ The desired mapping is selected at startup by setting the parameter `marcMapping
 |--------------|---------------|---------------------------------------------------------------|--------------------|--------------------------|--------------------|
 | 980 $a       | Location      | orderLine.locations[].id (name resolved to id)                | Yes                |                          |                    | 
 | 980 $d       | Material type | orderLine.physical.materialType and item.materialTypeId       | No                 | Configured material type |                    |
-| 980 $q       | Quantity      | orderLine.locations[].quantityPhysical or .quantityElectronic | No (defaults to 1) | 1                        |                    |
+| 980 $q       | Quantity      | orderLine.locations[] .quantityPhysical or .quantityElectronic | No (defaults to 1) | 1                        |                    |
 | 980 $r       | Loan type     | item.permanentLoanTypeId                                      | Yes                |                          |                    |
 ### Pre-configured values, defined as parameters in the startup properties file
 | Property name                      | Description                               | Examples                    | Target properties                              | Required                     | Content                                                      |
