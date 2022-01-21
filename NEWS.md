@@ -1,6 +1,6 @@
-## 1.4.2 SNAPSHOT
+## 1.4.2 2022-01-21
 
-* Fixes premature use of coming 'holdingId' property in response to POST of PO
+* Fixes premature use of coming 'holdingId' property in JSON response to POST of PO
 
 ## 1.4.1 2022-01-20
 
