@@ -1,3 +1,7 @@
+## 1.4.2 SNAPSHOT
+
+* Fixes premature use of coming 'holdingId' property in response to POST of PO
+
 ## 1.4.1 2022-01-20
 
 * Fixes bug in location validation for MARC records with multiple 980s
