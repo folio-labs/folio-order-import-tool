@@ -44,7 +44,7 @@
 	color: #a94442 !important;
 }
 
-#tabs-with-content .tabs:not (:last-child) {
+#tabs-with-content .tabs:not(:last-child) {
 	margin-bottom: 0;
 }
 
