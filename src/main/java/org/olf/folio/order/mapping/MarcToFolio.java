@@ -764,7 +764,7 @@ public abstract class MarcToFolio {
           if ( identifierField.getSubfield( 'q' ) != null ) identifierValue += " " + identifierField.getSubfieldsAsString( "q" );
         } else {
           if (Constants.ISBN.equals(identifierType)) {
-            identifierValue = getInitialDigits(identifierValue);
+            identifierValue = getInitialIsbnCharacters(identifierValue);
           }
         }
         break;
@@ -801,11 +801,16 @@ public abstract class MarcToFolio {
     return identifierValue;
   }
 
-  private static String getInitialDigits(String s) {
+  /**
+   * Returns a substring from the start of the input containing only valid ISBN characters: digits and 'X'.
+   * @param s The potential ISBN
+   * @return The resulting potential ISBN cleaned of bad characters
+   */
+  private static String getInitialIsbnCharacters(String s) {
     String trimmed = s.trim();
     StringBuilder f = new StringBuilder();
     for (int i = 0; i < trimmed.length(); i++)
-      if (Character.isDigit(trimmed.charAt(i))) {
+      if (Character.isDigit(trimmed.charAt(i)) || ('X' == trimmed.charAt(i))) {
         f.append(trimmed.charAt(i));
       } else {
         break;
@@ -815,7 +820,7 @@ public abstract class MarcToFolio {
 
   private static boolean doIncludeThisIdentifier(String identifierTypeId, String value) {
     if (identifierTypeId.equals(Constants.ISBN)) {
-      if (Utils.isInvalidIsbn(getInitialDigits(value))) {
+      if (Utils.isInvalidIsbn(getInitialIsbnCharacters(value))) {
         return !Config.onIsbnInvalidRemoveIsbn;
       }
     }
