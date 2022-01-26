@@ -174,6 +174,7 @@ public class LogHistory {
       input = sc.nextLine();
       sb.append(input).append(" ");
     }
+    sc.close();
     return sb.toString();
   }
 
