@@ -252,10 +252,6 @@ public class Results {
     return flags;
   }
 
-  private int getRecordCount () {
-    return recordResults.size();
-  }
-
   /**
    * Count records that passed validation
    * @return record count
