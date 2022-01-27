@@ -74,13 +74,26 @@ Note that the webapp expects to be running at the root path of its server.  So f
 * Configure a reverse proxy to point the root path of that virtual host to a distinct path on the actual server.  For example in Apache, 
 
 ```
-<Location />
+<VirtualHost ....>
   ....
+  ServerName my-instance-name.domain.edu
+  
+  ProxyPreserveHost On
+  SSLProxyEngine On
+  
+  RewriteEngine on
+  RewriteRule ^$ /import [L]
+  
+  <Location />
+    ....
    
-  RequestHeader set X-Forwarded-Proto "https" env=HTTPS
-  ProxyPass https://my-instance-name.domain.edu/my-instance-name/
-  ProxyPassReverse http://my-instance-name.domain.edu/my-instance-name/
-</Location>
+    RequestHeader set X-Forwarded-Proto "https" env=HTTPS
+    ProxyPass https://my-instance-name.domain.edu/my-instance-name/
+    ProxyPassReverse http://my-instance-name.domain.edu/my-instance-name/
+  </Location>
+  
+  ....
+</VirtualHost>
 ```
 Then configure each app instance to point to a separate properties file using a ServletContext attribute in its servlet configuration.  In Jetty, as an example, define a servlet properties file (in the same directory and with the same filename as the .war, but extension .xml) such as:
 
