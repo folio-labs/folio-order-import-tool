@@ -19,6 +19,9 @@ public class ConfigurationListener implements ServletContextListener {
 		String userHomeSysProp = System.getProperty( "user.home" );
 		String configFileSysProp = System.getProperty("config") == null ?
 						System.getProperty( "configFile") : System.getProperty("config");
+		if (configFileSysProp == null || configFileSysProp.isEmpty()) {
+			configFileSysProp = (String)context.getAttribute("config");
+		}
 		if (configFileSysProp == null || configFileSysProp.isEmpty()) configFileSysProp =
 						userHomeSysProp + "/order/import.properties";
 		try {
