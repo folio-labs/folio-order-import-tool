@@ -79,7 +79,6 @@ Note that the webapp expects to be running at the root path of its server.  So f
   ServerName my-instance-name.domain.edu
   
   ProxyPreserveHost On
-  SSLProxyEngine On
   
   RewriteEngine on
   RewriteRule ^$ /import [L]
@@ -88,8 +87,8 @@ Note that the webapp expects to be running at the root path of its server.  So f
     ....
    
     RequestHeader set X-Forwarded-Proto "https" env=HTTPS
-    ProxyPass https://my-instance-name.domain.edu/my-instance-name/
-    ProxyPassReverse http://my-instance-name.domain.edu/my-instance-name/
+    ProxyPass http://my-instance-name.domain.edu:8080/my-instance-name/
+    ProxyPassReverse http://my-instance-name.domain.edu:8080/my-instance-name/
   </Location>
   
   ....
