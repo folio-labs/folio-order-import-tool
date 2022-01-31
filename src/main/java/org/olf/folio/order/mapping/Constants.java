@@ -31,6 +31,7 @@ public class Constants {
 	public static final String OTHER_STANDARD_IDENTIFIER = "2e8b3b6c-0e7d-4e48-bca2-b0b23b376af5";
 	public static final String PUBLISHER_OR_DISTRIBUTOR_NUMBER = "b5d8cdc4-9441-487c-90cf-0c7ec97728eb";
 	public static final String SYSTEM_CONTROL_NUMBER = "7e591197-f335-4afb-bc6d-a6d76ca3bace";
+	public static final String OCLC = "439bfbae-75bc-4f74-9fc7-b2a2d47ce3ef";
 
 	public static final String ITEM_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE = "f3ae3823-d096-4c65-8734-0c1efd2ffea8";
 	public static final String HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE =  "88914775-f677-4759-b57b-1a33b90b24e0";
