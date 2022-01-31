@@ -3,7 +3,6 @@ package org.olf.folio.order.entities.orders;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import org.json.JSONObject;
 import org.olf.folio.order.entities.FolioEntity;
-import org.olf.folio.order.mapping.MarcToFolio;
 
 @CanIgnoreReturnValue
 public class PoLineLocation extends FolioEntity {

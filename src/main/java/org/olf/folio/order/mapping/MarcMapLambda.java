@@ -13,6 +13,19 @@ public class MarcMapLambda extends MarcToFolio {
   }
 
   /**
+   * @return null.  Lambda mapping does not use FOLIO-compatible user limits.
+   */
+  @Override
+  public String userLimit() {
+    return null;
+  }
+
+  @Override
+  public boolean hasUserLimit() {
+    return false;
+  }
+
+  /**
    * @return 980$o
    */
   public String objectCode() {
