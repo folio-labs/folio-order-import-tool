@@ -607,22 +607,6 @@ public abstract class MarcToFolio {
     return !getDataFieldsForIdentifierType(Constants.ISBN).isEmpty();
   }
 
-  public boolean hasISSN() {
-    return !getDataFieldsForIdentifierType(Constants.ISSN).isEmpty();
-  }
-
-  public boolean hasOtherStandardIdentifier() {
-    return !getDataFieldsForIdentifierType(Constants.OTHER_STANDARD_IDENTIFIER).isEmpty();
-  }
-
-  public boolean hasPublisherOrDistributorNumber() {
-    return !getDataFieldsForIdentifierType(Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER).isEmpty();
-  }
-
-  public boolean hasSystemControlNumber () {
-    return !getDataFieldsForIdentifierType(Constants.SYSTEM_CONTROL_NUMBER).isEmpty();
-  }
-
   public String getISBN() {
     List<DataField> isbnFields =
             getDataFieldsForIdentifierType(Constants.ISBN);
@@ -633,23 +617,40 @@ public abstract class MarcToFolio {
     }
   }
 
-  public JSONArray productIdentifiers () {
-    JSONArray identifiersJson = new JSONArray();
-    for (String identifierTypeId : Arrays.asList(
+  public List<String> applicableProductIdentifierTypeIds() {
+    return Arrays.asList(
             Constants.ISBN,
             Constants.ISSN,
             Constants.OTHER_STANDARD_IDENTIFIER,
-            Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER)) {
+            Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER);
+  }
+
+  public JSONArray productIdentifiers () {
+    JSONArray identifiersJson = new JSONArray();
+    for (String identifierTypeId : applicableProductIdentifierTypeIds()) {
       for (DataField identifierField : getDataFieldsForIdentifierType(identifierTypeId)) {
         String value = getIdentifierValue( identifierTypeId, identifierField);
         if (has(value) && doIncludeThisIdentifier(identifierTypeId, value)) {
-            identifiersJson.put(new ProductIdentifier()
-                    .putProductId(value)
-                    .putProductIdType(identifierTypeId).asJson());
+          identifiersJson.put(new ProductIdentifier()
+                  .putProductId(value)
+                  .putProductIdType(identifierTypeId).asJson());
         }
       }
     }
     return identifiersJson;
+  }
+
+  public boolean hasNoApplicableProductIdentifiers() {
+    for (String identifierTypeId : applicableProductIdentifierTypeIds()) {
+      if (hasIdentifierOfType(identifierTypeId)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public boolean hasIdentifierOfType (String identifierTypeId) {
+    return !getDataFieldsForIdentifierType(identifierTypeId).isEmpty();
   }
 
   public JSONArray instanceIdentifiers () {
@@ -916,7 +917,7 @@ public abstract class MarcToFolio {
         } else if (Config.V_ON_ISBN_INVALID_REPORT_ERROR.equalsIgnoreCase(Config.onIsbnInvalid)) {
           outcome.addValidationMessageIfAny("ISBN is invalid").markSkipped(Config.onValidationErrorsSKipFailed);
         }
-      } else if (!hasISBN() && !hasISSN() && !hasPublisherOrDistributorNumber() && !hasSystemControlNumber() && !hasOtherStandardIdentifier()) {
+      } else if (hasNoApplicableProductIdentifiers()) {
         String existingInstancesMessage;
         JSONObject instances = FolioData.getInstancesByQuery("title=\"" + title() + "\"");
         int totalRecords = instances.getInt("totalRecords");
@@ -929,7 +930,7 @@ public abstract class MarcToFolio {
           existingInstancesMessage = "Found no existing Instances with that exact title.";
         }
         outcome.setFlagIfNotNull(
-                "No ISBN, ISSN, Publisher number or distributor number, system control number," + " or other standard identifier found in the record." + " This order import might trigger the creation of a new Instance in FOLIO." + existingInstancesMessage);
+                "No applicable product identifiers found in the record. This order import might trigger the creation of a new Instance in FOLIO." + existingInstancesMessage);
       }
     }
   }

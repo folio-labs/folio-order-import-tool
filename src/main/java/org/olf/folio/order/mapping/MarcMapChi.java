@@ -5,6 +5,8 @@ import org.olf.folio.order.entities.inventory.Item;
 import org.olf.folio.order.importhistory.RecordResult;
 import org.olf.folio.order.folioapis.ValidationLookups;
 
+import java.util.List;
+
 public class MarcMapChi extends MarcToFolio {
   protected static final String BARCODE  = "o";
 
@@ -34,6 +36,10 @@ public class MarcMapChi extends MarcToFolio {
     if (hasBarcode()) {
       item.putBarcode(barcode());
     }
+  }
+
+  public List<String> applicableProductIdentifierTypeIds() {
+    return List.of(Constants.ISBN);
   }
 
   public void validate (RecordResult outcome) throws Exception {
