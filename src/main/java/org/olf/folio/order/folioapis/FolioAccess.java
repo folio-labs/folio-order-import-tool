@@ -158,8 +158,9 @@ public class FolioAccess {
             uri, responseCode, body.toString(2)));
 
     if (responseCode > 399) {
-      String message = String.format("API error. Status code %s, message %s%n%s",
-              responseCode, response.getStatusLine().getReasonPhrase(),body.toString(2));
+      String responseString = EntityUtils.toString(response.getEntity());
+      String message = String.format("API error. Status code %s, message %s%s%n%s",
+              responseCode, response.getStatusLine().getReasonPhrase(), responseString, body.toString(2));
       logger.info(message);
       throw new Exception(message);
     }
