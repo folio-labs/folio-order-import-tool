@@ -31,7 +31,10 @@ Once the job is finished, clicking the 'Refresh' will display a state of 'done' 
 ## If you want to try it
 
 * Clone the repo.
-* The tool expects a properties file to be given as an environment variable on the command line, like `-Dconfig=/path/to/your.properties`, or -- if no properties file is specified -- it expects to find one here: `/yourhomefolder/order/import.properties`.
+* The tool expects a properties file to be specified by one of these methods:
+    1. A environment variable on the command line, named 'config', like `-Dconfig=/path/to/your.properties`.
+    1. A ServletContext attribute, named 'config', specified in the servlet container configuration. Useful for [deploying multiple instances](#multiple-instances) in one servlet container.
+    1. If neither of the above 'config' variables are set, it expects to find the properties file here: `/yourhomefolder/order/import.properties`.
 * You will have to set your Okapi address, FOLIO tenant, userid and password in the properties, and you may have to adjust the file upload path where it will save
   the uploaded file and store a history of validations and imports, see the [How to configure the service](#how-to-configure-the-service)
 * Call: `mvn jetty:run [-Dconfig=path-to-properties-file]`
@@ -60,6 +63,54 @@ To override the default configuration, mount your configuration to `/var/lib/jet
 container e.g.:
 
     docker run -d -v $(pwd)/order:/var/lib/jetty/order -p 8080:8080 <imageId>
+
+### Multiple instances
+
+You may want to run multiple instances of the tool in the same server environment, using separate configuration files. For example, this would allow separate production and test instances that each point to the appropriate FOLIO API endpoint.
+
+Note that the webapp expects to be running at the root path of its server.  So first set up separate virtual hosts for each instance.
+
+* Add a CNAME my-instance-name.domain.edu referencing the actual server.
+* Configure a reverse proxy to point the root path of that virtual host to a distinct path on the actual server.  For example in Apache, 
+
+```
+<VirtualHost ....>
+  ....
+  ServerName my-instance-name.domain.edu
+  
+  ProxyPreserveHost On
+  
+  RewriteEngine on
+  RewriteRule ^$ /import [L]
+  
+  <Location />
+    ....
+   
+    RequestHeader set X-Forwarded-Proto "https" env=HTTPS
+    ProxyPass http://my-instance-name.domain.edu:8080/my-instance-name/
+    ProxyPassReverse http://my-instance-name.domain.edu:8080/my-instance-name/
+  </Location>
+  
+  ....
+</VirtualHost>
+```
+Then configure each app instance to point to a separate properties file using a ServletContext attribute in its servlet configuration.  In Jetty, as an example, define a servlet properties file (in the same directory and with the same filename as the .war, but extension .xml) such as:
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure_9_3.dtd">
+
+<Configure class="org.eclipse.jetty.webapp.WebAppContext">
+  <Set name="contextPath">/my-instance-name</Set>
+  <Set name="war">/usr/share/jetty9/webapps/my-instance-name.war</Set>
+  <Get name="ServletContext">
+    <Call name="setAttribute">
+      <Arg>config</Arg>
+      <Arg>/some-folder-with-configuration-files/import-my-instance-name.properties</Arg>
+    </Call>
+  </Get>
+</Configure>
+```
 
 ## How to configure the service
 
