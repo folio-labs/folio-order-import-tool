@@ -1,11 +1,15 @@
 package org.olf.folio.order;
 
 import java.io.FileNotFoundException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import org.json.JSONArray;
@@ -31,10 +35,16 @@ import org.olf.folio.order.importhistory.Results;
 import org.olf.folio.order.folioapis.FolioAccess;
 import org.olf.folio.order.folioapis.FolioData;
 
+import static org.olf.folio.order.folioapis.FolioData.encode;
+
 
 public class OrderImport {
 
 	private static final Logger logger = Logger.getLogger(OrderImport.class);
+	private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+	static {
+		dateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+	}
 
 	public Results runAnalyzeJob(FileStorageHelper fileStore) throws Exception {
 		logger.info("...starting...");
@@ -249,20 +259,25 @@ public class OrderImport {
 			mappedMarc.populateHoldingsRecord(holdingsRecord);
 			FolioAccess.callApiPut(FolioData.HOLDINGS_STORAGE_PATH, holdingsRecord);
 			if (mappedMarc.updateItem()) {
-				JSONArray items = FolioAccess.callApiGetArray(FolioData.ITEMS_PATH + "?query=(holdingsRecordId=="
-												+ holdingsRecord.getId() + ")",
-								FolioData.ITEMS_ARRAY);
+				String query = String.format("(holdingsRecordId==\"%s\" AND metadata.createdDate>=\"%s\")",
+								holdingsRecord.getId(),
+								getFormattedTimeSomeMinutesAgo(5)
+								);
+				JSONArray items = FolioAccess.callApiGetArray(FolioData.ITEMS_PATH + "?query="+encode(query),	FolioData.ITEMS_ARRAY);
+				logger.debug("Found following recently created items on the holdings record: " + items.toString(2));
 				for (Object itemObject : items) {
 					Item item = Item.fromJson((JSONObject) itemObject);
 					if (item.isEmpty()) {
 						outcome.setImportError(String.format(
-										"Warning: The tool attempted to find and update an Item " + "but no Item was found for holdingsRecordId (%s)",
+										"Warning: The tool attempted to find and update an Item but no recently created items were found for holdingsRecordId (%s)",
 										holdingsRecord.getId()));
 					} else {
 						mappedMarc.populateItem(item);
 						FolioAccess.callApiPut(FolioData.ITEMS_PATH, item);
 					}
 				}
+			} else {
+				logger.debug("Not updating item; does not apply.");
 			}
 		}
 	}
@@ -336,4 +351,13 @@ public class OrderImport {
 			}
 		}
 	}
+
+	private static String getFormattedTimeSomeMinutesAgo(int minutesAgo) {
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(new Date());
+		calendar.add(Calendar.MINUTE,-minutesAgo);
+		return dateFormatter.format(calendar.getTime());
+	}
+
+
 }
