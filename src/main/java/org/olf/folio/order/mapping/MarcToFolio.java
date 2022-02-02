@@ -653,9 +653,22 @@ public abstract class MarcToFolio {
     return !getDataFieldsForIdentifierType(identifierTypeId).isEmpty();
   }
 
-  public JSONArray instanceIdentifiers () {
+  public JSONArray instanceIdentifiers (List<String> identifierTypeIds) {
     JSONArray identifiersJson = new JSONArray();
-    for (String identifierTypeId : Arrays.asList(
+    for (String identifierTypeId : identifierTypeIds) {
+      for (DataField identifierField : getDataFieldsForIdentifierType(identifierTypeId)) {
+        String value = getIdentifierValueWithQualifiers( identifierTypeId, identifierField);
+        if (has(value) && doIncludeThisIdentifier(identifierTypeId, value)) {
+          identifiersJson.put(new InstanceIdentifier().putValue(value).putIdentifierTypeId(
+                  identifierTypeId).asJson());
+        }
+      }
+    }
+    return identifiersJson;
+  }
+
+  public JSONArray instanceIdentifiers () {
+    return instanceIdentifiers(Arrays.asList(
             Constants.ISBN,
             Constants.INVALID_ISBN,
             Constants.ISSN,
@@ -663,16 +676,7 @@ public abstract class MarcToFolio {
             Constants.LINKING_ISSN,
             Constants.OTHER_STANDARD_IDENTIFIER,
             Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER,
-            Constants.SYSTEM_CONTROL_NUMBER)) {
-      for (DataField identifierField : getDataFieldsForIdentifierType(identifierTypeId)) {
-        String value = getIdentifierValueWithQualifiers( identifierTypeId, identifierField);
-        if (has(value) && doIncludeThisIdentifier(identifierTypeId, value)) {
-            identifiersJson.put(new InstanceIdentifier().putValue(value).putIdentifierTypeId(
-                    identifierTypeId).asJson());
-        }
-      }
-    }
-    return identifiersJson;
+            Constants.SYSTEM_CONTROL_NUMBER));
   }
 
   /**
@@ -702,10 +706,20 @@ public abstract class MarcToFolio {
       case Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER:
         return findIdentifierFieldsByTagAndSubFields(  "028", 'a' );
       case Constants.SYSTEM_CONTROL_NUMBER:
-        List<DataField> fields035 = findIdentifierFieldsByTagAndSubFields(  "035", 'a' );
-        for ( DataField dataField : fields035 )
+        List<DataField> fields035_1 = findIdentifierFieldsByTagAndSubFields(  "035", 'a' );
+        for ( DataField dataField : fields035_1 )
         {
           if ( dataField.getIndicator2() == '9' )
+          {
+            identifierFields.add( dataField );
+          }
+        }
+        return identifierFields;
+      case Constants.OCLC:
+        List<DataField> fields035_2 = findIdentifierFieldsByTagAndSubFields(  "035", 'a' );
+        for ( DataField dataField : fields035_2 )
+        {
+          if ( dataField.getIndicator2() != '9' )
           {
             identifierFields.add( dataField );
           }
@@ -791,7 +805,8 @@ public abstract class MarcToFolio {
         break;
       case Constants.OTHER_STANDARD_IDENTIFIER:       // 024, 025 using $a
       case Constants.PUBLISHER_OR_DISTRIBUTOR_NUMBER: // 028 using $a
-      case Constants.SYSTEM_CONTROL_NUMBER:           // 035 using $a
+      case Constants.SYSTEM_CONTROL_NUMBER:           // 035 using $a (indicator2=9)
+      case Constants.OCLC:                            // 035 using $a (other/no indicators)
         identifierValue = identifierField.getSubfieldsAsString("a");
         break;
       default:
