@@ -1,3 +1,11 @@
+## 1.5.0 2022-02-02
+* Supports ISBNs with last digit of 'X'.
+* Lambda mapping: ignores 856$x 'userLimit' field, so it can be used with non-integer values.
+* Supports passing import properties file name as ServletContext attribute.
+* Chi mapping: Add OCLC number to Instance identifiers.
+* Chi mapping: Use only ISBN for product ID (and thus for linking to existing Instance).
+* Update only newly created item(s); in the rare case holdings record has previously existing items.
+
 ## 1.4.2 2022-01-21
 
 * Fixes premature use of coming 'holdingId' property in JSON response to POST of PO
