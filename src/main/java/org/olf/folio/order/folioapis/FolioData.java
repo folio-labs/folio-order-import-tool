@@ -253,7 +253,7 @@ public class FolioData extends FolioAccess {
     }
   }
 
-  protected static String encode(String str) {
+  public static String encode(String str) {
     return URLEncoder.encode(str, StandardCharsets.UTF_8);
   }
 
