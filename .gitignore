@@ -5,3 +5,4 @@ c:\\tmp\\*
 marc-test-files/ignore/
 c:/logs
 test/
+.vscode
