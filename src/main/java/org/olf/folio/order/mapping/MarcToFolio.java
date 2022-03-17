@@ -934,7 +934,8 @@ public abstract class MarcToFolio {
         }
       } else if (hasNoApplicableProductIdentifiers()) {
         String existingInstancesMessage;
-        JSONObject instances = FolioData.getInstancesByQuery("title=\"" + title() + "\"");
+        // Titles with quoted sections AND slashes can throw FOLIO CQL parser off. The query will work without the quotes.
+        JSONObject instances = FolioData.getInstancesByQuery("title=\"" + title().replaceAll("\"","") + "\"");
         int totalRecords = instances.getInt("totalRecords");
         if (totalRecords > 0) {
           Instance firstExistingInstance = Instance.fromJson((JSONObject) instances.getJSONArray(FolioData.INSTANCES_ARRAY).get(0));
