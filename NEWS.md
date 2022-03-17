@@ -1,4 +1,10 @@
+## 1.5.1 2022-03-17
+
+* Workaround for CQL parser issue affecting titles with quotes  
+* Log4J upgrade for security issue
+
 ## 1.5.0 2022-02-02
+
 * Supports ISBNs with last digit of 'X'.
 * Lambda mapping: ignores 856$x 'userLimit' field, so it can be used with non-integer values.
 * Supports passing import properties file name as ServletContext attribute.
