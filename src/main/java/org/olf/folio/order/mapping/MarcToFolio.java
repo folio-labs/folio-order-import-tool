@@ -934,8 +934,7 @@ public abstract class MarcToFolio {
         }
       } else if (hasNoApplicableProductIdentifiers()) {
         String existingInstancesMessage;
-        // Titles with quoted sections AND slashes can throw FOLIO CQL parser off. The query will work without the quotes.
-        JSONObject instances = FolioData.getInstancesByQuery("title=\"" + title().replaceAll("\"","") + "\"");
+        JSONObject instances = FolioData.getInstancesByQuery("title=\"" + cqlEncode(title()) + "\"");
         int totalRecords = instances.getInt("totalRecords");
         if (totalRecords > 0) {
           Instance firstExistingInstance = Instance.fromJson((JSONObject) instances.getJSONArray(FolioData.INSTANCES_ARRAY).get(0));
@@ -949,6 +948,16 @@ public abstract class MarcToFolio {
                 "No applicable product identifiers found in the record. This order import might trigger the creation of a new Instance in FOLIO." + existingInstancesMessage);
       }
     }
+  }
+
+  private static String cqlEncode(String title) {
+    // Titles with quoted sections AND slashes can throw FOLIO CQL parser off. The query will work without the quotes.
+    title = title.replaceAll("\"","");
+
+    // ?, * and ^ are special characters and should be escaped
+    title = title.replaceAll("([\\?\\^\\*])", "\\\\$1");
+
+    return title;
   }
 
   public boolean has (String string) {
