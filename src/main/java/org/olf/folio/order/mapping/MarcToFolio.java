@@ -32,13 +32,18 @@ import static org.olf.folio.order.mapping.Constants.CONTRIBUTOR_NAME_TYPES_MAP;
 
 public abstract class MarcToFolio {
   Record marcRecord;
+  DataField d041;
   DataField d245;
   DataField d250;
   DataField d260;
   DataField d264;
+  DataField d490;
   DataField d980;
   DataField first856;
   boolean has856;
+
+  // Mappings 041
+  protected static final String LANGUAGE = "a";
 
   // Mappings 245
   protected static final String TITLE_ONE = "a";
@@ -98,10 +103,12 @@ public abstract class MarcToFolio {
       FOLIO_TO_MARC_FIELD_MAP.put(FUND_CODE_LABEL, MARC_980_B);
       FOLIO_TO_MARC_FIELD_MAP.put(VENDOR_CODE_LABEL, MARC_980_V);
     }
+    d041 = (DataField) marcRecord.getVariableField("041");
     d245 = (DataField) marcRecord.getVariableField("245");
     d250 = (DataField) marcRecord.getVariableField("250");
     d260 = (DataField) marcRecord.getVariableField("260");
     d264 = (DataField) marcRecord.getVariableField("264");
+    d490 = (DataField) marcRecord.getVariableField("490");
     d980 = (DataField) marcRecord.getVariableField("980");
     first856 = getFirst856(marcRecord);
     has856 =  (first856 != null);
@@ -131,6 +138,10 @@ public abstract class MarcToFolio {
     return d856List;
   }
 
+  public boolean has041() {
+    return d041 != null;
+  }
+
   public boolean has250() {
     return d250 != null;
   }
@@ -141,6 +152,10 @@ public abstract class MarcToFolio {
 
   public boolean has264() {
     return d264 != null;
+  }
+
+  public boolean has490() {
+    return d490 != null;
   }
 
   public boolean has980() {
@@ -191,6 +206,31 @@ public abstract class MarcToFolio {
 
   public boolean hasEdition() {
     return edition() != null && ! edition().isEmpty();
+  }
+
+  public JSONArray getLanguages () {
+    JSONArray languageArray = new JSONArray();
+    if (has041()) {
+      List<Subfield> languages = d041.getSubfields(LANGUAGE);
+      if (languages != null) {
+        for (Subfield lang : languages) {
+          languageArray.put(lang.getData());
+        }
+      }
+    }
+    return languageArray;
+  }
+
+  public JSONArray series() {
+    JSONArray seriesArray = new JSONArray();
+    if (has490()) {
+      @SuppressWarnings( "SpellCheckingInspection" )
+      String seriesStatement = d490.getSubfieldsAsString("alvx368");
+      if (seriesStatement != null && ! seriesStatement.isEmpty()) {
+        seriesArray.put(seriesStatement);
+      }
+    }
+    return seriesArray;
   }
 
   public String publisher(String field) {
@@ -856,6 +896,9 @@ public abstract class MarcToFolio {
     instance.putTitle(title())
             .putSource(Instance.V_FOLIO)
             .putInstanceTypeId(FolioData.getInstanceTypeId(Instance.INSTANCE_TYPE))
+            .putLanguages(getLanguages())
+            .putEdition(edition())
+            .putSeries(series())
             .putIdentifiers(instanceIdentifiers())
             .putContributors(getContributorsForInstance())
             .putDiscoverySuppress(Instance.DISCOVERY_SUPPRESS)
