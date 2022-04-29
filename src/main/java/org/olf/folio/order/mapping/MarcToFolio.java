@@ -37,6 +37,7 @@ public abstract class MarcToFolio {
   DataField d250;
   DataField d260;
   DataField d264;
+  DataField d490;
   DataField d980;
   DataField first856;
   boolean has856;
@@ -106,6 +107,7 @@ public abstract class MarcToFolio {
     d250 = (DataField) marcRecord.getVariableField("250");
     d260 = (DataField) marcRecord.getVariableField("260");
     d264 = (DataField) marcRecord.getVariableField("264");
+    d490 = (DataField) marcRecord.getVariableField("490");
     d980 = (DataField) marcRecord.getVariableField("980");
     first856 = getFirst856(marcRecord);
     has856 =  (first856 != null);
@@ -149,6 +151,10 @@ public abstract class MarcToFolio {
 
   public boolean has264() {
     return d264 != null;
+  }
+
+  public boolean has490() {
+    return d490 != null;
   }
 
   public boolean has980() {
@@ -204,6 +210,18 @@ public abstract class MarcToFolio {
       }
     }
     return languageArray;
+  }
+
+  public JSONArray series() {
+    JSONArray seriesArray = new JSONArray();
+    if (has490()) {
+      @SuppressWarnings( "SpellCheckingInspection" )
+      String seriesStatement = d490.getSubfieldsAsString("alvx368");
+      if (seriesStatement != null && ! seriesStatement.isEmpty()) {
+        seriesArray.put(seriesStatement);
+      }
+    }
+    return seriesArray;
   }
 
   public String publisher(String field) {
@@ -871,6 +889,7 @@ public abstract class MarcToFolio {
             .putInstanceTypeId(FolioData.getInstanceTypeId(Instance.INSTANCE_TYPE))
             .putLanguages(getLanguages())
             .putEdition(edition())
+            .putSeries(series())
             .putIdentifiers(instanceIdentifiers())
             .putContributors(getContributorsForInstance())
             .putDiscoverySuppress(Instance.DISCOVERY_SUPPRESS)
