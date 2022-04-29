@@ -49,6 +49,7 @@ public abstract class MarcToFolio {
   protected static final String TITLE_ONE = "a";
   protected static final String TITLE_TWO = "b";
   protected static final String TITLE_THREE = "c";
+  protected static final String TITLE_NAME_OF_PART = "p";
 
   // Mappings 250
   protected static final String EDITION = "a";
@@ -182,10 +183,18 @@ public abstract class MarcToFolio {
     return d245.getSubfieldsAsString(TITLE_THREE);
   }
 
+  /**
+   * @return 245$p
+   */
+  public String nameOfPart() {
+    return d245.getSubfieldsAsString(TITLE_NAME_OF_PART);
+  }
+
   public String title() {
     return titleOne()
             + (titleTwo() == null ? "" : " " + titleTwo())
-            + (titleThree() == null ? "" : " " + titleThree());
+            + (titleThree() == null ? "" : " " + titleThree()
+            + (nameOfPart() == null ? "" : " " + nameOfPart()));
   }
 
   /**
