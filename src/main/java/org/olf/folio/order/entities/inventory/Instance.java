@@ -19,6 +19,7 @@ public class Instance extends FolioEntity {
   public static final String P_SOURCE = "source";
   public static final String P_INSTANCE_TYPE_ID = "instanceTypeId";
   public static final String P_LANGUAGES = "languages";
+  public static final String P_EDITIONS = "editions";
   public static final String P_IDENTIFIERS = "identifiers";
   public static final String P_CONTRIBUTORS = "contributors";
   public static final String P_DISCOVERY_SUPPRESS = "discoverySuppress";
@@ -47,6 +48,13 @@ public class Instance extends FolioEntity {
   }
   public Instance putLanguages(JSONArray languages) {
     return (Instance) putArray(P_LANGUAGES, languages);
+  }
+  public Instance putEdition (String edition) {
+    JSONArray editions = new JSONArray();
+    if (edition != null && ! edition.isEmpty()) {
+      editions.put(edition);
+    }
+    return (Instance) putArray(P_EDITIONS, editions);
   }
   public Instance putIdentifiers(JSONArray identifiers) {
     return (Instance) putArray(P_IDENTIFIERS, identifiers);

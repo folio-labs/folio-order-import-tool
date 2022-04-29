@@ -870,6 +870,7 @@ public abstract class MarcToFolio {
             .putSource(Instance.V_FOLIO)
             .putInstanceTypeId(FolioData.getInstanceTypeId(Instance.INSTANCE_TYPE))
             .putLanguages(getLanguages())
+            .putEdition(edition())
             .putIdentifiers(instanceIdentifiers())
             .putContributors(getContributorsForInstance())
             .putDiscoverySuppress(Instance.DISCOVERY_SUPPRESS)
