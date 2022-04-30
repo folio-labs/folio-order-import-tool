@@ -11,6 +11,7 @@ public class Item extends FolioEntity {
   public static final String P_BARCODE = "barcode";
   public static final String P_MATERIAL_TYPE_ID = "materialTypeId";
   public static final String P_PERMANENT_LOAN_TYPE = "permanentLoanType";
+  public static final String P_COPY_NUMBER = "copyNumber";
 
   public static Item fromJson (JSONObject itemJson) {
     Item item = new Item();
@@ -32,6 +33,10 @@ public class Item extends FolioEntity {
 
   public Item addBookplateNote (BookplateNote note) {
     return addNote(note.asJson());
+  }
+
+  public Item putCopyNumber(String copyNumber) {
+    return (Item) putString(P_COPY_NUMBER, copyNumber);
   }
 
   public JSONArray getNotes () {

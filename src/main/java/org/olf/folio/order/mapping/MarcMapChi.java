@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Arrays;
 
 public class MarcMapChi extends MarcToFolio {
+  public static final String V_COPY_NUMBER = "c.1";
   protected static final String BARCODE  = "o";
 
   public MarcMapChi(Record marcRecord) {
@@ -51,6 +52,7 @@ public class MarcMapChi extends MarcToFolio {
     if (hasBarcode()) {
       item.putBarcode(barcode());
     }
+    item.putCopyNumber(V_COPY_NUMBER);
   }
 
   public List<String> applicableProductIdentifierTypeIds() {
