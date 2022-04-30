@@ -37,6 +37,7 @@ public abstract class MarcToFolio {
   DataField d250;
   DataField d260;
   DataField d264;
+  DataField d336;
   DataField d490;
   DataField d980;
   DataField first856;
@@ -57,6 +58,9 @@ public abstract class MarcToFolio {
   // Mappings 260, 264
   protected static final String PUBLISHER        = "b";
   protected static final String PUBLICATION_DATE = "c";
+
+  // Mappings 336
+  protected static final String RESOURCE_TYPE = "a";
 
   // Mappings 980
   protected static final String FUND_CODE             = "b";
@@ -83,6 +87,9 @@ public abstract class MarcToFolio {
 
   // Mappings 856
   protected static final String USER_LIMIT           = "x";
+
+  // Fall-back resource type
+  public static final String V_RESOURCE_TYPE = "text";
 
   protected static final String V_ELECTRONIC = "ELECTRONIC";
 
@@ -112,6 +119,7 @@ public abstract class MarcToFolio {
     d250 = (DataField) marcRecord.getVariableField("250");
     d260 = (DataField) marcRecord.getVariableField("260");
     d264 = (DataField) marcRecord.getVariableField("264");
+    d336 = (DataField) marcRecord.getVariableField("336");
     d490 = (DataField) marcRecord.getVariableField("490");
     d980 = (DataField) marcRecord.getVariableField("980");
     first856 = getFirst856(marcRecord);
@@ -158,6 +166,10 @@ public abstract class MarcToFolio {
     return d264 != null;
   }
 
+  public boolean has336() {
+    return d336 != null;
+  }
+
   public boolean has490() {
     return d490 != null;
   }
@@ -199,6 +211,21 @@ public abstract class MarcToFolio {
             + (titleTwo() == null ? "" : " " + titleTwo())
             + (titleThree() == null ? "" : " " + titleThree()
             + (nameOfPart() == null ? "" : " " + nameOfPart()));
+  }
+
+  /**
+   *
+   * @return UUID for type from 336$a or default to UUID for 'text'
+   */
+  public String instanceTypeId() throws Exception {
+    if (has336() && d336.getSubfieldsAsString(RESOURCE_TYPE) != null) {
+      String instanceTypeId = FolioData.getInstanceTypeId(d336.getSubfieldsAsString(RESOURCE_TYPE));
+      if (instanceTypeId != null) {
+        return instanceTypeId;
+      }
+    }
+    // Default to 'text'
+    return FolioData.getInstanceTypeId(V_RESOURCE_TYPE);
   }
 
   /**
@@ -900,7 +927,7 @@ public abstract class MarcToFolio {
     instance.putTitle(title())
             .putIndexTitle(Utils.makeIndexTitle(title()))
             .putSource(Instance.V_FOLIO)
-            .putInstanceTypeId(FolioData.getInstanceTypeId(Instance.INSTANCE_TYPE))
+            .putInstanceTypeId(instanceTypeId())
             .putLanguages(getLanguages())
             .putEdition(edition())
             .putSeries(series())
