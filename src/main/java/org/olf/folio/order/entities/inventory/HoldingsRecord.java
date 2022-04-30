@@ -7,8 +7,6 @@ import org.olf.folio.order.entities.FolioEntity;
 
 @CanIgnoreReturnValue
 public class HoldingsRecord extends FolioEntity {
-  // Constant value
-  public static final String V_HOLDINGS_TYPE_ELECTRONIC = "Electronic";
   // Property names
   public static final String P_ID = "id";
   public static final String P_ELECTRONIC_ACCESS = "electronicAccess";
