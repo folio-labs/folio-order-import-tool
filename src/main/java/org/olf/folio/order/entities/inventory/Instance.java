@@ -84,6 +84,12 @@ public class Instance extends FolioEntity {
   public Instance putSucceedingTitles (JSONArray succeedingTitles) {
     return (Instance) putArray(P_SUCCEEDING_TITLES, succeedingTitles);
   }
+  public Instance putAlternativeTitle (String alternativeTitle) {
+    if (alternativeTitle != null && !alternativeTitle.isEmpty()) {
+
+    }
+    return this;
+  }
   public String getSource () {
     return getString(P_SOURCE);
   }

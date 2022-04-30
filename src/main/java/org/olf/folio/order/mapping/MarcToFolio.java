@@ -41,6 +41,7 @@ public abstract class MarcToFolio {
   DataField d337;
   DataField d338;
   DataField d490;
+  List<VariableField> d880s;
   DataField d980;
   DataField first856;
   boolean has856;
@@ -69,6 +70,9 @@ public abstract class MarcToFolio {
 
   // Mappings 338
   protected static final String CARRIER_TYPE = "a";
+
+  // Mappings 880
+  protected static final String LINKAGE = "6";
 
   // Mappings 980
   protected static final String FUND_CODE             = "b";
@@ -131,6 +135,7 @@ public abstract class MarcToFolio {
     d337 = (DataField) marcRecord.getVariableField("337");
     d338 = (DataField) marcRecord.getVariableField("338");
     d490 = (DataField) marcRecord.getVariableField("490");
+    d880s = marcRecord.getVariableFields("880");
     d980 = (DataField) marcRecord.getVariableField("980");
     first856 = getFirst856(marcRecord);
     has856 =  (first856 != null);
@@ -189,6 +194,22 @@ public abstract class MarcToFolio {
   }
   public boolean hasFormatFields () {
     return has337() && has338();
+  }
+
+  public boolean has880s() {
+    return d880s != null;
+  }
+
+  public String getAlternativeTitle () {
+    if (has880s()) {
+      for (VariableField d880 : d880s) {
+        if (((DataField) d880).getSubfieldsAsString(LINKAGE).startsWith("245")) {
+          //noinspection SpellCheckingInspection
+          return ((DataField) d880).getSubfieldsAsString("abcp");
+        }
+      }
+    }
+    return null;
   }
 
   public boolean has490() {
