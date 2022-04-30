@@ -22,6 +22,7 @@ public class FolioData extends FolioAccess {
   public static final String EXPENSE_CLASSES_PATH = "finance/expense-classes";
   public static final String ACQUISITION_METHODS_PATH = "orders/acquisition-methods";
   public static final String INSTANCE_TYPES_PATH = "instance-types";
+  public static final String INSTANCE_FORMATS_PATH = "instance-formats";
   public static final String MATERIAL_TYPES_PATH = "material-types";
   public static final String LOAN_TYPES_PATH = "loan-types";
   public static final String CONTRIBUTOR_TYPES_PATH = "contributor-types";
@@ -49,6 +50,7 @@ public class FolioData extends FolioAccess {
   public static final String LOAN_TYPES_ARRAY = "loantypes";
   public static final String FISCAL_YEARS_ARRAY = "fiscalYears";
   public static final String INSTANCE_TYPES_ARRAY = "instanceTypes";
+  public static final String INSTANCE_FORMATS_ARRAY = "instanceFormats";
   public static final String CONTRIBUTOR_TYPES_ARRAY = "contributorTypes";
   public static final String HOLDINGS_TYPES_ARRAY = "holdingsTypes";
   public static final String NOTE_TYPES_ARRAY = "noteTypes";
@@ -61,6 +63,7 @@ public class FolioData extends FolioAccess {
   public static final Map<String,String> addressNameToUuid = new HashMap<>();
   public static final Map<String,String> locationNameToUuid = new HashMap<>();
   public static final Map<String,String> instanceTypeNameToUuid = new HashMap<>();
+  public static final Map<String,String> instanceFormatNameToUuid = new HashMap<>();
   public static final Map<String,String> materialTypeNameToUuid = new HashMap<>();
   public static final Map<String,String> loanTypeNameToUuid = new HashMap<>();
   public static final Map<String,String> contributorTypeNameToUuid = new HashMap<>();
@@ -117,13 +120,20 @@ public class FolioData extends FolioAccess {
             instanceTypeNameToUuid);
   }
 
+  public static String getInstanceFormatId(String instanceFormatName) throws Exception {
+    return getIdByKey(
+            instanceFormatName,
+            INSTANCE_FORMATS_PATH + "?query=(name==%22" + encode(instanceFormatName) + "%22)",
+            INSTANCE_FORMATS_ARRAY,
+            instanceFormatNameToUuid);
+  }
+
   public static String getMaterialTypeId (String materialTypeName) throws Exception {
     return getIdByKey(
             materialTypeName,
             MATERIAL_TYPES_PATH + "?query=(name==%22" + encode(materialTypeName) + "%22)",
             MATERIAL_TYPES_ARRAY,
             materialTypeNameToUuid);
-
   }
 
   public static String getLoanTypeId (String loanTypeName) throws Exception {

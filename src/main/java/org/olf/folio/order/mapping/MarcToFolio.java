@@ -38,6 +38,8 @@ public abstract class MarcToFolio {
   DataField d260;
   DataField d264;
   DataField d336;
+  DataField d337;
+  DataField d338;
   DataField d490;
   DataField d980;
   DataField first856;
@@ -61,6 +63,12 @@ public abstract class MarcToFolio {
 
   // Mappings 336
   protected static final String RESOURCE_TYPE = "a";
+
+  // Mappings 337
+  protected static final String MEDIA_TYPE = "a";
+
+  // Mappings 338
+  protected static final String CARRIER_TYPE = "a";
 
   // Mappings 980
   protected static final String FUND_CODE             = "b";
@@ -120,6 +128,8 @@ public abstract class MarcToFolio {
     d260 = (DataField) marcRecord.getVariableField("260");
     d264 = (DataField) marcRecord.getVariableField("264");
     d336 = (DataField) marcRecord.getVariableField("336");
+    d337 = (DataField) marcRecord.getVariableField("337");
+    d338 = (DataField) marcRecord.getVariableField("338");
     d490 = (DataField) marcRecord.getVariableField("490");
     d980 = (DataField) marcRecord.getVariableField("980");
     first856 = getFirst856(marcRecord);
@@ -168,6 +178,17 @@ public abstract class MarcToFolio {
 
   public boolean has336() {
     return d336 != null;
+  }
+
+  public boolean has337() {
+    return d338 != null;
+  }
+
+  public boolean has338() {
+    return d338 != null;
+  }
+  public boolean hasFormatFields () {
+    return has337() && has338();
   }
 
   public boolean has490() {
@@ -226,6 +247,19 @@ public abstract class MarcToFolio {
     }
     // Default to 'text'
     return FolioData.getInstanceTypeId(V_RESOURCE_TYPE);
+  }
+
+  public JSONArray instanceFormatIds () throws Exception {
+    JSONArray instanceFormats = new JSONArray();
+    if (hasFormatFields()) {
+      String instanceFormatName =
+              d337.getSubfieldsAsString(MEDIA_TYPE)
+              + " -- "
+              + d338.getSubfieldsAsString(CARRIER_TYPE);
+      String instanceFormatId = FolioData.getInstanceFormatId(instanceFormatName);
+      instanceFormats.put(instanceFormatId);
+    }
+    return instanceFormats;
   }
 
   /**
@@ -928,6 +962,7 @@ public abstract class MarcToFolio {
             .putIndexTitle(Utils.makeIndexTitle(title()))
             .putSource(Instance.V_FOLIO)
             .putInstanceTypeId(instanceTypeId())
+            .putInstanceFormatIds(instanceFormatIds())
             .putLanguages(getLanguages())
             .putEdition(edition())
             .putSeries(series())
