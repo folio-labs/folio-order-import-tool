@@ -86,6 +86,10 @@ public abstract class MarcToFolio {
 
   protected static final String V_ELECTRONIC = "ELECTRONIC";
 
+  // Two of FOLIO Inventory's default holdings type labels. A library could have changed them.
+  public static final String V_HOLDINGS_TYPE_ELECTRONIC = "Electronic";
+  public static final String V_HOLDINGS_TYPE_PHYSICAL = "Physical";
+
   // For reporting missing mandatory mappings in 980
   public static final Map<String, String> FOLIO_TO_MARC_FIELD_MAP = new HashMap<>();
   public static final String FUND_CODE_LABEL = "Fund code";
@@ -911,11 +915,13 @@ public abstract class MarcToFolio {
   public void populateHoldingsRecord(HoldingsRecord holdingsRecord) throws Exception {
     holdingsRecord.putElectronicAccess(getElectronicAccess(Config.textForElectronicResources));
     if (electronic()) {
-      holdingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName(HoldingsRecord.V_HOLDINGS_TYPE_ELECTRONIC));
+      holdingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName(V_HOLDINGS_TYPE_ELECTRONIC));
       if (hasDonor()) {
         holdingsRecord.addBookplateNote(
                 BookplateNote.createElectronicBookplateNote(donor()));
       }
+    } else {
+      holdingsRecord.putHoldingsTypeId(FolioData.getHoldingsTypeIdByName(V_HOLDINGS_TYPE_PHYSICAL));
     }
   }
 
