@@ -11,7 +11,6 @@ public class Instance extends FolioEntity {
   public static final String V_FOLIO = "FOLIO";
   public static final String V_MARC = "MARC";
   public static final boolean DISCOVERY_SUPPRESS = false;
-  public static final String INSTANCE_TYPE = "text";
 
   public static final String P_ID = "id";
   public static final String P_HRID = "hrid";
