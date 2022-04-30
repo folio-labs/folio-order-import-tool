@@ -134,7 +134,6 @@ public class FolioData extends FolioAccess {
             MATERIAL_TYPES_PATH + "?query=(name==%22" + encode(materialTypeName) + "%22)",
             MATERIAL_TYPES_ARRAY,
             materialTypeNameToUuid);
-
   }
 
   public static String getLoanTypeId (String loanTypeName) throws Exception {
