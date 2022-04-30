@@ -17,6 +17,7 @@ public class Instance extends FolioEntity {
   public static final String P_TITLE = "title";
   public static final String P_SOURCE = "source";
   public static final String P_INSTANCE_TYPE_ID = "instanceTypeId";
+  public static final String P_INSTANCE_FORMAT_IDS = "instanceFormatIds";
   public static final String P_LANGUAGES = "languages";
   public static final String P_EDITIONS = "editions";
   public static final String P_SERIES = "series";
@@ -45,6 +46,9 @@ public class Instance extends FolioEntity {
   }
   public Instance putInstanceTypeId(String instanceTypeId) {
     return (Instance) putString(P_INSTANCE_TYPE_ID, instanceTypeId);
+  }
+  public Instance putInstanceFormatIds(JSONArray instanceFormatIds) {
+    return (Instance) putArray(P_INSTANCE_FORMAT_IDS, instanceFormatIds);
   }
   public Instance putLanguages(JSONArray languages) {
     return (Instance) putArray(P_LANGUAGES, languages);
