@@ -1,13 +1,17 @@
+## 1.7.0 2022-05-01
+
+* Sets instance.indexTitle to title with initial article removed.
+
 ## 1.6.0 2022-05-01
 
 * Escapes all title characters that are CQL special characters.
 * Maps name-of-part (245$p) to end of title.
-* Maps edition from first 250$a.
+* Maps editions from first 250$a.
 * Maps series from first 490, all subfields except $y, $z.
 * Maps languages from 041$a.
-* Set holdings type for physical resources too (as for electronic).
+* Sets holdings type for physical resources, too (as for electronic).
 * Maps resource type from first 336$a (default still 'text').
-* Maps instance format from first 337$a " -- " 338$a, concatenated.
+* Maps instance formats from first 337$a " -- " 338$a, concatenated.
 * Chi mapping: Sets item copy number to 'c.1'.
 
 ## 1.5.1 2022-03-17
