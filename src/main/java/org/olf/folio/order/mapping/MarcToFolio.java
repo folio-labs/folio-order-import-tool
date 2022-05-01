@@ -959,6 +959,7 @@ public abstract class MarcToFolio {
 
   public void populateInstance(Instance instance) throws Exception {
     instance.putTitle(title())
+            .putIndexTitle(Utils.makeIndexTitle(title()))
             .putSource(Instance.V_FOLIO)
             .putInstanceTypeId(instanceTypeId())
             .putInstanceFormatIds(instanceFormatIds())

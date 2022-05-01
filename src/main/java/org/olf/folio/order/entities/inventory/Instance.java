@@ -15,6 +15,7 @@ public class Instance extends FolioEntity {
   public static final String P_ID = "id";
   public static final String P_HRID = "hrid";
   public static final String P_TITLE = "title";
+  public static final String P_INDEX_TITLE = "indexTitle";
   public static final String P_SOURCE = "source";
   public static final String P_INSTANCE_TYPE_ID = "instanceTypeId";
   public static final String P_INSTANCE_FORMAT_IDS = "instanceFormatIds";
@@ -40,6 +41,9 @@ public class Instance extends FolioEntity {
   }
   public Instance putTitle(String title) {
     return (Instance) putString(P_TITLE, title);
+  }
+  public Instance putIndexTitle(String indexTitle) {
+    return (Instance) putString(P_INDEX_TITLE, indexTitle);
   }
   public Instance putSource(String source) {
     return (Instance) putString(P_SOURCE, source);
