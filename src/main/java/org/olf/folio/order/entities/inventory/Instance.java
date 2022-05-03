@@ -73,6 +73,12 @@ public class Instance extends FolioEntity {
   public Instance putContributors(JSONArray contributors) {
     return (Instance)  putArray(P_CONTRIBUTORS, contributors);
   }
+  public Instance addContributor(JSONObject contributor) {
+    if (json.has(P_CONTRIBUTORS) && contributor != null && !contributor.isEmpty()) {
+      getArray(P_CONTRIBUTORS).put(contributor);
+    }
+    return this;
+  }
   public Instance putDiscoverySuppress (boolean suppress) {
     return (Instance) putBoolean(P_DISCOVERY_SUPPRESS, suppress);
   }

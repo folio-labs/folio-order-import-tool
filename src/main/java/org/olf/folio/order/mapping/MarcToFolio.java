@@ -212,6 +212,18 @@ public abstract class MarcToFolio {
     return null;
   }
 
+  public JSONObject getContributorFrom880 () throws Exception {
+    if (has880s()) {
+      for (VariableField d880 : d880s) {
+        if (((DataField) d880).getSubfieldsAsString(LINKAGE).startsWith("100")) {
+          return makeContributor(((DataField)d880), "Personal name",
+                  new String[] {"a", "b", "c", "d", "f", "g", "j", "k", "l", "n", "p", "t", "u"});
+        }
+      }
+    }
+    return null;
+  }
+
   public boolean has490() {
     return d490 != null;
   }
@@ -989,6 +1001,7 @@ public abstract class MarcToFolio {
             .putSeries(series())
             .putIdentifiers(instanceIdentifiers())
             .putContributors(getContributorsForInstance())
+            .addContributor(getContributorFrom880())
             .putDiscoverySuppress(Instance.DISCOVERY_SUPPRESS)
             .putElectronicAccess(getElectronicAccess(Config.textForElectronicResources))
             .putNatureOfContentTermIds(new JSONArray())
