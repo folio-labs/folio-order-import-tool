@@ -3,7 +3,7 @@
 
 # Application requires import.properties file at ${JETTY_BASE}/order/import.properties
 
-FROM jetty
+FROM jetty:10
 COPY --chown=jetty:jetty target/order.war ${JETTY_HOME}/webapps/
 COPY --chown=jetty:jetty import.properties ${JETTY_BASE}/order/
 COPY --chown=jetty:jetty docker-config/ROOT.xml ${JETTY_BASE}/webapps/
