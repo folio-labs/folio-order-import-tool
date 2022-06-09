@@ -993,7 +993,9 @@ public abstract class MarcToFolio {
   }
 
   public void populateItem(Item item) throws Exception {
-    item.addBookplateNote(BookplateNote.createPhysicalBookplateNote(donor()));
+    if (hasDonor()) {
+      item.addBookplateNote(BookplateNote.createPhysicalBookplateNote(donor()));
+    }
   }
 
   public void validate(RecordResult outcome) throws Exception {

@@ -18,7 +18,7 @@ public class BookplateNote extends FolioEntity {
 
   public static BookplateNote createPhysicalBookplateNote (String note) {
     return new BookplateNote()
-            .putItemNoteTypeId(Constants.ITEM_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE)
+            .putItemNoteTypeId(Constants.ITEM_NOTE_TYPE_ID_NOTE)
             .putNote(note)
             .putStaffOnly(false);
   }
