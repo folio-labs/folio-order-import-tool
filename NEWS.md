@@ -1,3 +1,7 @@
+## 1.7.2 2022-06-09
+
+* Update Dockerfile to specify Jetty 10 as the base image.
+
 ## 1.7.1 2022-06-09
 
 * Sigma mapping: Only sets note type on items if there's a donor. 
