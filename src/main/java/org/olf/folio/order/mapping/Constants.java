@@ -34,6 +34,7 @@ public class Constants {
 	public static final String OCLC = "439bfbae-75bc-4f74-9fc7-b2a2d47ce3ef";
 
 	public static final String ITEM_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE = "f3ae3823-d096-4c65-8734-0c1efd2ffea8";
+	public static final String ITEM_NOTE_TYPE_ID_NOTE =  "8d0a5eca-25de-4391-81a9-236eeefdd20b";
 	public static final String HOLDINGS_NOTE_TYPE_ID_ELECTRONIC_BOOKPLATE =  "88914775-f677-4759-b57b-1a33b90b24e0";
 
 	public static final String ELECTRONIC_ACCESS_RELATIONSHIP_TYPE_RESOURCE = "f5d0068e-6272-458e-8a81-b85e7b9a14aa";
