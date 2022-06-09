@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.olf.folio.order</groupId>
 	<artifactId>folio-order-import-tool</artifactId>
-	<version>1.7.2-SNAPSHOT</version>
+	<version>1.7.2</version>
 	<packaging>war</packaging>
 	<name>FOLIO Order Import Tool</name>
 
@@ -205,7 +205,7 @@
 		<url>https://github.com/folio-labs/${artifactId}</url>
 		<connection>scm:git:git://github.com/folio-labs/${artifactId}.git</connection>
 		<developerConnection>scm:git:git@github.com:folio-labs/${artifactId}.git</developerConnection>
-		<tag>HEAD</tag>
+		<tag>v1.7.2</tag>
 	</scm>
 
 </project>
