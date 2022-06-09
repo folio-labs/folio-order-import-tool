@@ -1,3 +1,7 @@
+## 1.7.1 2022-06-09
+
+* Sigma mapping: Only sets note type on items if there's a donor. 
+
 ## 1.7.0 2022-05-01
 
 * Sets instance.indexTitle to title with initial article removed.
