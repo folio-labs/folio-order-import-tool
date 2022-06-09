@@ -328,7 +328,7 @@ This is how the tool uses FOLIO's APIs:
 
   configurations/entries
 ````
-1) coming API usage, will require permission `orders-storage.acquisition-methods.collection.get`
+1) starting from FOLIO release Lotus.
 
 ### Required permissions 
 ```json
@@ -374,6 +374,7 @@ This is how the tool uses FOLIO's APIs:
     "orders.item.get",
     "orders.item.post",
     "orders.po-number.item.get",
+    "orders.acquisition-methods.collection.get",
     "organizations-storage.organizations.collection.get",
     "tags.collection.get"
   ]
