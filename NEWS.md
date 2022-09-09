@@ -1,3 +1,8 @@
+## 1.7.3 2022-09-09
+
+* Chi mapping: Restore note type to electronic bookplate for items.
+* Set jetty artifact versions to `9.4.48.v20220622` and pin them.
+
 ## 1.7.2 2022-06-09
 
 * Update Dockerfile to specify Jetty 10 as the base image.
