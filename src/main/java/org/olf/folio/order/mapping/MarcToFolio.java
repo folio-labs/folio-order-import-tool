@@ -425,10 +425,6 @@ public abstract class MarcToFolio {
     return V_ELECTRONIC.equalsIgnoreCase(electronicIndicator());
   }
 
-  public boolean physical() {
-    return !electronic();
-  }
-
   public String currency() {
     return d980.getSubfieldsAsString(CURRENCY) == null ? "USD"
             : d980.getSubfieldsAsString(CURRENCY);
@@ -994,7 +990,7 @@ public abstract class MarcToFolio {
 
   public void populateItem(Item item) throws Exception {
     if (hasDonor()) {
-      item.addBookplateNote(BookplateNote.createPhysicalBookplateNote(donor()));
+      item.addBookplateNote(BookplateNote.createElectronicBookplateNoteForItem(donor()));
     }
   }
 
