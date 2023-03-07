@@ -1,3 +1,7 @@
+## 1.8.0 2023-03-07
+
+* Switch Instance lookup from Inventory to Search (SUP-50607)
+
 ## 1.7.3 2022-09-09
 
 * Chi mapping: Restore note type to electronic bookplate for items.
