@@ -1053,7 +1053,7 @@ public abstract class MarcToFolio {
         }
       } else if (hasNoApplicableProductIdentifiers()) {
         String existingInstancesMessage;
-        JSONObject instances = FolioData.getInstancesByQuery("title all \"" + cqlEncode(title()) + "\"");
+        JSONObject instances = FolioData.getInstancesByQuery("title == \"" + cqlEncode(title()) + "\"");
         int totalRecords = instances.getInt("totalRecords");
         if (totalRecords > 0) {
           Instance firstExistingInstance = Instance.fromJson((JSONObject) instances.getJSONArray(FolioData.INSTANCES_ARRAY).get(0));
