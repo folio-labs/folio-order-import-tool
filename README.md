@@ -306,6 +306,7 @@ This is how the tool uses FOLIO's APIs:
   orders/acquisition-methods¹
 
   inventory/instances
+  search/instances
   holdings-storage/holdings
   inventory/items
   instance-types
@@ -340,7 +341,7 @@ This is how the tool uses FOLIO's APIs:
     "finance.fiscal-years.collection.get",
     "finance.funds.collection.get",
     "finance-storage.budget-expense-classes.collection.get",
-    "inventory.instances.collection.get",
+    "search.instances.collection.get",
     "inventory.instances.item.get",
     "inventory.instances.item.post",
     "inventory.instances.item.put",

@@ -1053,13 +1053,13 @@ public abstract class MarcToFolio {
         }
       } else if (hasNoApplicableProductIdentifiers()) {
         String existingInstancesMessage;
-        JSONObject instances = FolioData.getInstancesByQuery("title=\"" + cqlEncode(title()) + "\"");
+        JSONObject instances = FolioData.getInstancesByQuery("title all \"" + cqlEncode(title()) + "\"");
         int totalRecords = instances.getInt("totalRecords");
         if (totalRecords > 0) {
           Instance firstExistingInstance = Instance.fromJson((JSONObject) instances.getJSONArray(FolioData.INSTANCES_ARRAY).get(0));
-          existingInstancesMessage = String.format("%s in Inventory with the same title%sHRID %s",
+          existingInstancesMessage = String.format("%s in Inventory with the same title%sID %s",
                   ( totalRecords > 1 ? " There are already " + totalRecords + " instances" : " There is already an Instance" ),
-                  ( totalRecords > 1 ? ", for example one with " : " and " ), firstExistingInstance.getHrid());
+                  ( totalRecords > 1 ? ", for example one with " : " and " ), firstExistingInstance.getId());
         } else {
           existingInstancesMessage = "Found no existing Instances with that exact title.";
         }
