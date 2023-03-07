@@ -13,6 +13,7 @@ public class FolioData extends FolioAccess {
   // FOLIO APIS PATHS
   public static final String HOLDINGS_STORAGE_PATH = "holdings-storage/holdings";
   public static final String INSTANCES_PATH = "inventory/instances";
+  public static final String INSTANCES_SEARCH_PATH = "search/instances";
   public static final String ITEMS_PATH = "inventory/items";
   public static final String COMPOSITE_ORDERS_PATH = "orders/composite-orders";
   public static final String NOTES_PATH = "notes";
@@ -252,7 +253,7 @@ public class FolioData extends FolioAccess {
   }
 
   public static JSONObject getInstancesByQuery (String query) throws Exception {
-    return callApiGet(INSTANCES_PATH + "?query=(" +encode(query) + ")");
+    return callApiGet(INSTANCES_SEARCH_PATH + "?query=(" +encode(query) + ")");
   }
 
   private static String getFirstId(JSONArray array) {
