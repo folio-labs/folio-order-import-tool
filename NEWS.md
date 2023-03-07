@@ -1,3 +1,7 @@
+## 1.8.1 2023-03-07
+
+* Use exact match for title look-up (SUP-50607)
+
 ## 1.8.0 2023-03-07
 
 * Switch Instance lookup from Inventory to Search (SUP-50607)
