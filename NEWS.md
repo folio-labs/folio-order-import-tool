@@ -1,3 +1,7 @@
+## 1.9.0 not released
+
+* Display OIT's POM version on configuration view page
+
 ## 1.8.1 2023-03-07
 
 * Use exact match for title look-up (SUP-50607)

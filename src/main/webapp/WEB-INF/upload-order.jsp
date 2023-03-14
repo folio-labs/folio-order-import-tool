@@ -111,6 +111,10 @@
 									<section class="tab-content">
 									  <div id="config">
 									    <p class="title">Configuration<span style="color:#f5f5f5"></span></p>
+									       <%
+									          out.println(Config.getOitVersion());
+									       %>
+									       <br/><br/>
                                            <%
                                               for (String key : Config.KNOWN_PROPERTIES) {
                                                 if (!key.contains("password")) {

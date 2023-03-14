@@ -1,5 +1,6 @@
 package org.olf.folio.order;
 
+import java.io.IOException;
 import org.marc4j.marc.Record;
 import org.olf.folio.order.mapping.MarcToFolio;
 import org.olf.folio.order.mapping.MarcMapChi;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import org.olf.folio.order.utils.PropertiesReader;
 
 public class Config {
 
@@ -156,6 +158,7 @@ public class Config {
 
   public static boolean acquisitionMethodsApiPresent = true;
 
+  @SuppressWarnings("unused") // used in JSP
   public static List<Object> allSettings = new ArrayList<>();
 
   public static void load (ServletContext servletContext) {
@@ -218,6 +221,20 @@ public class Config {
               (importInvoice ? EMPTY : NOT_APPLICABLE));
       permELocationWithInvoiceImport = getText(P_PERM_E_LOCATION_WITH_INVOICE_IMPORT,
               (importInvoice ? EMPTY : NOT_APPLICABLE));
+    }
+  }
+
+  private static final String POM_PROPERTIES_FILE = "properties-from-pom.properties";
+
+  @SuppressWarnings("unused") // Used in JSP
+  public static String getOitVersion() {
+    try {
+      PropertiesReader reader = new PropertiesReader(POM_PROPERTIES_FILE);
+      return reader.getProperty("name") + ", version " + reader.getProperty("version");
+    } catch (IOException ioe) {
+      return "Could not retrieve the version of this Order Import Tool: " + ioe.getMessage();
+    } catch (NullPointerException npe) {
+      return "Could not retrieve the version of this Order Import Tool from " + POM_PROPERTIES_FILE;
     }
   }
 
