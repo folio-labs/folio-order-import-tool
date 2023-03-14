@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.olf.folio.order</groupId>
 	<artifactId>folio-order-import-tool</artifactId>
-	<version>1.8.2-SNAPSHOT</version>
+	<version>1.9.0-SNAPSHOT</version>
 	<packaging>war</packaging>
 	<name>FOLIO Order Import Tool</name>
 
@@ -12,6 +12,8 @@
 		<jersey.version>2.27</jersey.version>
 		<maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+		<name>${project.name}</name>
+		<version>${project.version}</version>
 	</properties>
 
 	<dependencies>
@@ -196,6 +198,23 @@
 					<pushChanges>false</pushChanges>
 					<localCheckout>true</localCheckout>
 				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>properties-maven-plugin</artifactId>
+				<version>1.0.0</version>
+				<executions>
+					<execution>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>write-project-properties</goal>
+						</goals>
+						<configuration>
+							<outputFile>${project.build.outputDirectory}/properties-from-pom.properties</outputFile>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 
 		</plugins>
