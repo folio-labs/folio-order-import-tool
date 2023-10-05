@@ -17,12 +17,12 @@ For details, see [What data are populated to FOLIO](#what-data-are-populated-to-
 
 The MARC file can be run through validation without actually importing anything to FOLIO. Choose a MARC file in the tool's UI and click `Analyze MARC records`. For details about the checks it performs, see [Validation of incoming MARC records](#validation-of-incoming-marc-records)
 
-When running an actual import, the exact same checks are performed for each record, and the tool then acts on the results according to the setting of configuration parameter `onValidationErrors`. See options for this setting in the [configuration table](#how-to-configure-the-service) 
+When running an actual import, the exact same checks are performed for each record, and the tool then acts on the results according to the setting of configuration parameter `onValidationErrors`. See options for this setting in the [configuration table](#how-to-configure-the-service)
 
 ![ui-screen-shot](https://user-images.githubusercontent.com/11644885/146233019-fe7b87d0-a3a0-4372-b135-6a22d14c06e5.png)
 
 
-Imports can take a while for files with many MARC records, so imports are started in the back-ground. Right after starting an import, the UI will display a status with the state 'started' and a count of MARC records in the file and a 'Refresh' link that you can click to get updates on progress. 
+Imports can take a while for files with many MARC records, so imports are started in the back-ground. Right after starting an import, the UI will display a status with the state 'started' and a count of MARC records in the file and a 'Refresh' link that you can click to get updates on progress.
 
 ![ui-import-started](https://user-images.githubusercontent.com/11644885/146233538-9b19b43f-2875-491b-b41f-68631bcc66fd.png)
 
@@ -41,7 +41,7 @@ Once the job is finished, clicking the 'Refresh' will display a state of 'done' 
 * If the configuration is okay, it should start a jetty server, and you should be able to point your browser to http://localhost:8888/import and try
   it
 * However, unless `exitOnConfigErrors` is set to false in the properties, the service will stop if it detects fatal configuration problems
-* Unless `exitOnAccessErrors` is set to false, the service will stop if it fails to log in to Okapi. 
+* Unless `exitOnAccessErrors` is set to false, the service will stop if it fails to log in to Okapi.
 * And, unless `exitOnFailedIdLookups` is set to false, the service will stop if it could not find FOLIO UUIDs for names or codes
   defined in the properties.
 * We've included example MARC files, but you will have to update them with your vendor, fund, object codes, etc.
@@ -71,26 +71,26 @@ You may want to run multiple instances of the tool in the same server environmen
 Note that the webapp expects to be running at the root path of its server.  So first set up separate virtual hosts for each instance.
 
 * Add a CNAME my-instance-name.domain.edu referencing the actual server.
-* Configure a reverse proxy to point the root path of that virtual host to a distinct path on the actual server.  For example in Apache, 
+* Configure a reverse proxy to point the root path of that virtual host to a distinct path on the actual server.  For example in Apache,
 
 ```
 <VirtualHost ....>
   ....
   ServerName my-instance-name.domain.edu
-  
+
   ProxyPreserveHost On
-  
+
   RewriteEngine on
   RewriteRule ^$ /import [L]
-  
+
   <Location />
     ....
-   
+
     RequestHeader set X-Forwarded-Proto "https" env=HTTPS
     ProxyPass http://my-instance-name.domain.edu:8080/my-instance-name/
     ProxyPassReverse http://my-instance-name.domain.edu:8080/my-instance-name/
   </Location>
-  
+
   ....
 </VirtualHost>
 ```
@@ -126,7 +126,7 @@ The startup configuration has parameters controlling FOLIO access, start-up beha
 | okapi_username            | The FOLIO user name of the import user i.e. 'diku_admin'                                                                               |||
 | okapi_password            | The password for the import user                                                                                                       |||
 | **Startup**               ||||
-| exitOnConfigurationErrors | boolean ¹                                                                                                                              | true                         | If set to true (the default), the service will exit if it detects fatal problems with the configuration properties -- like missing mandatory properties. <br/>If set to false, it will merely log configuration problems.                                                                                             | 
+| exitOnConfigurationErrors | boolean ¹                                                                                                                              | true                         | If set to true (the default), the service will exit if it detects fatal problems with the configuration properties -- like missing mandatory properties. <br/>If set to false, it will merely log configuration problems.                                                                                             |
 | exitOnAccessErrors        | boolean ¹                                                                                                                              | true                         | If set to true (the default), the service will exit if it fails to gain access to FOLIO for any reason (wrong URL, tenant, username or service down etc). <br/>If set to false, it will merely log access problems.                                                                                                   |
 | exitOnFailedIdLookups     | boolean ¹                                                                                                                              | true                         | If set to true (the default), the service will exit if it fails to resolve configured names of codes to FOLIO UUIDs. <br/>If set to false, it will merely log missing values.                                                                                                                                         |
 | **Server**                ||||
@@ -136,11 +136,11 @@ The startup configuration has parameters controlling FOLIO access, start-up beha
 | **Processing**            ||||
 | purchaseOrderUnit         | `file` or `record`                                                                                                                     | record                       | Instructs the tool to create one purchase order per file or one purchase order per record (default).                                                                                                                                                                                                                  |
 | onValidationErrors        | `cancelAll`, `skipFailed` or `attemptImport`                                                                                           | cancelAll                    | If one or more records fail the initial validation check, this setting will cause the service to either cancel the entire import (`cancelAll`), skip the current, failed record (`skipFailed`), or attempt import anyway (`attemptImport`). With the last option, the import itself would presumably eventually fail. |
-| onIsbnInvalid             | `removeIsbn`, `reportError` or `doNothing`                                                                                             | reportError                  | Controls if the tool should report error and perhaps skip the record, or remove the ISBN to ingest, or do nothing (which should cause the import to error out later)                                                                                                                                                  | 
+| onIsbnInvalid             | `removeIsbn`, `reportError` or `doNothing`                                                                                             | reportError                  | Controls if the tool should report error and perhaps skip the record, or remove the ISBN to ingest, or do nothing (which should cause the import to error out later)                                                                                                                                                  |
 | **Tool UI**               |||
 | daysToShowResults         | number of days ³                                                                                                                       | 14                           | Results are listed in the UI for this number of days after first created. After that they will be skipped (but not deleted)                                                                                                                                                                                           |
 | tzTimeZone                | A [tz time zone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones), ie `America/Chicago`                                   | Europe/Stockholm             | Sets the time zone of dates in the UI                                                                                                                                                                                                                                                                                 |
-| locale                    | Language and country, i.e. `en-US`                                                                                                     | sv-SE                        | Formats dates in the UI                                                                                                                                                                                                                                                                                               | 
+| locale                    | Language and country, i.e. `en-US`                                                                                                     | sv-SE                        | Formats dates in the UI                                                                                                                                                                                                                                                                                               |
 | folioUiUrl                | Protocol and domain of FOLIO UI, ie https://folio-snapshot.dev.folio.org/ ²                                                            | none                         | If provided, links to FOLIO's UI will be displayed for records in the import log.                                                                                                                                                                                                                                     |
 | folioUiInventoryPath      | Path to the Inventory UI ²                                                                                                             | inventory/view               | Used for a link in the import log to the Instance in UI Inventory.                                                                                                                                                                                                                                                    |
 | folioUiOrdersPath         | Path to the Orders UI ²                                                                                                                | orders/view                  | Used for a link in the import log to the order in UI Orders.                                                                                                                                                                                                                                                          |
@@ -152,15 +152,15 @@ The startup configuration has parameters controlling FOLIO access, start-up beha
 3) if the provided config value is not a valid number, the default will apply
 
 ## What data are populated to FOLIO
-The tool populates FOLIO Orders and Inventory with data from three different sources: 
+The tool populates FOLIO Orders and Inventory with data from three different sources:
 1) The incoming MARC records
 2) Static values defined as configuration parameters
-3) Static values hard-coded in the program. 
+3) Static values hard-coded in the program.
 
 ### Data from the incoming MARC records
-The tool provides three, slightly different sets of MARC mappings. All three share a basic set of mappings but then extend that with some mappings of their own. 
+The tool provides three, slightly different sets of MARC mappings. All three share a basic set of mappings but then extend that with some mappings of their own.
 
-The desired mapping is selected at startup by setting the parameter `marcMapping` to either `chi` (default), `lambda` or `sigma`. 
+The desired mapping is selected at startup by setting the parameter `marcMapping` to either `chi` (default), `lambda` or `sigma`.
 
 #### Core mapping table
 
@@ -171,17 +171,17 @@ The desired mapping is selected at startup by setting the parameter `marcMapping
 | 022 $a ($c $q)     | ISSN                           | orderLine.details.productIds[] <br/>instance.identifiers[]                                                                                                                                            | No                                       |                                                                                        |
 | 022 $l ($c $q)     | Linking ISSN                   | instance.identifiers[]                                                                                                                                                                                | No                                       |                                                                                        |
 | 022 ($z $y $n)     | Invalid ISSN                   | instance.identifiers[]                                                                                                                                                                                | No                                       |                                                                                        |
-| 024 $a             | Other standard identifier      | orderLine.details.productIds[]<br/>instance.identifiers[]                                                                                                                                             | No                                       | 
+| 024 $a             | Other standard identifier      | orderLine.details.productIds[]<br/>instance.identifiers[]                                                                                                                                             | No                                       |
 | 025 $a             | Other standard identifier      | orderLine.details.productIds[]<br/>instance.identifiers[]                                                                                                                                             | No                                       |
 | 028 $a             | Publisher/Distributor number   | orderLine.details.productIds[]<br/>instance.identifiers[]                                                                                                                                             | No                                       |
 | 035 9$a            | System control number          | instance.identifiers[]                                                                                                                                                                                | No                                       |
-| 041 $a             | Languages                      | instance.languages[]                                                                                                                                                                                  | No                                       |                                                                                        |                                                                                                        |                                                                                                                                                                                  
+| 041 $a             | Languages                      | instance.languages[]                                                                                                                                                                                  | No                                       |                                                                                        |                                                                                                        |
 | 100, 700           | Contributors                   | instance.contributors.name /w contributor name type 'Personal name" and contributor type from $4 or 'bkp'                                                                                             | No                                       |                                                                                        |
 | 245 $a ($b $c $p)  | Instance title and index title | instance.title, instance.indexTitle (with initial article removed), orderLine.titleOrPackage                                                                                                          | Yes                                      |
 | 250 $a             | Edition                        | instance.editions[]                                                                                                                                                                                   | No                                       |                                                                                        |                                                                                                        |
 | 336 $a             | Resource type                  | instance.instanceTypeId                                                                                                                                                                               | No                                       | text                                                                                   |                                                                                                        |
 | 337$,338$a         | Format                         | instance.instanceFormatIds[]                                                                                                                                                                          | No                                       |                                                                                        | 337$a +  " -- " + 338$a                                                                                |
-| 490 $a,l,v,x,3,6,8 | Series                         | instance.series[]                                                                                                                                                                                     | No                                       |                                                                                        |
+| 490 $a,l,v,x,3,6,8 | Series                         | instance.series[].value                                                                                                                                                                               | No                                       |                                                                                        |
 | 856 $u             | URI                            | instance. electronicAccessUrl[]. uri, holdingsRecord. electronicAccessUrl[]. uri                                                                                                                      | No                                       |
 | 856 $x             | User limit                     | orderLine.eResource.userLimit if ELECTRONIC, but see Lambda                                                                                                                                           | No                                       |                                                                                        | Integer                                                                                                |
 | 856 $y             | Access provider code           | orderLine. eresource. accessProvider if ELECTRONIC                                                                                                                                                    | No                                       | Vendor code (if 856$y is not present or the code does not resolve to an existing org.) |                                                                                                        |
@@ -218,14 +218,14 @@ The desired mapping is selected at startup by setting the parameter `marcMapping
 | MARC_fields¹  | Description    | Target properties     | Required | Default | Content (incoming)                             |
 |---------------|----------------|-----------------------|----------|---------|------------------------------------------------|
 | 856 $x        | User limit     | n/a                   | No       |         | This field is not submitted to FOLIO.          |
-| 980 $o        | Object code    | orderLine tag list    | Yes      |         | The object code must exist as a Tag in FOLIO.  | 
+| 980 $o        | Object code    | orderLine tag list    | Yes      |         | The object code must exist as a Tag in FOLIO.  |
 | 980 $r        | Project code   | orderLine tag list    | No       |         | The project code must exist as a Tag in FOLIO. |
 
-#### `Sigma` mapping extension 
+#### `Sigma` mapping extension
 
 | MARC_fields¹ | Description     | Target properties                                                | Required            | Default                   | Content (incoming) |
 |--------------|-----------------|------------------------------------------------------------------|---------------------|---------------------------|--------------------|
-| 980 $a       | Location        | orderLine.locations[].id (name resolved to id)                   | Yes                 |                           |                    | 
+| 980 $a       | Location        | orderLine.locations[].id (name resolved to id)                   | Yes                 |                           |                    |
 | 980 $d       | Material type   | orderLine.physical.materialType and item.materialTypeId          | No                  | Configured material type  |                    |
 | 980 $q       | Quantity        | orderLine.locations[] .quantityPhysical or .quantityElectronic   | No (defaults to 1)  | 1                         |                    |
 | 980 $r       | Loan type       | item.permanentLoanTypeId                                         | Yes                 |                           |                    |
@@ -294,9 +294,9 @@ This is how the tool uses FOLIO's APIs:
 * It makes requests to a number of reference data APIs to map reference values (fiscal years, fund codes, budgets, instance types, material types, note
   types, tags)
 * It gets the next PO number from Orders
-* It posts a purchase order (approved and open) and one line item for each MARC record in a file 
+* It posts a purchase order (approved and open) and one line item for each MARC record in a file
 * It retrieves, then put the new/linked Instance from Inventory
-* It optionally retrieves, then put the new/linked holdings record 
+* It optionally retrieves, then put the new/linked holdings record
 * It optionally posts notes for the Order
 
 #### APIs used
@@ -331,7 +331,7 @@ This is how the tool uses FOLIO's APIs:
 ````
 1) starting from FOLIO release Lotus.
 
-### Required permissions 
+### Required permissions
 ```json
 {
   "permissions": [
@@ -384,4 +384,4 @@ This is how the tool uses FOLIO's APIs:
 
 ### Development notes
 
-Documentation on the schema for communication between the service and the UI can be found in [IMPORT_RESPONSE_SCHEMA](IMPORT_RESPONSE_SCHEMA.md) 
+Documentation on the schema for communication between the service and the UI can be found in [IMPORT_RESPONSE_SCHEMA](IMPORT_RESPONSE_SCHEMA.md)
