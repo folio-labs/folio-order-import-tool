@@ -292,7 +292,9 @@ public abstract class MarcToFolio {
       @SuppressWarnings( "SpellCheckingInspection" )
       String seriesStatement = d490.getSubfieldsAsString("alvx368");
       if (seriesStatement != null && ! seriesStatement.isEmpty()) {
-        seriesArray.put(seriesStatement);
+        JSONObject series = new JSONObject();
+        series.put("value", seriesStatement);
+        seriesArray.put(series);
       }
     }
     return seriesArray;
