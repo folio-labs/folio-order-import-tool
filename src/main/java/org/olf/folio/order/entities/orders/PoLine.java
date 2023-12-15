@@ -40,7 +40,6 @@ public class PoLine extends FolioEntity {
   public static final String P_SELECTOR = "selector";
   public static final String P_DONOR = "donor";
   public static final String P_CONTRIBUTORS = "contributors";
-  public static final String P_PRODUCT_IDS = "productIds";
   public static final String P_DETAILS = "details";
   public static final String P_EDITION = "edition";
   public static final String P_PUBLISHER = "publisher";
@@ -88,7 +87,7 @@ public class PoLine extends FolioEntity {
             .putSelectorIfPresent(mappedMarc.selector())
             .putDonorIfPresent(mappedMarc.donor())
             .putContributors(mappedMarc.getContributorsForOrderLine())
-            .putDetailsIfPresent(OrderLineDetails.fromMarcRecord(mappedMarc).asJson())
+            .putDetails(OrderLineDetails.fromMarcRecord(mappedMarc).asJson())
             .putEditionIfPresent(mappedMarc.edition());
 
     if (mappedMarc.has260()) {
@@ -189,10 +188,6 @@ public class PoLine extends FolioEntity {
   public PoLine putDetails (JSONObject details) {
     return (PoLine) putObject(P_DETAILS, details);
   }
-  public PoLine putDetailsIfPresent(JSONObject details) {
-    return present(details) ? putDetails(details) : this;
-  }
-
   public PoLine putEdition (String edition) {
     return (PoLine) putString(P_EDITION, edition);
   }
@@ -241,18 +236,4 @@ public class PoLine extends FolioEntity {
     return holdingsRecordIds;
   }
 
-  public List<PoLineLocation> getLocations() {
-    List<PoLineLocation> poLineLocationList = new ArrayList<>();
-    JSONArray locations = json.getJSONArray(P_LOCATIONS);
-    if (locations != null && !locations.isEmpty()) {
-      for (Object o : locations) {
-        poLineLocationList.add(PoLineLocation.fromJson((JSONObject) o));
-      }
-    }
-    return poLineLocationList;
-  }
-
-  public Physical getPhysical () {
-    return Physical.fromJson(getJSONObject(P_PHYSICAL));
-  }
 }
