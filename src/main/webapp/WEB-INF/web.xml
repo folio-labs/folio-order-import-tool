@@ -49,4 +49,14 @@
     <listener-class>org.olf.folio.order.listeners.ConfigurationListener</listener-class>
   </listener>
 
+  <session-config>
+    <session-timeout>525600</session-timeout>
+    <cookie-config>
+        <name>folio-order-import-session</name>
+        <path>/</path>
+        <http-only>true</http-only>
+        <secure>true</secure>
+    </cookie-config>
+  </session-config>
+
 </web-app>

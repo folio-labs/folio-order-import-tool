@@ -26,6 +26,7 @@ public class CompositePurchaseOrder extends FolioEntity {
   public static final String P_ID = "id";
   public static final String P_APPROVED = "approved";
   public static final String P_WORKFLOW_STATUS = "workflowStatus";
+  public static final String P_ASSIGNED_TO = "assignedTo";
   public static final String P_BILL_TO = "billTo";
   public static final String P_COMPOSITE_PO_LINES = "compositePoLines";
 
@@ -47,6 +48,7 @@ public class CompositePurchaseOrder extends FolioEntity {
                     .putId(orderId)
                     .putApproved(V_APPROVED)
                     .putWorkflowStatus(V_OPEN)
+                    .putAssignedTo(mappedMarc.assignedTo())
                     .putBillToIfPresent(mappedMarc.billToUuid())
                     .putCompositePoLines(
                             new JSONArray().put(PoLine.fromMarcRecord(orderId, mappedMarc).asJson())
@@ -85,6 +87,9 @@ public class CompositePurchaseOrder extends FolioEntity {
   }
   public CompositePurchaseOrder putWorkflowStatus(String workflowStatus) {
     return (CompositePurchaseOrder) putString(P_WORKFLOW_STATUS, workflowStatus);
+  }
+  public CompositePurchaseOrder putAssignedTo(String username) {
+    return (CompositePurchaseOrder) putString(P_ASSIGNED_TO, username);
   }
   public CompositePurchaseOrder putBillTo(String billTo) {
     return (CompositePurchaseOrder) putString(P_BILL_TO, billTo);

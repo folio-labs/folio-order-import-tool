@@ -28,6 +28,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpSession;
+
 import static org.olf.folio.order.mapping.Constants.CONTRIBUTOR_NAME_TYPES_MAP;
 
 public abstract class MarcToFolio {
@@ -1083,6 +1085,14 @@ public abstract class MarcToFolio {
 
   public boolean has (String string) {
     return string != null && !string.isEmpty();
+  }
+
+  public void addSessionContext(HttpSession session) {
+    // noop
+  }
+
+  public String assignedTo() {
+    return null;
   }
 
 }

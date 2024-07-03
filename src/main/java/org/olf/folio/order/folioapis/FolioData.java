@@ -35,6 +35,7 @@ public class FolioData extends FolioAccess {
   public static final String BUDGETS_PATH = "finance/budgets";
   public static final String BUDGET_EXPENSE_CLASSES_PATH = "finance-storage/budget-expense-classes";
   public static final String TAGS_PATH = "tags";
+  public static final String USERS_PATH = "users";
 
   // NAMES OF ENTITY ARRAYS IN RESPONSE JSON FROM THE APIS
   public static final String INSTANCES_ARRAY = "instances";
@@ -57,6 +58,7 @@ public class FolioData extends FolioAccess {
   public static final String NOTE_TYPES_ARRAY = "noteTypes";
   public static final String CONFIGS_ARRAY = "configs";
   public static final String TAGS_ARRAY = "tags";
+  public static final String USERS_ARRAY = "users";
 
   // CACHING LOOKED UP VALUES
   public static final Map<String,String> organizationCodeToUuid = new HashMap<>();
@@ -76,6 +78,7 @@ public class FolioData extends FolioAccess {
   public static final Map<String,String> fundIdAndFiscalYearIdToBudgetId = new HashMap<>();
   public static final Map<String,String> acquisitionMethodValueToUuid = new HashMap<>();
   public static final Map<String,String> budgetAndExpClassToBudgetExpClassId = new HashMap<>();
+  public static final Map<String,String> usernameToUuid = new HashMap<>();
 
   public static String getNextPoNumberFromOrders() throws Exception {
     return (callApiGet(ORDERS_PO_NUMBER_PATH)).getString("poNumber");
@@ -176,6 +179,14 @@ public class FolioData extends FolioAccess {
             NOTE_TYPES_PATH + "?query=(name==%22" + encode(noteTypeName) + "%22)",
             NOTE_TYPES_ARRAY,
             noteTypeNameToUuid);
+  }
+
+  public static String getUserIdByUsername (String username) throws Exception {
+    return getIdByKey(
+            username,
+            USERS_PATH + "?query=(username==%22" + encode(username) + "%22)",
+            USERS_ARRAY,
+            usernameToUuid);
   }
 
   public static String getAddressIdByName (String addressName) throws Exception {
