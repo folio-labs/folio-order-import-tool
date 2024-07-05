@@ -50,10 +50,7 @@ public class MarcMapLambda extends MarcToFolio {
   public void validate(RecordResult outcome) throws Exception {
     super.validate(outcome);
     if (has980()) {
-      if (!hasObjectCode()) {
-        outcome.setFlagIfNotNull(
-                "Object code is required with MARC mapping 'Lambda'" + " but no object code found in the record");
-      } else {
+      if (hasObjectCode()) {
         String message = ValidationLookups.validateTag(objectCode());
         if (message != null) {
           outcome.addValidationMessageIfAny("Cannot set the object code: " + message);
