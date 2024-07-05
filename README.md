@@ -152,10 +152,11 @@ The startup configuration has parameters controlling FOLIO access, start-up beha
 3) if the provided config value is not a valid number, the default will apply
 
 ## What data are populated to FOLIO
-The tool populates FOLIO Orders and Inventory with data from three different sources:
+The tool populates FOLIO Orders and Inventory with data from four different sources:
 1) The incoming MARC records
 2) Static values defined as configuration parameters
-3) Static values hard-coded in the program.
+3) Static values hard-coded in the program
+4) Authentication data via HTTP Request headers
 
 ### Data from the incoming MARC records
 The tool provides three, slightly different sets of MARC mappings. All three share a basic set of mappings but then extend that with some mappings of their own.
@@ -262,6 +263,25 @@ The desired mapping is selected at startup by setting the parameter `marcMapping
 | IF PHYSICAL                                                  |
 | orderLine.cost.quantityPhysical                              | 1                                            |
 | holdingsRecord.holdingsTypeId                                | The holdings type ID for Physical            |
+
+### Authentication data via HTTP Request headers
+
+If the web server hosting the FOLIO Order import tool performs HTTP authentication, then the logged in user can be set in each order's `assignedTo` field.  To do this, configure the web server to set a request header `X-Remote-User` with value matching the FOLIO username, as below.
+
+```
+  <Location />
+
+                  AuthType Basic
+                  AuthName "Order Import Tool"
+                  AuthLDAPURL "ldap://ldapserver.edu/dc=myuniversity,dc=edu?uid"
+                  AuthBasicProvider ldap
+                  require valid-user
+
+                  RequestHeader set X-Remote-User expr=%{REMOTE_USER}
+                  RequestHeader unset Authorization
+
+                  ...
+```
 
 ## Validation of incoming MARC records
 
