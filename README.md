@@ -346,6 +346,7 @@ This is how the tool uses FOLIO's APIs:
 
   notes
   tags
+  users
 
   configurations/entries
 ````
@@ -397,7 +398,11 @@ This is how the tool uses FOLIO's APIs:
     "orders.po-number.item.get",
     "orders.acquisition-methods.collection.get",
     "organizations-storage.organizations.collection.get",
-    "tags.collection.get"
+    "perms.users.get",
+    "tags.collection.get",
+    "usergroups.collection.get",
+    "users.collection.get",
+    "users-bl.collection.get"
   ]
 }
 ```
