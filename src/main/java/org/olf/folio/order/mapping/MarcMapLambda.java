@@ -4,6 +4,7 @@ import javax.servlet.http.HttpSession;
 
 import org.marc4j.marc.Record;
 import org.olf.folio.order.importhistory.RecordResult;
+import org.olf.folio.order.controllers.OrderController;
 import org.olf.folio.order.folioapis.FolioData;
 import org.olf.folio.order.folioapis.ValidationLookups;
 
@@ -78,8 +79,8 @@ public class MarcMapLambda extends MarcToFolio {
   }
 
   public String assignedTo() {
-    logger.info("retrieving username from session: " + this.session.getAttribute("username"));
-    String username = (String)this.session.getAttribute("username");
+    String username = (String)this.session.getAttribute(OrderController.SESSION_USERNAME);
+    logger.debug("retrieving username from session: " + username);
     try {
       return FolioData.getUserIdByUsername(username);
     }

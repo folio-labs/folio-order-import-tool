@@ -15,11 +15,14 @@ public class OrderController extends HttpServlet {
 	
 	private static final Logger logger = Logger.getLogger(OrderController.class);
 
+	// Session attributes
+	public static String SESSION_USERNAME = "username";
+
 	protected void doGet(HttpServletRequest request,HttpServletResponse response) throws ServletException, IOException {
 		String username = request.getHeader("X-Remote-User");
 		logger.debug("Maybe got username from session: " + username);
 		if (username != null) {
-			request.getSession().setAttribute("username", username);
+			request.getSession().setAttribute(SESSION_USERNAME, username);
 		}
 
 		RequestDispatcher rd = request.getRequestDispatcher("WEB-INF/upload-order.jsp");
