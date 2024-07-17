@@ -53,7 +53,8 @@ public class OrderService {
 		// Run synchronous if just analysis (usually quick)
 		if (analyzeOnly) {
 			try {
-				Results results = new OrderImport().runAnalyzeJob(storage);
+				OrderImport orderImport = new OrderImport(servletRequest.getSession(true));
+				Results results = orderImport.runAnalyzeJob(storage);
 				storage.storeResults(results);
 				return Response.status(Response.Status.OK).entity(results.toJsonString()).build();
 			} catch (Exception e) {
@@ -76,7 +77,8 @@ public class OrderService {
 			// Run asynchronous if actual import
 			new Thread(() -> {
 				try {
-					storage.storeResults(new OrderImport().runImportJob(storage, importResults));
+					OrderImport orderImport = new OrderImport(servletRequest.getSession(true));
+					storage.storeResults(orderImport.runImportJob(storage, importResults));
 				}
 				catch (Exception e) {
 					logger.error("There was a problem in the job thread: " + e.getMessage());

@@ -1,12 +1,18 @@
 package org.olf.folio.order.mapping;
 
+import javax.servlet.http.HttpSession;
+
 import org.marc4j.marc.Record;
 import org.olf.folio.order.importhistory.RecordResult;
+import org.olf.folio.order.controllers.OrderController;
+import org.olf.folio.order.folioapis.FolioData;
 import org.olf.folio.order.folioapis.ValidationLookups;
 
 public class MarcMapLambda extends MarcToFolio {
   protected static final String OBJECT_CODE           = "o";
   protected static final String PROJECT_CODE          = "r";
+
+  protected HttpSession session;
 
   public MarcMapLambda(Record record) {
     super(record);
@@ -64,4 +70,21 @@ public class MarcMapLambda extends MarcToFolio {
       }
     }
   }
+
+  public void addSessionContext(HttpSession session) {
+    this.session = session;
+  }
+
+  public String assignedTo() {
+    String username = (String)this.session.getAttribute(OrderController.SESSION_USERNAME);
+    logger.debug("retrieving username from session: " + username);
+    try {
+      return FolioData.getUserIdByUsername(username);
+    }
+    catch (Exception e) {
+      logger.error("Error retrieving user UUID for username: " + username, e);
+      return null;
+    }
+  }
+
 }

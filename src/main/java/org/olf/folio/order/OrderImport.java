@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import javax.servlet.http.HttpSession;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -44,6 +46,12 @@ public class OrderImport {
 	private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 	static {
 		dateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+	}
+
+	private HttpSession session;
+
+	public OrderImport(HttpSession session) {
+		this.session = session;
 	}
 
 	public Results runAnalyzeJob(FileStorageHelper fileStore) throws Exception {
@@ -96,6 +104,7 @@ public class OrderImport {
 			try {
 				Record record = reader.next();
 				MarcToFolio mappedMarc = Config.getMarcMapping(record);
+				mappedMarc.addSessionContext(session);
 				RecordChecker.validateMarcRecord(mappedMarc, outcome);
 				if (!outcome.isSkipped()) {
 					// RECORD VALIDATION PASSED OR SERVICE IS CONFIGURED TO ATTEMPT IMPORT IN ANY CASE
