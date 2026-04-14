@@ -1,6 +1,6 @@
 package org.olf.folio.order.mapping;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 import org.marc4j.marc.Record;
 import org.olf.folio.order.importhistory.RecordResult;

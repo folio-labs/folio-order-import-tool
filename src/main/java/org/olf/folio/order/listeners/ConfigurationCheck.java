@@ -1,13 +1,13 @@
 package org.olf.folio.order.listeners;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.log4j.Logger;
 import org.olf.folio.order.Config;
 import org.olf.folio.order.mapping.Constants;
 import org.olf.folio.order.folioapis.FolioAccess;
 import org.olf.folio.order.folioapis.FolioData;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
