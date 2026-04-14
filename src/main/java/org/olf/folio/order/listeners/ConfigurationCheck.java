@@ -1,6 +1,6 @@
 package org.olf.folio.order.listeners;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.log4j.Logger;
 import org.olf.folio.order.Config;
 import org.olf.folio.order.mapping.Constants;
