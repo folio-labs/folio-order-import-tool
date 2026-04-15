@@ -26,7 +26,7 @@ public class ConfigurationListener implements ServletContextListener {
 						userHomeSysProp + "/order/import.properties";
 		try {
 			String path = configFileSysProp.startsWith( "/" ) ?
-						configFileSysProp : userHomeSysProp + "/" + configFileSysProp;
+				configFileSysProp : userHomeSysProp + "/" + configFileSysProp;
 			CompositeConfiguration compositeConfiguration = new CompositeConfiguration();
 			compositeConfiguration.addConfiguration( new Configurations().properties( new File( path ) ) );
 			logger.info("Initializing properties using " + path);

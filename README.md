@@ -52,8 +52,8 @@ Once the job is finished, clicking the 'Refresh' will display a state of 'done' 
 You can build a Docker image using the [Dockerfile](Dockerfile) in this repository.
 
 1. Build the WAR for the webapp: `mvn install`
-1. Build the Docker image: `docker build .`
-1. Run the container: `docker run -d -p 8080:8080 <imageId>`
+1. Build the Docker image: `docker build -t folio-order-import .`
+1. Run the container: `docker run -d -p 8080:8080 folio-order-import`
 
 This will run a [Jetty](https://hub.docker.com/_/jetty) container with the order import webapp as the root, using the
 default configuration in the [import.properties](import.properties) file. This will work against the
@@ -62,7 +62,7 @@ FOLIO [folio-snapshot](https://folio-snapshot.dev.folio.org) reference environme
 To override the default configuration, mount your configuration to `/var/lib/jetty/order/import.properties` on the
 container e.g.:
 
-    docker run -d -v $(pwd)/order:/var/lib/jetty/order -p 8080:8080 <imageId>
+    docker run -d -v $(pwd)/order:/var/lib/jetty/order -p 8080:8080 folio-order-import
 
 ### Multiple instances
 
