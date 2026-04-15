@@ -7,7 +7,7 @@ import org.olf.folio.order.mapping.MarcMapChi;
 import org.olf.folio.order.mapping.MarcMapLambda;
 import org.olf.folio.order.mapping.MarcMapSigma;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.time.ZoneId;
 import java.time.zone.ZoneRulesException;
 import java.util.ArrayList;
