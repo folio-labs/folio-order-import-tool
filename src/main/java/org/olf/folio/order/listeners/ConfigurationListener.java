@@ -4,9 +4,10 @@ import java.util.Iterator;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import java.io.File;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.olf.folio.order.Config;
 
@@ -15,7 +16,6 @@ public class ConfigurationListener implements ServletContextListener {
 	private static final Logger logger = Logger.getLogger(ConfigurationListener.class);
 	public void contextInitialized(ServletContextEvent sce) {
 		ServletContext context = sce.getServletContext();
-		String path = "file://";
 		String userHomeSysProp = System.getProperty( "user.home" );
 		String configFileSysProp = System.getProperty("config") == null ?
 						System.getProperty( "configFile") : System.getProperty("config");
@@ -25,10 +25,10 @@ public class ConfigurationListener implements ServletContextListener {
 		if (configFileSysProp == null || configFileSysProp.isEmpty()) configFileSysProp =
 						userHomeSysProp + "/order/import.properties";
 		try {
-			path += (configFileSysProp.startsWith( "/" ) ?
-							configFileSysProp : userHomeSysProp + "/" + configFileSysProp);
+			String path = configFileSysProp.startsWith( "/" ) ?
+							configFileSysProp : userHomeSysProp + "/" + configFileSysProp;
 			CompositeConfiguration compositeConfiguration = new CompositeConfiguration();
-			compositeConfiguration.addConfiguration( new PropertiesConfiguration( path ) );
+			compositeConfiguration.addConfiguration( new Configurations().properties( new File( path ) ) );
 			logger.info("Initializing properties using " + path);
 			Iterator<String> keys = compositeConfiguration.getKeys();
 			while (keys.hasNext()) {
