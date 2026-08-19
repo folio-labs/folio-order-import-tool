@@ -7,7 +7,7 @@ import org.olf.folio.order.mapping.Constants;
 import org.olf.folio.order.folioapis.FolioAccess;
 import org.olf.folio.order.folioapis.FolioData;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;

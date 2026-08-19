@@ -3,7 +3,8 @@
 
 # Application requires import.properties file at ${JETTY_BASE}/order/import.properties
 
-FROM jetty:10
+FROM jetty:12.0.34-jdk21
+RUN java -jar "$JETTY_HOME/start.jar" --add-modules=ee10-deploy,ee10-webapp,ee10-annotations,ee10-jsp
 COPY --chown=jetty:jetty target/order.war ${JETTY_HOME}/webapps/
 COPY --chown=jetty:jetty import.properties ${JETTY_BASE}/order/
 COPY --chown=jetty:jetty docker-config/ROOT.xml ${JETTY_BASE}/webapps/

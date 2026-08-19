@@ -1,9 +1,9 @@
 package org.olf.folio.order.listeners;
 
 import java.util.Iterator;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import java.io.File;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
@@ -26,7 +26,7 @@ public class ConfigurationListener implements ServletContextListener {
 						userHomeSysProp + "/order/import.properties";
 		try {
 			String path = configFileSysProp.startsWith( "/" ) ?
-							configFileSysProp : userHomeSysProp + "/" + configFileSysProp;
+				configFileSysProp : userHomeSysProp + "/" + configFileSysProp;
 			CompositeConfiguration compositeConfiguration = new CompositeConfiguration();
 			compositeConfiguration.addConfiguration( new Configurations().properties( new File( path ) ) );
 			logger.info("Initializing properties using " + path);
